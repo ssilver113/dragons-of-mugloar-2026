@@ -1,0 +1,5 @@
+[
+  {"id":"hpot","name":"Healing potion","cost":50},
+  {"id":"cs","name":"Claw Sharpening","cost":100},
+  {"id":"wingpotmax","name":"Potion of Awesome Wings","cost":300}
+]

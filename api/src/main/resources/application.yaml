@@ -17,3 +17,14 @@ management:
 springdoc:
   swagger-ui:
     path: /swagger-ui
+
+mugloar:
+  base-url: https://dragonsofmugloar.com/api/v2
+  user-agent: dragons-of-mugloar-client/1.0
+  connect-timeout: 3s
+  read-timeout: 10s
+  max-retries: 2
+  retry-delay: 250ms
+  retry-max-delay: 2s
+  retry-jitter: 100ms
+  retry-multiplier: 2.0
