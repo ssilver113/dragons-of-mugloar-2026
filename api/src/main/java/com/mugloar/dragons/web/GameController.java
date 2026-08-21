@@ -20,13 +20,6 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Game", description = "Start a game, read the board, attempt an ad")
 public class GameController {
 
-    /**
-     * Ids are short opaque tokens upstream. Constraining them here keeps a path that could never
-     * be a game id from reaching the network at all, and the underscore and hyphen are allowed
-     * because a decoded ad id is not guaranteed to stay strictly alphanumeric.
-     */
-    static final String ID_PATTERN = "^[A-Za-z0-9_-]{1,64}$";
-
     private final GameService games;
 
     public GameController(GameService games) {
@@ -42,15 +35,15 @@ public class GameController {
 
     @GetMapping("/{gameId}/ads")
     @Operation(summary = "List the board, decoded and scored for this dragon's level")
-    public AdBoardView listAds(@PathVariable @Pattern(regexp = ID_PATTERN) String gameId) {
+    public AdBoardView listAds(@PathVariable @Pattern(regexp = Identifiers.ID_PATTERN) String gameId) {
         return AdBoardView.from(games.listAds(gameId));
     }
 
     @PostMapping("/{gameId}/ads/{adId}/solve")
     @Operation(summary = "Attempt one ad. Costs a turn and ages every ad on the board")
     public SolveResultView solve(
-            @PathVariable @Pattern(regexp = ID_PATTERN) String gameId,
-            @PathVariable @Pattern(regexp = ID_PATTERN) String adId) {
+            @PathVariable @Pattern(regexp = Identifiers.ID_PATTERN) String gameId,
+            @PathVariable @Pattern(regexp = Identifiers.ID_PATTERN) String adId) {
         return SolveResultView.from(games.solve(gameId, adId));
     }
 }

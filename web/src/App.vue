@@ -1,18 +1,52 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import AdList from './components/AdList.vue'
 import GameStats from './components/GameStats.vue'
 import MessageBanner from './components/MessageBanner.vue'
+import ShopPanel from './components/ShopPanel.vue'
 import { useGameStore } from './stores/game'
 
 const store = useGameStore()
 
 const starting = computed(() => store.startStatus === 'pending')
 const outcome = computed(() => store.lastOutcome)
+
+/**
+ * Which half of the game is on screen — but only where both do not fit. From `lg` up the board
+ * and the shop sit side by side and this is inert, which is why the switch is two buttons rather
+ * than a tablist: a tab that controls nothing on a wide screen would be a lie to a screen reader.
+ */
+const view = ref<'board' | 'shop'>('board')
+const onlyOnMobile = (panel: 'board' | 'shop') => (view.value === panel ? '' : 'hidden lg:block')
+
+const banner = computed(() => {
+  const last = outcome.value
+  if (!last) {
+    return null
+  }
+  if (last.kind === 'solve') {
+    return {
+      tone: last.success ? ('success' as const) : ('failure' as const),
+      title: last.success ? 'Mission accomplished' : 'Mission failed',
+      body: last.message,
+    }
+  }
+  return last.success
+    ? {
+        tone: 'success' as const,
+        title: `Bought ${last.item.name}`,
+        body: 'The dragon is better equipped than it was a turn ago.',
+      }
+    : {
+        tone: 'failure' as const,
+        title: 'The shop refused the sale',
+        body: 'Nothing changed hands, and the turn is spent all the same.',
+      }
+})
 </script>
 
 <template>
-  <main class="mx-auto flex min-h-dvh max-w-4xl flex-col gap-6 px-4 py-8">
+  <main class="mx-auto flex min-h-dvh max-w-6xl flex-col gap-6 px-4 py-8">
     <header class="flex flex-col gap-1">
       <h1 class="text-2xl font-semibold text-accent sm:text-3xl">Dragons of Mugloar</h1>
       <p class="text-sm text-ink-muted">
@@ -71,24 +105,53 @@ const outcome = computed(() => store.lastOutcome)
     </template>
 
     <template v-else>
-      <MessageBanner
-        v-if="outcome"
-        :tone="outcome.success ? 'success' : 'failure'"
-        :title="outcome.success ? 'Mission accomplished' : 'Mission failed'"
-      >
-        {{ outcome.message }}
+      <MessageBanner v-if="banner" :tone="banner.tone" :title="banner.title">
+        {{ banner.body }}
       </MessageBanner>
 
-      <AdList
-        :ads="store.orderedAds"
-        :status="store.boardStatus"
-        :solving-ad-id="store.solvingAdId"
-        :advisor="store.advisorEnabled"
-        :disabled="store.busy"
-        @solve="store.solve($event)"
-        @refresh="store.refreshAds()"
-        @toggle-advisor="store.toggleAdvisor()"
-      />
+      <div
+        class="flex gap-1 rounded-lg bg-surface-raised p-1 lg:hidden"
+        role="group"
+        aria-label="Choose what to show"
+      >
+        <button
+          v-for="panel in (['board', 'shop'] as const)"
+          :key="panel"
+          type="button"
+          class="flex-1 rounded-md px-3 py-1.5 text-sm font-medium capitalize focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          :class="view === panel ? 'bg-accent text-surface' : 'text-ink-muted hover:text-ink'"
+          :aria-pressed="view === panel"
+          @click="view = panel"
+        >
+          {{ panel === 'board' ? 'Message board' : 'Shop' }}
+        </button>
+      </div>
+
+      <div class="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <div :class="onlyOnMobile('board')">
+          <AdList
+            :ads="store.orderedAds"
+            :status="store.boardStatus"
+            :solving-ad-id="store.solvingAdId"
+            :advisor="store.advisorEnabled"
+            :disabled="store.busy"
+            @solve="store.solve($event)"
+            @refresh="store.refreshAds()"
+            @toggle-advisor="store.toggleAdvisor()"
+          />
+        </div>
+        <div :class="onlyOnMobile('shop')">
+          <ShopPanel
+            :items="store.shopItems"
+            :gold="store.game?.gold ?? 0"
+            :status="store.shopStatus"
+            :buying-item-id="store.buyingItemId"
+            :disabled="store.busy"
+            @buy="store.buy($event)"
+            @refresh="store.refreshShop()"
+          />
+        </div>
+      </div>
     </template>
   </main>
 </template>

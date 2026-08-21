@@ -18,6 +18,12 @@ public enum ErrorCode {
     /** The ad is gone from the board: solved already, or expired. Refetch the board. */
     AD_NOT_AVAILABLE,
 
+    /** The shop does not stock this item, so buying it could only waste a turn. */
+    ITEM_NOT_AVAILABLE,
+
+    /** The item costs more than the purse holds. Refused before the turn was spent. */
+    INSUFFICIENT_GOLD,
+
     /** The upstream does not know this game id. */
     GAME_NOT_FOUND,
 

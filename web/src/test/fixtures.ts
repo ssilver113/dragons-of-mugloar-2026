@@ -1,4 +1,4 @@
-import type { AdView, GameView } from '../api/types'
+import type { AdView, GameView, ShopItemView } from '../api/types'
 
 /** Shapes copied from live responses; overrides keep each test's intent to the fields it cares about. */
 export function aGame(overrides: Partial<GameView> = {}): GameView {
@@ -26,6 +26,17 @@ export function anAd(overrides: Partial<AdView> = {}): AdView {
     successProbability: 0.86,
     expectedValue: 12.9,
     flags: [],
+    ...overrides,
+  }
+}
+
+export function anItem(overrides: Partial<ShopItemView> = {}): ShopItemView {
+  return {
+    id: 'cs',
+    name: 'Claw Sharpening',
+    cost: 100,
+    livesGained: 0,
+    levelsGained: 1,
     ...overrides,
   }
 }

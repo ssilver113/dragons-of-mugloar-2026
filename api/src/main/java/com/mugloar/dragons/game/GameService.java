@@ -37,7 +37,7 @@ public class GameService {
 
     public AdBoard listAds(String gameId) {
         GameSession session = sessions.require(gameId);
-        GameState state = requireRunning(session);
+        GameState state = session.requireRunning();
 
         List<EnrichedAd> ads = enricher.enrich(client.listAds(gameId), state.level());
         session.recordBoard(ads.stream().map(EnrichedAd::adId).toList());
@@ -46,7 +46,7 @@ public class GameService {
 
     public SolveOutcome solve(String gameId, String adId) {
         GameSession session = sessions.require(gameId);
-        GameState state = requireRunning(session);
+        GameState state = session.requireRunning();
         if (!session.isKnownSolvable(adId)) {
             throw new AdNotAvailableException(adId);
         }
@@ -59,13 +59,5 @@ public class GameService {
         session.setState(updated);
 
         return new SolveOutcome(updated, adId, solved.success(), solved.message());
-    }
-
-    private static GameState requireRunning(GameSession session) {
-        GameState state = session.state();
-        if (state.finished()) {
-            throw new GameNotRunningException(state.gameId());
-        }
-        return state;
     }
 }

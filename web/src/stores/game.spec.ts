@@ -3,13 +3,14 @@ import { createPinia, setActivePinia } from 'pinia'
 import { http, HttpResponse } from 'msw'
 import { server } from '../mocks/server'
 import { useGameStore } from './game'
-import { aGame, anAd, problem } from '../test/fixtures'
-import type { AdView, GameView, SolveResultView } from '../api/types'
+import { aGame, anAd, anItem, problem } from '../test/fixtures'
+import type { AdView, GameView, ShopItemView, SolveResultView } from '../api/types'
 
 /** What the fake server currently believes; tests move it to set up the next response. */
 const upstream = {
   game: aGame(),
   ads: [] as AdView[],
+  items: [] as ShopItemView[],
 }
 
 function stubGame(): void {
@@ -17,6 +18,17 @@ function stubGame(): void {
     http.post('/api/games', () => HttpResponse.json(upstream.game)),
     http.get('/api/games/:gameId/ads', () =>
       HttpResponse.json({ game: upstream.game, ads: upstream.ads }),
+    ),
+    http.get('/api/games/:gameId/shop', () =>
+      HttpResponse.json({ game: upstream.game, items: upstream.items }),
+    ),
+  )
+}
+
+function stubBuy(game: GameView, success = true): void {
+  server.use(
+    http.post('/api/games/:gameId/shop/:itemId/buy', ({ params }) =>
+      HttpResponse.json({ game, itemId: params.itemId, success }),
     ),
   )
 }
@@ -45,6 +57,7 @@ beforeEach(() => {
   setActivePinia(createPinia())
   upstream.game = aGame()
   upstream.ads = [anAd()]
+  upstream.items = [anItem()]
 })
 
 describe('starting a game', () => {
@@ -57,6 +70,14 @@ describe('starting a game', () => {
     expect(store.ads).toHaveLength(2)
     expect(store.startStatus).toBe('ready')
     expect(store.boardStatus).toBe('ready')
+  })
+
+  it('loads the shop up front, because listing it costs no turn', async () => {
+    upstream.items = [anItem({ id: 'hpot' }), anItem({ id: 'cs' })]
+    const store = await startedStore()
+
+    expect(store.shopItems.map((item) => item.id)).toEqual(['hpot', 'cs'])
+    expect(store.shopStatus).toBe('ready')
   })
 
   it('leaves no half-started game behind when the request fails', async () => {
@@ -152,7 +173,11 @@ describe('solving an ad', () => {
 
     expect(store.game).toMatchObject({ gold: 15, score: 15, turn: 1 })
     expect(store.ads.map((ad) => ad.adId)).toEqual(['fresh'])
-    expect(store.lastOutcome).toMatchObject({ adId: 'target', success: true })
+    expect(store.lastOutcome).toEqual({
+      kind: 'solve',
+      success: true,
+      message: 'You successfully solved the mission!',
+    })
     expect(store.solvingAdId).toBeNull()
   })
 
@@ -241,5 +266,146 @@ describe('refreshing the board', () => {
     await store.refreshAds()
 
     expect(store.boardStatus).toBe('idle')
+  })
+})
+
+describe('buying an item', () => {
+  beforeEach(() => {
+    upstream.game = aGame({ gold: 120 })
+    upstream.ads = [anAd({ adId: 'ages', expiresIn: 3 }), anAd({ adId: 'runs-out', expiresIn: 1 })]
+    upstream.items = [
+      anItem({ id: 'cs', cost: 100, levelsGained: 1 }),
+      anItem({ id: 'hpot', cost: 50, livesGained: 1, levelsGained: 0 }),
+      anItem({ id: 'wingpotmax', cost: 300, levelsGained: 2 }),
+    ]
+  })
+
+  it('predicts the spend, the effect and the aged board before the server answers', async () => {
+    const store = await startedStore()
+    stubBuy(aGame({ gold: 20, level: 1, turn: 1 }))
+
+    const pending = store.buy('cs')
+
+    expect(store.game).toMatchObject({ gold: 20, level: 1, lives: 3, turn: 1 })
+    expect(store.buyingItemId).toBe('cs')
+    expect(store.ads.map((ad) => ad.adId)).toEqual(['ages'])
+    expect(store.ads[0]?.expiresIn).toBe(2)
+    await pending
+  })
+
+  it('predicts a life rather than a level for the potion', async () => {
+    const store = await startedStore()
+    stubBuy(aGame({ gold: 70, lives: 4, turn: 1 }))
+
+    const pending = store.buy('hpot')
+
+    expect(store.game).toMatchObject({ gold: 70, lives: 4, level: 0 })
+    await pending
+  })
+
+  it('replaces the prediction with the server state and refetches the board', async () => {
+    const store = await startedStore()
+    stubBuy(aGame({ gold: 20, level: 1, turn: 1 }))
+    upstream.game = aGame({ gold: 20, level: 1, turn: 1 })
+    upstream.ads = [anAd({ adId: 'fresh' })]
+
+    await store.buy('cs')
+
+    expect(store.game).toMatchObject({ gold: 20, level: 1, turn: 1 })
+    expect(store.ads.map((ad) => ad.adId)).toEqual(['fresh'])
+    expect(store.lastOutcome).toMatchObject({ kind: 'purchase', success: true })
+    expect(store.buyingItemId).toBeNull()
+  })
+
+  it('reports a refusal the shop charged a turn for, without rolling anything back', async () => {
+    const store = await startedStore()
+    stubBuy(aGame({ gold: 120, turn: 1 }), false)
+    upstream.game = aGame({ gold: 120, turn: 1 })
+
+    await store.buy('cs')
+
+    expect(store.lastOutcome).toMatchObject({ kind: 'purchase', success: false })
+    expect(store.game).toMatchObject({ gold: 120, turn: 1 })
+    expect(store.error).toBeNull()
+  })
+
+  it('rolls the purse and the board back when the request fails', async () => {
+    const store = await startedStore()
+    const before = [...store.ads]
+    server.use(http.post('/api/games/:gameId/shop/:itemId/buy', () => HttpResponse.error()))
+
+    await store.buy('cs')
+
+    expect(store.game).toMatchObject({ gold: 120, level: 0, turn: 0 })
+    expect(store.ads).toEqual(before)
+    expect(store.error).toMatchObject({ code: 'NETWORK_ERROR' })
+    expect(store.buyingItemId).toBeNull()
+  })
+
+  it('never sends a purchase the purse cannot cover', async () => {
+    const store = await startedStore()
+
+    await store.buy('wingpotmax')
+
+    expect(store.game).toMatchObject({ gold: 120, turn: 0 })
+    expect(store.buyingItemId).toBeNull()
+    expect(store.lastOutcome).toBeNull()
+  })
+
+  it('ignores an item the shop never listed', async () => {
+    const store = await startedStore()
+
+    await store.buy('sword')
+
+    expect(store.game).toMatchObject({ turn: 0 })
+  })
+
+  it('will not buy while a solve is still in flight', async () => {
+    const store = await startedStore()
+    server.use(
+      http.post('/api/games/:gameId/ads/:adId/solve', () =>
+        HttpResponse.json({ game: aGame({ gold: 120, turn: 1 }), adId: 'ages', success: true, message: 'Done' }),
+      ),
+    )
+
+    const pending = store.solve('ages')
+    await store.buy('cs')
+
+    expect(store.buyingItemId).toBeNull()
+    expect(store.game?.gold).toBe(120)
+    await pending
+  })
+
+  it('refuses to spend a turn on a game that is already over', async () => {
+    const store = await startedStore()
+    upstream.game = aGame({ gold: 120, lives: 0, finished: true })
+    await store.refreshAds()
+
+    await store.buy('cs')
+
+    expect(store.buyingItemId).toBeNull()
+    expect(store.lastOutcome).toBeNull()
+  })
+})
+
+describe('loading the shop', () => {
+  it('records the failure without claiming an empty catalogue', async () => {
+    const store = useGameStore()
+    server.use(
+      http.post('/api/games', () => HttpResponse.json(upstream.game)),
+      http.get('/api/games/:gameId/ads', () =>
+        HttpResponse.json({ game: upstream.game, ads: upstream.ads }),
+      ),
+      http.get('/api/games/:gameId/shop', () =>
+        problem(503, 'UPSTREAM_UNAVAILABLE', 'Not responding.'),
+      ),
+    )
+
+    await store.startGame()
+
+    expect(store.shopStatus).toBe('error')
+    expect(store.shopItems).toEqual([])
+    expect(store.error).toMatchObject({ code: 'UPSTREAM_UNAVAILABLE' })
+    expect(store.ads).toHaveLength(1)
   })
 })

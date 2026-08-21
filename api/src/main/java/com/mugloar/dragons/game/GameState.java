@@ -1,6 +1,7 @@
 package com.mugloar.dragons.game;
 
 import com.mugloar.dragons.mugloar.dto.GameStartedResponse;
+import com.mugloar.dragons.mugloar.dto.PurchaseResponse;
 import com.mugloar.dragons.mugloar.dto.SolveResponse;
 
 /**
@@ -30,5 +31,14 @@ public record GameState(String gameId, int lives, int gold, int level, int score
     /** Merges a solve result, carrying {@code level} forward because the response does not report it. */
     public GameState afterSolve(SolveResponse solved) {
         return new GameState(gameId, solved.lives(), solved.gold(), level, solved.score(), solved.turn());
+    }
+
+    /**
+     * Merges a purchase, which is the one response that does report {@code level}. {@code score}
+     * is carried forward: it counts gold earned, so spending never moves it.
+     */
+    public GameState afterPurchase(PurchaseResponse bought) {
+        return new GameState(
+                gameId, bought.lives(), bought.gold(), bought.level(), score, bought.turn());
     }
 }

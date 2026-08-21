@@ -4,7 +4,7 @@ import { createPinia } from 'pinia'
 import { http, HttpResponse } from 'msw'
 import App from './App.vue'
 import { server } from './mocks/server'
-import { aGame, anAd, problem } from './test/fixtures'
+import { aGame, anAd, anItem, problem } from './test/fixtures'
 
 function render() {
   return mount(App, { global: { plugins: [createPinia()] } })
@@ -27,6 +27,9 @@ describe('App', () => {
           game: aGame(),
           ads: [anAd({ message: 'Steal a shipment of gold' })],
         }),
+      ),
+      http.get('/api/games/:gameId/shop', () =>
+        HttpResponse.json({ game: aGame(), items: [anItem()] }),
       ),
     )
     const app = render()
@@ -60,6 +63,7 @@ describe('App', () => {
       http.get('/api/games/:gameId/ads', () =>
         HttpResponse.json({ game: dying, ads: [anAd({ adId: 'last', message: 'One last job' })] }),
       ),
+      http.get('/api/games/:gameId/shop', () => HttpResponse.json({ game: dying, items: [] })),
       http.post('/api/games/:gameId/ads/:adId/solve', () =>
         HttpResponse.json({
           game: aGame({ lives: 0, score: 1210, turn: 84, finished: true }),
@@ -78,5 +82,59 @@ describe('App', () => {
 
     expect(app.text()).toContain('The dragon has fallen')
     expect(app.text()).toContain('Final score 1210')
+  })
+
+  it('puts the shop next to the board, and lets a small screen pick one', async () => {
+    const rich = aGame({ gold: 500 })
+    server.use(
+      http.post('/api/games', () => HttpResponse.json(rich)),
+      http.get('/api/games/:gameId/ads', () =>
+        HttpResponse.json({ game: rich, ads: [anAd({ message: 'Steal a shipment of gold' })] }),
+      ),
+      http.get('/api/games/:gameId/shop', () =>
+        HttpResponse.json({ game: rich, items: [anItem({ name: 'Claw Sharpening' })] }),
+      ),
+    )
+    const app = render()
+
+    await app.get('button').trigger('click')
+    await flushPromises()
+
+    // Both panels are always mounted; the switch only decides which one a narrow screen hides.
+    expect(app.text()).toContain('Steal a shipment of gold')
+    expect(app.text()).toContain('Claw Sharpening')
+
+    const [board, shop] = app.findAll('[aria-label="Choose what to show"] button')
+    expect(board?.attributes('aria-pressed')).toBe('true')
+    expect(shop?.attributes('aria-pressed')).toBe('false')
+
+    await shop?.trigger('click')
+    expect(shop?.attributes('aria-pressed')).toBe('true')
+  })
+
+  it('buys an item and shows the dragon getting stronger', async () => {
+    // One mutable state, so the board refetch that follows a purchase reports the new purse
+    // rather than handing back the one the game started with.
+    let current = aGame({ gold: 500 })
+    server.use(
+      http.post('/api/games', () => HttpResponse.json(current)),
+      http.get('/api/games/:gameId/ads', () => HttpResponse.json({ game: current, ads: [anAd()] })),
+      http.get('/api/games/:gameId/shop', () =>
+        HttpResponse.json({ game: current, items: [anItem({ name: 'Claw Sharpening' })] }),
+      ),
+      http.post('/api/games/:gameId/shop/:itemId/buy', () => {
+        current = aGame({ gold: 400, level: 1, turn: 1 })
+        return HttpResponse.json({ game: current, itemId: 'cs', success: true })
+      }),
+    )
+    const app = render()
+
+    await app.get('button').trigger('click')
+    await flushPromises()
+    await app.get('[aria-label="Buy Claw Sharpening for 100 gold"]').trigger('click')
+    await flushPromises()
+
+    expect(app.get('[role="status"]').text()).toContain('Bought Claw Sharpening')
+    expect(app.get('[aria-label="Dragon status"]').text()).toContain('400')
   })
 })

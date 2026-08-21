@@ -3,6 +3,8 @@ import type {
   ErrorCode,
   GameView,
   ProblemDetail,
+  PurchaseResultView,
+  ShopView,
   SolveResultView,
 } from './types'
 
@@ -77,6 +79,15 @@ export const api = {
   solve: (gameId: string, adId: string): Promise<SolveResultView> =>
     request<SolveResultView>(
       `${games}/${encodeURIComponent(gameId)}/ads/${encodeURIComponent(adId)}/solve`,
+      { method: 'POST' },
+    ),
+
+  listShop: (gameId: string): Promise<ShopView> =>
+    request<ShopView>(`${games}/${encodeURIComponent(gameId)}/shop`),
+
+  buy: (gameId: string, itemId: string): Promise<PurchaseResultView> =>
+    request<PurchaseResultView>(
+      `${games}/${encodeURIComponent(gameId)}/shop/${encodeURIComponent(itemId)}/buy`,
       { method: 'POST' },
     ),
 }

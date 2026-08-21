@@ -9,6 +9,8 @@ import com.mugloar.dragons.mugloar.exception.InvalidActionException;
 import com.mugloar.dragons.mugloar.exception.MugloarException;
 import com.mugloar.dragons.mugloar.exception.MugloarProtocolException;
 import com.mugloar.dragons.mugloar.exception.MugloarUnavailableException;
+import com.mugloar.dragons.shop.InsufficientGoldException;
+import com.mugloar.dragons.shop.ItemNotAvailableException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
@@ -55,6 +57,21 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         log.debug("{}", e.getMessage());
         return problem(HttpStatus.CONFLICT, ErrorCode.AD_NOT_AVAILABLE,
                 "That ad is no longer on the board. Refresh to see the current one.");
+    }
+
+    @ExceptionHandler(ItemNotAvailableException.class)
+    ProblemDetail handleItemNotAvailable(ItemNotAvailableException e) {
+        log.debug("{}", e.getMessage());
+        return problem(HttpStatus.CONFLICT, ErrorCode.ITEM_NOT_AVAILABLE,
+                "The shop does not sell that. Refresh to see what it stocks.");
+    }
+
+    /** Refused here rather than upstream, where finding out would have cost a turn. */
+    @ExceptionHandler(InsufficientGoldException.class)
+    ProblemDetail handleInsufficientGold(InsufficientGoldException e) {
+        log.debug("{}", e.getMessage());
+        return problem(HttpStatus.CONFLICT, ErrorCode.INSUFFICIENT_GOLD,
+                "You cannot afford that yet.");
     }
 
     @ExceptionHandler(GameNotFoundException.class)

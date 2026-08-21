@@ -120,7 +120,9 @@ Measured effects, each from a fresh game:
 | `cs`, `gas`, `wax`, `tricks`, `wingpot` | 100 | **level +1** each |
 | `ch`, `rf`, `iron`, `mtrix`, `wingpotmax` | 300 | **level +2** each |
 
-Every 100-gold item behaves identically (+1 level) and every 300-gold item behaves identically (+2 levels); the names are flavour. The 300-gold items are 1.5× the level per gold, so they are the better buy whenever affordable.
+Every 100-gold item behaves identically (+1 level) and every 300-gold item behaves identically (+2 levels); the names are flavour.
+
+**The two tiers trade gold against turns, and neither dominates.** Three 100-gold items cost 300 gold and three turns for **+3 levels**; one 300-gold item costs 300 gold and one turn for **+2 levels**. So the 100-gold tier is 1.5× the level per *gold*, and the 300-gold tier is 2× the level per *turn*. Which is the better buy depends on which resource is scarcer at that moment, so it is a strategy parameter to tune against the benchmark, not a fixed rule.
 
 **Lives are uncapped.** Bought `hpot` four times consecutively from full health and reached 7 lives with no ceiling and no diminishing effect.
 

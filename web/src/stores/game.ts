@@ -1,27 +1,38 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { ApiError, api } from '../api/client'
-import type { AdView, GameView, SolveResultView } from '../api/types'
+import type { AdView, GameView, ShopItemView } from '../api/types'
 
 export type RequestStatus = 'idle' | 'pending' | 'ready' | 'error'
+
+/**
+ * What the last turn did, in the shape the banner needs. One slot rather than one per action:
+ * only one turn can be the most recent, so two slots could only ever disagree.
+ */
+export type TurnOutcome =
+  | { kind: 'solve'; success: boolean; message: string }
+  | { kind: 'purchase'; success: boolean; item: ShopItemView }
 
 export const useGameStore = defineStore('game', () => {
   const game = ref<GameView | null>(null)
   const ads = ref<AdView[]>([])
+  const shopItems = ref<ShopItemView[]>([])
   const startStatus = ref<RequestStatus>('idle')
   const boardStatus = ref<RequestStatus>('idle')
+  const shopStatus = ref<RequestStatus>('idle')
   const solvingAdId = ref<string | null>(null)
+  const buyingItemId = ref<string | null>(null)
   const error = ref<ApiError | null>(null)
-  const lastOutcome = ref<SolveResultView | null>(null)
+  const lastOutcome = ref<TurnOutcome | null>(null)
   const advisorEnabled = ref(false)
 
   const started = computed(() => game.value !== null)
   const finished = computed(() => game.value?.finished ?? false)
+
+  /** A turn is in flight. Only one may be, whichever action started it. */
+  const acting = computed(() => solvingAdId.value !== null || buyingItemId.value !== null)
   const busy = computed(
-    () =>
-      startStatus.value === 'pending' ||
-      boardStatus.value === 'pending' ||
-      solvingAdId.value !== null,
+    () => startStatus.value === 'pending' || boardStatus.value === 'pending' || acting.value,
   )
 
   /**
@@ -38,13 +49,17 @@ export const useGameStore = defineStore('game', () => {
   async function startGame(): Promise<void> {
     startStatus.value = 'pending'
     boardStatus.value = 'idle'
+    shopStatus.value = 'idle'
     error.value = null
     lastOutcome.value = null
     ads.value = []
+    shopItems.value = []
     try {
       game.value = await api.startGame()
       startStatus.value = 'ready'
-      await refreshAds()
+      // The shop is static for the life of a game and listing it costs no turn, so it is fetched
+      // once, up front: affordability is then answerable the moment the player looks.
+      await Promise.all([refreshAds(), refreshShop()])
     } catch (e) {
       game.value = null
       startStatus.value = 'error'
@@ -69,15 +84,31 @@ export const useGameStore = defineStore('game', () => {
     }
   }
 
+  /** The catalogue only, deliberately: the state riding along is older than a turn in flight. */
+  async function refreshShop(): Promise<void> {
+    const current = game.value
+    if (!current) {
+      return
+    }
+    shopStatus.value = 'pending'
+    try {
+      shopItems.value = (await api.listShop(current.gameId)).items
+      shopStatus.value = 'ready'
+    } catch (e) {
+      shopStatus.value = 'error'
+      error.value = asApiError(e)
+    }
+  }
+
   /**
    * Optimistic in the only way this game allows: whether the ad succeeds is unknowable here, but
-   * the mechanical half of a turn is not — the ad leaves the board, the turn counter moves and
+   * the mechanical half of a turn is not. The ad leaves the board, the turn counter moves and
    * every other ad ages by one. The authoritative state replaces the guess on the way back, and a
    * failure restores the snapshot untouched.
    */
   async function solve(adId: string): Promise<void> {
     const current = game.value
-    if (!current || current.finished || solvingAdId.value !== null) {
+    if (!current || current.finished || acting.value) {
       return
     }
     const previousGame = current
@@ -92,7 +123,7 @@ export const useGameStore = defineStore('game', () => {
     try {
       const result = await api.solve(current.gameId, adId)
       game.value = result.game
-      lastOutcome.value = result
+      lastOutcome.value = { kind: 'solve', success: result.success, message: result.message }
       if (!result.game.finished) {
         await refreshAds()
       }
@@ -110,6 +141,48 @@ export const useGameStore = defineStore('game', () => {
     }
   }
 
+  /**
+   * A purchase predicts more than a solve, because more of it is known: the price is fixed, the
+   * effect was measured, and the turn ages the board exactly as a solve does. That leaves only
+   * the shop's own refusal unpredictable, and the server refuses everything it can see coming.
+   */
+  async function buy(itemId: string): Promise<void> {
+    const current = game.value
+    const item = shopItems.value.find((candidate) => candidate.id === itemId)
+    if (!current || current.finished || acting.value || !item || item.cost > current.gold) {
+      return
+    }
+    const previousGame = current
+    const previousAds = ads.value
+
+    error.value = null
+    lastOutcome.value = null
+    buyingItemId.value = itemId
+    game.value = {
+      ...current,
+      gold: current.gold - item.cost,
+      lives: current.lives + item.livesGained,
+      level: current.level + item.levelsGained,
+      turn: current.turn + 1,
+    }
+    ads.value = ageBoard(previousAds)
+
+    try {
+      const result = await api.buy(current.gameId, itemId)
+      game.value = result.game
+      lastOutcome.value = { kind: 'purchase', success: result.success, item }
+      if (!result.game.finished) {
+        await refreshAds()
+      }
+    } catch (e) {
+      game.value = previousGame
+      ads.value = previousAds
+      error.value = asApiError(e)
+    } finally {
+      buyingItemId.value = null
+    }
+  }
+
   function toggleAdvisor(): void {
     advisorEnabled.value = !advisorEnabled.value
   }
@@ -121,25 +194,31 @@ export const useGameStore = defineStore('game', () => {
   return {
     game,
     ads,
+    shopItems,
     startStatus,
     boardStatus,
+    shopStatus,
     solvingAdId,
+    buyingItemId,
     error,
     lastOutcome,
     advisorEnabled,
     started,
     finished,
+    acting,
     busy,
     orderedAds,
     startGame,
     refreshAds,
+    refreshShop,
     solve,
+    buy,
     toggleAdvisor,
     dismissError,
   }
 })
 
-function ageBoard(board: AdView[], solvedAdId: string): AdView[] {
+function ageBoard(board: AdView[], solvedAdId?: string): AdView[] {
   // The server never returns an ad that has run out, so the prediction does not invent one.
   return board.filter((ad) => ad.adId !== solvedAdId && ad.expiresIn > 1).map(aged)
 }
