@@ -28,3 +28,7 @@ mugloar:
   retry-max-delay: 2s
   retry-jitter: 100ms
   retry-multiplier: 2.0
+
+game:
+  # Long enough to survive a coffee break mid-game; nothing here needs to outlive the process.
+  session-ttl: 2h
