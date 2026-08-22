@@ -1,14 +1,17 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia } from 'pinia'
 import { http, HttpResponse } from 'msw'
 import App from './App.vue'
 import { server } from './mocks/server'
-import { aGame, anAd, anItem, problem } from './test/fixtures'
+import { aDecision, aGame, aStep, anAd, anItem, problem } from './test/fixtures'
 
 function render() {
   return mount(App, { global: { plugins: [createPinia()] } })
 }
+
+const buttonLabelled = (app: ReturnType<typeof render>, label: string) =>
+  app.findAll('button').find((button) => button.text() === label)
 
 describe('App', () => {
   it('opens on an invitation to start, with no board and no stats', () => {
@@ -134,7 +137,50 @@ describe('App', () => {
     await app.get('[aria-label="Buy Claw Sharpening for 100 gold"]').trigger('click')
     await flushPromises()
 
-    expect(app.get('[role="status"]').text()).toContain('Bought Claw Sharpening')
+    // More than one live region is on screen now that auto-play has a status line of its own.
+    const announced = app.findAll('[role="status"]').map((region) => region.text())
+    expect(announced.some((text) => text.includes('Bought Claw Sharpening'))).toBe(true)
     expect(app.get('[aria-label="Dragon status"]').text()).toContain('400')
+  })
+
+  it('hands the game to the solver, and says what it did with each turn', async () => {
+    let current = aGame({ gold: 50 })
+    let steps = 0
+    server.use(
+      http.post('/api/games', () => HttpResponse.json(current)),
+      http.get('/api/games/:gameId/ads', () => HttpResponse.json({ game: current, ads: [anAd()] })),
+      http.get('/api/games/:gameId/shop', () =>
+        HttpResponse.json({ game: current, items: [anItem()] }),
+      ),
+      http.post('/api/games/:gameId/autoplay/step', () => {
+        steps += 1
+        current =
+          steps === 1
+            ? aGame({ gold: 65, score: 15, turn: 1 })
+            : aGame({ gold: 65, score: 1400, lives: 0, turn: 2, finished: true })
+        return HttpResponse.json(
+          aStep({
+            game: current,
+            decision: aDecision({ ads: [{ ...aDecision().ads[0]!, message: 'Steal the gold' }] }),
+          }),
+        )
+      }),
+    )
+    const app = render()
+
+    await app.get('button').trigger('click')
+    await flushPromises()
+
+    // Max speed so the loop is not held up by a real timer, which is also the mode that skips
+    // the per-turn board refetch.
+    await app.get('select').setValue('max')
+    await buttonLabelled(app, 'Run')?.trigger('click')
+    await vi.waitFor(() => expect(app.text()).toContain('The dragon has fallen'))
+
+    expect(app.text()).toContain('Final score 1400')
+    // The board is gone, but the reasoning that got there survives it.
+    expect(app.text()).toContain('Mission accomplished')
+    expect(app.text()).toContain('Best reward on the board once the risk to a life is priced in.')
+    expect(app.text()).toContain('Steal the gold')
   })
 })

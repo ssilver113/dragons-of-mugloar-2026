@@ -1,7 +1,7 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { ApiError, api } from '../api/client'
-import type { AdView, GameView, ShopItemView } from '../api/types'
+import type { AdView, AutoPlayStepView, GameView, ShopItemView } from '../api/types'
 
 export type RequestStatus = 'idle' | 'pending' | 'ready' | 'error'
 
@@ -22,6 +22,7 @@ export const useGameStore = defineStore('game', () => {
   const shopStatus = ref<RequestStatus>('idle')
   const solvingAdId = ref<string | null>(null)
   const buyingItemId = ref<string | null>(null)
+  const autoStepping = ref(false)
   const error = ref<ApiError | null>(null)
   const lastOutcome = ref<TurnOutcome | null>(null)
   const advisorEnabled = ref(false)
@@ -29,8 +30,10 @@ export const useGameStore = defineStore('game', () => {
   const started = computed(() => game.value !== null)
   const finished = computed(() => game.value?.finished ?? false)
 
-  /** A turn is in flight. Only one may be, whichever action started it. */
-  const acting = computed(() => solvingAdId.value !== null || buyingItemId.value !== null)
+  /** A turn is in flight. Only one may be, whichever action started it — solver included. */
+  const acting = computed(
+    () => solvingAdId.value !== null || buyingItemId.value !== null || autoStepping.value,
+  )
   const busy = computed(
     () => startStatus.value === 'pending' || boardStatus.value === 'pending' || acting.value,
   )
@@ -183,6 +186,33 @@ export const useGameStore = defineStore('game', () => {
     }
   }
 
+  /**
+   * One turn taken by the solver. There is nothing to predict optimistically here — which move it
+   * will pick is exactly what the call returns — so the state is only ever written from the
+   * response, and a failure leaves everything as it was.
+   *
+   * Unlike `solve` and `buy` this throws instead of parking the failure in `error`: the auto-play
+   * loop has to tell a rate limit, which is a wait, from a failure, which is a halt, and it shows
+   * either one next to the log rather than in the app-wide banner.
+   */
+  async function autoPlayStep(refreshBoard: boolean): Promise<AutoPlayStepView> {
+    const current = game.value
+    if (!current || current.finished || acting.value) {
+      throw new ApiError('INVALID_ACTION', 'The dragon cannot take a turn right now.', 0)
+    }
+    autoStepping.value = true
+    try {
+      const step = await api.autoPlayStep(current.gameId)
+      game.value = step.game
+      if (refreshBoard && !step.game.finished) {
+        await refreshAds()
+      }
+      return step
+    } finally {
+      autoStepping.value = false
+    }
+  }
+
   function toggleAdvisor(): void {
     advisorEnabled.value = !advisorEnabled.value
   }
@@ -200,6 +230,7 @@ export const useGameStore = defineStore('game', () => {
     shopStatus,
     solvingAdId,
     buyingItemId,
+    autoStepping,
     error,
     lastOutcome,
     advisorEnabled,
@@ -213,6 +244,7 @@ export const useGameStore = defineStore('game', () => {
     refreshShop,
     solve,
     buy,
+    autoPlayStep,
     toggleAdvisor,
     dismissError,
   }

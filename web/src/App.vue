@@ -1,23 +1,34 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import AdList from './components/AdList.vue'
+import AutoPlayControls from './components/AutoPlayControls.vue'
+import DecisionLog from './components/DecisionLog.vue'
 import GameStats from './components/GameStats.vue'
 import MessageBanner from './components/MessageBanner.vue'
 import ShopPanel from './components/ShopPanel.vue'
 import { useGameStore } from './stores/game'
+import { useAutoPlayStore } from './stores/autoplay'
 
 const store = useGameStore()
+const autoPlay = useAutoPlayStore()
 
 const starting = computed(() => store.startStatus === 'pending')
 const outcome = computed(() => store.lastOutcome)
 
 /**
- * Which half of the game is on screen — but only where both do not fit. From `lg` up the board
- * and the shop sit side by side and this is inert, which is why the switch is two buttons rather
- * than a tablist: a tab that controls nothing on a wide screen would be a lie to a screen reader.
+ * Which part of the game is on screen — but only where they do not all fit. From `lg` up the
+ * board, the shop and the log are all visible and this is inert, which is why the switch is
+ * buttons rather than a tablist: a tab that controls nothing on a wide screen would be a lie to a
+ * screen reader.
  */
-const view = ref<'board' | 'shop'>('board')
-const onlyOnMobile = (panel: 'board' | 'shop') => (view.value === panel ? '' : 'hidden lg:block')
+type Panel = 'board' | 'shop' | 'log'
+const PANELS: { id: Panel; label: string }[] = [
+  { id: 'board', label: 'Board' },
+  { id: 'shop', label: 'Shop' },
+  { id: 'log', label: 'Log' },
+]
+const view = ref<Panel>('board')
+const onlyOnMobile = (panel: Panel) => (view.value === panel ? '' : 'hidden lg:block')
 
 const banner = computed(() => {
   const last = outcome.value
@@ -102,9 +113,31 @@ const banner = computed(() => {
           {{ starting ? 'Starting…' : 'Play again' }}
         </button>
       </section>
+
+      <!-- The board is gone but the run is still worth reading, so the log outlives the game. -->
+      <DecisionLog
+        v-if="autoPlay.log.length"
+        :entries="autoPlay.log"
+        :halt="autoPlay.halt"
+        @keep-going="autoPlay.keepGoing()"
+        @retry="autoPlay.run()"
+      />
     </template>
 
     <template v-else>
+      <AutoPlayControls
+        :running="autoPlay.running"
+        :stepping="autoPlay.stepping"
+        :waiting="autoPlay.waiting"
+        :speed="autoPlay.speed"
+        :can-play="autoPlay.canPlay"
+        :busy="store.busy"
+        @run="autoPlay.run()"
+        @pause="autoPlay.pause()"
+        @step="autoPlay.step()"
+        @update:speed="autoPlay.speed = $event"
+      />
+
       <MessageBanner v-if="banner" :tone="banner.tone" :title="banner.title">
         {{ banner.body }}
       </MessageBanner>
@@ -115,15 +148,15 @@ const banner = computed(() => {
         aria-label="Choose what to show"
       >
         <button
-          v-for="panel in (['board', 'shop'] as const)"
-          :key="panel"
+          v-for="panel in PANELS"
+          :key="panel.id"
           type="button"
-          class="flex-1 rounded-md px-3 py-1.5 text-sm font-medium capitalize focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-          :class="view === panel ? 'bg-accent text-surface' : 'text-ink-muted hover:text-ink'"
-          :aria-pressed="view === panel"
-          @click="view = panel"
+          class="flex-1 rounded-md px-3 py-1.5 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          :class="view === panel.id ? 'bg-accent text-surface' : 'text-ink-muted hover:text-ink'"
+          :aria-pressed="view === panel.id"
+          @click="view = panel.id"
         >
-          {{ panel === 'board' ? 'Message board' : 'Shop' }}
+          {{ panel.label }}
         </button>
       </div>
 
@@ -134,7 +167,7 @@ const banner = computed(() => {
             :status="store.boardStatus"
             :solving-ad-id="store.solvingAdId"
             :advisor="store.advisorEnabled"
-            :disabled="store.busy"
+            :disabled="store.busy || autoPlay.active"
             @solve="store.solve($event)"
             @refresh="store.refreshAds()"
             @toggle-advisor="store.toggleAdvisor()"
@@ -146,11 +179,20 @@ const banner = computed(() => {
             :gold="store.game?.gold ?? 0"
             :status="store.shopStatus"
             :buying-item-id="store.buyingItemId"
-            :disabled="store.busy"
+            :disabled="store.busy || autoPlay.active"
             @buy="store.buy($event)"
             @refresh="store.refreshShop()"
           />
         </div>
+      </div>
+
+      <div :class="onlyOnMobile('log')">
+        <DecisionLog
+          :entries="autoPlay.log"
+          :halt="autoPlay.halt"
+          @keep-going="autoPlay.keepGoing()"
+          @retry="autoPlay.run()"
+        />
       </div>
     </template>
   </main>

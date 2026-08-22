@@ -1,5 +1,6 @@
 import type {
   AdBoardView,
+  AutoPlayStepView,
   ErrorCode,
   GameView,
   ProblemDetail,
@@ -90,4 +91,9 @@ export const api = {
       `${games}/${encodeURIComponent(gameId)}/shop/${encodeURIComponent(itemId)}/buy`,
       { method: 'POST' },
     ),
+
+  autoPlayStep: (gameId: string): Promise<AutoPlayStepView> =>
+    request<AutoPlayStepView>(`${games}/${encodeURIComponent(gameId)}/autoplay/step`, {
+      method: 'POST',
+    }),
 }
