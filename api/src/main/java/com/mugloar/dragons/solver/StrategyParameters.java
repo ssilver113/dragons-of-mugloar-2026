@@ -31,8 +31,17 @@ public record StrategyParameters(
             new StrategyParameters(300.0, 1, 2, 0.2, 600);
 
     public StrategyParameters {
-        if (lifeValueGold <= 0 || targetLevelPerTurn < 0 || dearTierGoldFloor < 0) {
-            throw new IllegalArgumentException("StrategyParameters must be positive");
+        // A life has to be worth something, or the risk term vanishes and every ad looks free.
+        if (lifeValueGold <= 0) {
+            throw new IllegalArgumentException("StrategyParameters lifeValueGold must be positive");
+        }
+        // The rest may be zero — never healing, never levelling, and always preferring the dear
+        // tier are all coherent settings for a sweep to try — but none of them may be negative.
+        if (targetLevelPerTurn < 0
+                || dearTierGoldFloor < 0
+                || potionThresholdLives < 0
+                || targetLevelBase < 0) {
+            throw new IllegalArgumentException("StrategyParameters must not be negative");
         }
     }
 

@@ -124,6 +124,23 @@ class SuccessModelTest {
                 .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> new SuccessModel(100, 12, 1.25, 0))
                 .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new SuccessModel(100, 12, 0, 0.18))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    /** A ceiling that shrank as the dragon grew would invert every estimate the solver makes. */
+    @Test
+    void refusesACeilingThatFallsWithLevel() {
+        assertThatThrownBy(() -> new SuccessModel(100, -8, 1.25, 0.18))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    /** Zero is a legitimate fit — it says difficulty never scaled with level — so it is allowed. */
+    @Test
+    void acceptsACeilingThatDoesNotMoveWithLevel() {
+        SuccessModel flat = new SuccessModel(100, 0, 1.25, 0.18);
+
+        assertThat(flat.safeRewardCeiling(20)).isEqualTo(flat.safeRewardCeiling(0));
     }
 
     @Test

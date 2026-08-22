@@ -57,6 +57,11 @@ public record SuccessModel(
         if (ceilingBase <= 0 || softnessFactor <= 0 || midpointFactor <= 0) {
             throw new IllegalArgumentException("SuccessModel parameters must be positive");
         }
+        // Zero is a legitimate fit — a game whose difficulty did not scale with level — but a
+        // negative slope would shrink the ceiling as the dragon grew, inverting every estimate.
+        if (ceilingPerLevel < 0) {
+            throw new IllegalArgumentException("SuccessModel ceilingPerLevel must not be negative");
+        }
     }
 
     /**

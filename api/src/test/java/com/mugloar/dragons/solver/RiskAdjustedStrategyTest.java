@@ -14,6 +14,7 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class RiskAdjustedStrategyTest {
 
@@ -240,5 +241,30 @@ class RiskAdjustedStrategyTest {
         assertThat(parameters.lifeCost(3)).isEqualTo(100.0);
         assertThat(parameters.lifeCost(1)).isEqualTo(300.0);
         assertThat(parameters.lifeCost(0)).isEqualTo(300.0);
+    }
+
+    /** A free life empties the risk term, and every ad on the board starts looking worth a turn. */
+    @Test
+    void refusesAValuelessLife() {
+        assertThatThrownBy(() -> new StrategyParameters(0, 1, 2, 0.2, 600))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    /**
+     * Never healing, never levelling and always preferring the dear tier are all settings a sweep
+     * may reasonably try, so zero is allowed everywhere it means "off". Negative never is.
+     */
+    @Test
+    void allowsEveryOtherKnobToBeSwitchedOffButNeverInverted() {
+        assertThat(new StrategyParameters(300, 0, 0, 0, 0).targetLevel(50)).isZero();
+
+        assertThatThrownBy(() -> new StrategyParameters(300, -1, 2, 0.2, 600))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new StrategyParameters(300, 1, -2, 0.2, 600))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new StrategyParameters(300, 1, 2, -0.2, 600))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new StrategyParameters(300, 1, 2, 0.2, -600))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 }
