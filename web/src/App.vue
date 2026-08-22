@@ -159,7 +159,7 @@ const banner = computed(() => {
       <DragonSigil :mood="mood" :size="80" class="size-14 sm:size-20" />
     </header>
 
-    <GameStats v-if="store.game" :game="store.game" />
+    <GameStats v-if="store.game" :game="store.game" :announce="!autoPlay.active" />
 
     <!--
       `fault` is an alert and `note` is not: a refusal the server saw coming is not a failure, and
@@ -314,22 +314,29 @@ const banner = computed(() => {
             />
           </div>
         </div>
-        <div :class="onlyOnMobile('shop')" class="flex min-w-0 flex-col gap-4">
-          <ShopPanel
-            :items="store.shopItems"
-            :gold="store.game?.gold ?? 0"
-            :status="store.shopStatus"
-            :buying-item-id="store.buyingItemId"
-            :disabled="store.busy || autoPlay.active"
-            @buy="store.buy($event)"
-            @refresh="store.refreshShop()"
-          />
-          <ReputationPanel
-            :reputation="store.reputation"
-            :scouting="store.investigating"
-            :disabled="store.busy || autoPlay.active"
-            @scout="store.investigate()"
-          />
+        <!--
+          The stack is a level in, as it is in the board column: `lg:block` and `flex` are both
+          display utilities, and the variant is emitted later, so the two on one element would
+          leave the column laid out as blocks with its gap doing nothing.
+        -->
+        <div :class="onlyOnMobile('shop')" class="min-w-0">
+          <div class="flex flex-col gap-4">
+            <ShopPanel
+              :items="store.shopItems"
+              :gold="store.game?.gold ?? 0"
+              :status="store.shopStatus"
+              :buying-item-id="store.buyingItemId"
+              :disabled="store.busy || autoPlay.active"
+              @buy="store.buy($event)"
+              @refresh="store.refreshShop()"
+            />
+            <ReputationPanel
+              :reputation="store.reputation"
+              :scouting="store.investigating"
+              :disabled="store.busy || autoPlay.active"
+              @scout="store.investigate()"
+            />
+          </div>
         </div>
       </div>
 

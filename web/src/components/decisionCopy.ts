@@ -86,7 +86,7 @@ export function itemEffect(item: ItemOptionView): string {
     effects.push(`+${item.levelsGained} level${item.levelsGained > 1 ? 's' : ''}`)
   }
   if (item.livesGained > 0) {
-    effects.push(`+${item.livesGained} life${item.livesGained > 1 ? 'ves' : ''}`)
+    effects.push(`+${item.livesGained} ${item.livesGained === 1 ? 'life' : 'lives'}`)
   }
   return effects.join(', ') || 'unmeasured'
 }

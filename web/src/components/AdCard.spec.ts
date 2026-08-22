@@ -95,4 +95,12 @@ describe('AdCard', () => {
   it('reports the attempt in progress on the ad being attempted', () => {
     expect(render({}, { solving: true, disabled: true }).text()).toContain('Solving')
   })
+
+  it('reports it in the accessible name too, which is the only one a screen reader hears', () => {
+    const idle = render({ message: 'Steal the gold' })
+    expect(idle.get('button').attributes('aria-label')).toBe('Solve: Steal the gold')
+
+    const busy = render({ message: 'Steal the gold' }, { solving: true, disabled: true })
+    expect(busy.get('button').attributes('aria-label')).toBe('Solving: Steal the gold')
+  })
 })

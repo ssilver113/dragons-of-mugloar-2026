@@ -140,11 +140,15 @@ const unsendable = computed(() => props.ad.flags.includes('UNREADABLE'))
 
     <div class="flex items-center justify-between gap-3">
       <p class="text-xs text-ink-muted">Expires in {{ turns }}</p>
+      <!--
+        The accessible name tracks the visible label. One that still read "Solve" while the button
+        says "Solving…" would hide the only state change there is to hear.
+      -->
       <button
         type="button"
         class="rounded-md bg-accent px-3 py-1.5 text-sm font-semibold text-surface hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-40"
         :disabled="disabled || unsendable"
-        :aria-label="`Solve: ${ad.message}`"
+        :aria-label="solving ? `Solving: ${ad.message}` : `Solve: ${ad.message}`"
         @click="$emit('solve', ad.adId)"
       >
         {{ solving ? 'Solving…' : 'Solve' }}

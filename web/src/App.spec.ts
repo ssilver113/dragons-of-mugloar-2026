@@ -184,6 +184,38 @@ describe('App', () => {
     expect(app.text()).toContain('Steal the gold')
   })
 
+  /**
+   * The status strip is a live region, and the solver moves it every turn. At max speed that is a
+   * reading every few hundred milliseconds, which is why the decision log is not one either.
+   */
+  it('stops announcing the status strip while the solver holds the game', async () => {
+    server.use(
+      http.post('/api/games', () => HttpResponse.json(aGame())),
+      http.get('/api/games/:gameId/ads', () =>
+        HttpResponse.json({ game: aGame(), ads: [anAd()] }),
+      ),
+      http.get('/api/games/:gameId/shop', () =>
+        HttpResponse.json({ game: aGame(), items: [anItem()] }),
+      ),
+      http.post('/api/games/:gameId/autoplay/step', () => HttpResponse.json(aStep())),
+    )
+    const app = render()
+
+    await app.get('button').trigger('click')
+    await flushPromises()
+
+    const strip = () => app.get('[aria-label="Dragon status"]')
+    expect(strip().attributes('aria-live')).toBe('polite')
+    // Atomic, or a polite region reads out each figure that moved rather than the turn.
+    expect(strip().attributes('aria-atomic')).toBe('true')
+
+    await buttonLabelled(app, 'Run')?.trigger('click')
+    expect(strip().attributes('aria-live')).toBe('off')
+
+    await buttonLabelled(app, 'Pause')?.trigger('click')
+    await vi.waitFor(() => expect(strip().attributes('aria-live')).toBe('polite'))
+  })
+
   it('ends the run, rather than annotating a board no longer being tracked', async () => {
     server.use(
       http.post('/api/games', () => HttpResponse.json(aGame({ score: 640, turn: 41 }))),

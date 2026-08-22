@@ -39,6 +39,25 @@ test('a failed job costs a life and says so', async ({ page }) => {
   await expect(stat(page, 'Score')).toHaveText('0')
 })
 
+/**
+ * `hidden lg:block` and `flex` are both display utilities, and the variant is emitted later, so
+ * putting them on one element leaves a column laid out as blocks with its gap doing nothing. It is
+ * invisible to every unit test and to the 375px check, because it only appears from `lg` up.
+ */
+test('the shop column is still a spaced stack once the layout goes wide', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 })
+  await startGame(page)
+
+  const column = page.locator('div.min-w-0 > div.flex.flex-col.gap-4').last()
+  const gap = await column.evaluate((el) => {
+    const [shop, standing] = [...el.children].map((child) => child.getBoundingClientRect())
+    return { display: getComputedStyle(el).display, between: Math.round(standing.top - shop.bottom) }
+  })
+
+  expect(gap.display).toBe('flex')
+  expect(gap.between).toBeGreaterThan(0)
+})
+
 test('the advisor is opt-in, and turning it on annotates every job', async ({ page }) => {
   await startGame(page)
 

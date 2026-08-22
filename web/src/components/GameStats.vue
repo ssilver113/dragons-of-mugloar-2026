@@ -3,7 +3,14 @@ import { ref, watch } from 'vue'
 import StatTile from './StatTile.vue'
 import type { GameView } from '../api/types'
 
-const props = defineProps<{ game: GameView }>()
+/**
+ * `announce` is off while the solver holds the game. A turn a player took is worth hearing; a
+ * hundred taken for them is the same chatter the decision log is deliberately silent about, and at
+ * max speed the queue would outlive the run.
+ */
+const props = withDefaults(defineProps<{ game: GameView; announce?: boolean }>(), {
+  announce: true,
+})
 
 /**
  * A level is the only figure here worth marking as it moves. Score and gold change most turns and
@@ -28,8 +35,16 @@ watch(
 </script>
 
 <template>
-  <!-- Announced as a whole, so a turn does not read out five separate number changes. -->
-  <dl class="grid grid-cols-3 gap-2 sm:grid-cols-5" aria-label="Dragon status" aria-live="polite">
+  <!--
+    `aria-atomic` is what makes this one announcement rather than five: without it a polite region
+    reads out each figure that changed, which is every figure on most turns.
+  -->
+  <dl
+    class="grid grid-cols-3 gap-2 sm:grid-cols-5"
+    aria-label="Dragon status"
+    :aria-live="announce ? 'polite' : 'off'"
+    aria-atomic="true"
+  >
     <StatTile label="Score" :value="game.score" />
     <StatTile label="Gold" :value="game.gold" />
     <StatTile label="Lives" :value="game.lives" />
