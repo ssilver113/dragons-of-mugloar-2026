@@ -1,0 +1,18 @@
+# Build output and caches: the image builds them itself, and copying a host build in would
+# quietly ship whatever happened to be on the machine that ran `docker compose up`.
+**/node_modules
+**/dist
+**/build
+**/.gradle
+**/coverage
+**/playwright-report
+**/blob-report
+**/test-results
+**/__pycache__
+
+# Not part of any build
+.git
+.github
+.idea
+.vscode
+*.md

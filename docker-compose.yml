@@ -1,0 +1,22 @@
+
+# The whole thing, in one command:
+#
+#   docker compose up --build
+#
+# Then open http://localhost:8081. Nothing else needs to be installed — not Java, not Node.
+
+services:
+  app:
+    build: .
+    image: dragons-of-mugloar
+    # The host port is overridable because 8081 is a popular port; the container's is not.
+    ports:
+      - '${PORT:-8081}:8081'
+    environment:
+      # Everything the app reads from configuration can be overridden here. These are the
+      # defaults, spelled out so it is obvious what a run is pointed at.
+      MUGLOAR_BASE_URL: https://dragonsofmugloar.com/api/v2
+      MUGLOAR_CONNECT_TIMEOUT: 3s
+      MUGLOAR_READ_TIMEOUT: 10s
+      GAME_SESSION_TTL: 2h
+    restart: unless-stopped
