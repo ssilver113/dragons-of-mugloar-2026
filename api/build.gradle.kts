@@ -35,7 +35,7 @@ tasks.withType<Test> {
     finalizedBy(tasks.jacocoTestReport)
 }
 
-// Coverage is reported, never gated (D15).
+// Coverage is reported, never gated.
 tasks.jacocoTestReport {
     dependsOn(tasks.test)
     reports {

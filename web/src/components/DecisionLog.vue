@@ -2,10 +2,19 @@
 import { computed } from 'vue'
 import DecisionEntry from './DecisionEntry.vue'
 import MessageBanner from './MessageBanner.vue'
+import { present } from '../api/errorPresentation'
 import type { Halt, LogEntry } from '../stores/autoplay'
 
 const props = defineProps<{ entries: LogEntry[]; halt: Halt | null }>()
 defineEmits<{ 'keep-going': []; retry: [] }>()
+
+/**
+ * Whether pressing Run again could do anything. A lost session or a finished game cannot be
+ * resumed, and a button that silently does nothing is worse than no button.
+ */
+const resumable = computed(
+  () => props.halt?.kind === 'error' && present(props.halt.error.code).severity !== 'terminal',
+)
 
 // Newest first. A run at max speed outpaces reading, and chasing the bottom of a growing list is
 // worse than losing the chronology.
@@ -40,6 +49,7 @@ const newestFirst = computed(() => [...props.entries].reverse())
     <MessageBanner v-else-if="halt?.kind === 'error'" tone="error" title="The run stopped">
       {{ halt.error.message }}
       <button
+        v-if="resumable"
         type="button"
         class="ml-1 rounded font-semibold text-accent underline hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         @click="$emit('retry')"

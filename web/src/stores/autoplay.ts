@@ -66,7 +66,7 @@ export const useAutoPlayStore = defineStore('autoplay', () => {
   const delayMs = computed(() => SPEEDS.find((s) => s.id === speed.value)?.delayMs ?? 600)
   /** A turn is in flight or about to be. Manual controls stay out of the way while it is. */
   const active = computed(() => running.value || stepping.value)
-  const canPlay = computed(() => games.started && !games.finished)
+  const canPlay = computed(() => games.playable)
 
   /**
    * Run until the game ends, the solver stalls, or something breaks. There is no server-side loop
@@ -172,6 +172,8 @@ export const useAutoPlayStore = defineStore('autoplay', () => {
       return 'halt'
     }
 
+    // Only reached when the turn landed, so the session cannot have been lost: the one way to
+    // stop being playable here is the dragon dying, which is what `finished` means.
     if (games.finished) {
       halt.value = { kind: 'finished' }
       return 'halt'
@@ -200,7 +202,7 @@ export const useAutoPlayStore = defineStore('autoplay', () => {
 
   /** At max speed the loop skips the per-turn board refresh, so the board is caught up here. */
   async function settle(): Promise<void> {
-    if (delayMs.value === 0 && games.started && !games.finished) {
+    if (delayMs.value === 0 && games.playable) {
       await games.refreshAds()
     }
   }

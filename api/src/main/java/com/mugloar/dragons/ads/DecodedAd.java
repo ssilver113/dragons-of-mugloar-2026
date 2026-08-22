@@ -4,7 +4,7 @@ import com.mugloar.dragons.mugloar.dto.AdResponse;
 
 /**
  * An ad with its cipher removed. The {@code adId} here is the one that must be posted to
- * {@code /solve} — sending the encoded form returns 400 (D24), so the encoded form never leaves
+ * {@code /solve} — sending the encoded form returns 400, so the encoded form never leaves
  * this package.
  */
 public record DecodedAd(

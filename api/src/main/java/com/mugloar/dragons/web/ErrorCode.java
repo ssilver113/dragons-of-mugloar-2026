@@ -6,7 +6,10 @@ package com.mugloar.dragons.web;
  */
 public enum ErrorCode {
 
-    /** A path variable did not look like an id. Nothing was sent upstream. */
+    /**
+     * The request was not one this API accepts — a path variable that could not be an id, an
+     * unknown path, a method the endpoint does not take. Nothing was sent upstream.
+     */
     VALIDATION_FAILED,
 
     /** No live session for this game id — it aged out or the server restarted. Start a new game. */

@@ -12,7 +12,7 @@ import java.util.List;
  * The one seam between this application and the Mugloar API.
  *
  * <p>Everything above this interface — domain, solver, web layer — is testable without a network,
- * which is the entire reason the boundary exists (D10). Implementations return the wire shapes
+ * which is the entire reason the boundary exists. Implementations return the wire shapes
  * unchanged; interpreting them, including decoding encrypted ads, belongs further in.
  *
  * <p>Every method throws {@link com.mugloar.dragons.mugloar.exception.MugloarException} or one of

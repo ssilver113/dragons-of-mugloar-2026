@@ -468,3 +468,101 @@ describe('calibration', () => {
     expect(calibration.games).toBe(2)
   })
 })
+
+describe('a failure that ends the run', () => {
+  it('ends the game rather than reporting a fault when the server has forgotten the session', async () => {
+    const store = await startedStore()
+    server.use(
+      http.post('/api/games/:gameId/ads/:adId/solve', () =>
+        problem(404, 'SESSION_EXPIRED', 'This game is no longer being tracked.'),
+      ),
+    )
+
+    await store.solve(upstream.ads[0].adId)
+
+    expect(store.ending).toBe('lost')
+    expect(store.playable).toBe(false)
+    // The panel that replaces the board says it; a banner above one would only repeat itself.
+    expect(store.error).toBeNull()
+  })
+
+  it('treats an unknown game upstream the same way', async () => {
+    const store = await startedStore()
+    server.use(
+      http.get('/api/games/:gameId/ads', () =>
+        problem(404, 'GAME_NOT_FOUND', 'The game service does not recognise this game.'),
+      ),
+    )
+
+    await store.refreshAds()
+
+    expect(store.ending).toBe('lost')
+  })
+
+  it('marks the game finished when the upstream says it already is', async () => {
+    const store = await startedStore()
+    server.use(
+      http.post('/api/games/:gameId/ads/:adId/solve', () =>
+        problem(410, 'GAME_OVER', 'This game is over.'),
+      ),
+    )
+
+    await store.solve(upstream.ads[0].adId)
+
+    expect(store.ending).toBe('finished')
+    expect(store.game?.finished).toBe(true)
+    expect(store.error).toBeNull()
+  })
+
+  it('stops fetching against a session the server has forgotten', async () => {
+    const store = await startedStore()
+    server.use(
+      http.get('/api/games/:gameId/ads', () =>
+        problem(404, 'SESSION_EXPIRED', 'This game is no longer being tracked.'),
+      ),
+    )
+    await store.refreshAds()
+
+    let calls = 0
+    server.use(
+      http.get('/api/games/:gameId/ads', () => {
+        calls += 1
+        return HttpResponse.json({ game: upstream.game, ads: upstream.ads })
+      }),
+    )
+    await store.refreshAds()
+
+    expect(calls).toBe(0)
+  })
+
+  it('lets a new game out of a lost one', async () => {
+    const store = await startedStore()
+    server.use(
+      http.get('/api/games/:gameId/ads', () =>
+        problem(404, 'SESSION_EXPIRED', 'This game is no longer being tracked.'),
+      ),
+    )
+    await store.refreshAds()
+
+    stubGame()
+    await store.startGame()
+
+    expect(store.ending).toBeNull()
+    expect(store.playable).toBe(true)
+  })
+
+  it('still parks a fault in the banner, where the game survives it', async () => {
+    const store = await startedStore()
+    server.use(
+      http.post('/api/games/:gameId/ads/:adId/solve', () =>
+        problem(503, 'UPSTREAM_UNAVAILABLE', 'The game service is not responding.'),
+      ),
+    )
+
+    await store.solve(upstream.ads[0].adId)
+
+    expect(store.error?.code).toBe('UPSTREAM_UNAVAILABLE')
+    expect(store.ending).toBeNull()
+    expect(store.playable).toBe(true)
+  })
+})

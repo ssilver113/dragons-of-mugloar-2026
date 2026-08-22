@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* Theme tokens live here rather than in a config file (Tailwind v4, D6).
+/* Theme tokens live here rather than in a config file (Tailwind v4).
    Phase 11 replaces these placeholders with the real fantasy palette. */
 @theme {
   --color-surface: oklch(21% 0.02 265);
@@ -10,8 +10,10 @@
   --color-accent: oklch(70% 0.17 45);
 
   /* State colours, used by banners and ad flags. Phase 8 builds the EV scale on top of these,
-     always alongside a non-colour cue. */
-  --color-danger: oklch(65% 0.19 25);
+     always alongside a non-colour cue.
+     Every one of these is set as text on --color-surface-raised somewhere, so lightness is
+     chosen to clear WCAG AA (4.5:1) against it, not only against the darker page background. */
+  --color-danger: oklch(70% 0.19 25);
   --color-warning: oklch(78% 0.15 75);
   --color-success: oklch(72% 0.15 150);
 }

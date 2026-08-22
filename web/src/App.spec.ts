@@ -84,7 +84,7 @@ describe('App', () => {
     await flushPromises()
 
     expect(app.text()).toContain('The dragon has fallen')
-    expect(app.text()).toContain('Final score 1210')
+    expect(app.text()).toContain('Final score 1210 points')
   })
 
   it('puts the shop next to the board, and lets a small screen pick one', async () => {
@@ -177,10 +177,114 @@ describe('App', () => {
     await buttonLabelled(app, 'Run')?.trigger('click')
     await vi.waitFor(() => expect(app.text()).toContain('The dragon has fallen'))
 
-    expect(app.text()).toContain('Final score 1400')
+    expect(app.text()).toContain('Final score 1400 points')
     // The board is gone, but the reasoning that got there survives it.
     expect(app.text()).toContain('Mission accomplished')
     expect(app.text()).toContain('Best reward on the board once the risk to a life is priced in.')
     expect(app.text()).toContain('Steal the gold')
+  })
+
+  it('ends the run, rather than annotating a board no longer being tracked', async () => {
+    server.use(
+      http.post('/api/games', () => HttpResponse.json(aGame({ score: 640, turn: 41 }))),
+      http.get('/api/games/:gameId/ads', () =>
+        HttpResponse.json({ game: aGame({ score: 640, turn: 41 }), ads: [anAd({ adId: 'job' })] }),
+      ),
+      http.get('/api/games/:gameId/shop', () => HttpResponse.json({ game: aGame(), items: [] })),
+      http.post('/api/games/:gameId/ads/:adId/solve', () =>
+        problem(404, 'SESSION_EXPIRED', 'This game is no longer being tracked.'),
+      ),
+    )
+    const app = render()
+
+    await app.get('button').trigger('click')
+    await flushPromises()
+    await app.get('[aria-label="Solve: Help Robin Webster to steal a shipment of gold"]').trigger('click')
+    await flushPromises()
+
+    expect(app.text()).toContain('This game was lost')
+    expect(app.text()).toContain('It was worth 640 points after 41 turns')
+    expect(buttonLabelled(app, 'Start a new game')).toBeDefined()
+    // The dragon was fine. Saying it fell would be a lie about the player's own game.
+    expect(app.text()).not.toContain('The dragon has fallen')
+    expect(app.find('[role="alert"]').exists()).toBe(false)
+  })
+
+  it('does not raise an alarm about a refusal the server saw coming', async () => {
+    server.use(
+      http.post('/api/games', () => HttpResponse.json(aGame())),
+      http.get('/api/games/:gameId/ads', () =>
+        HttpResponse.json({ game: aGame(), ads: [anAd({ adId: 'gone' })] }),
+      ),
+      http.get('/api/games/:gameId/shop', () => HttpResponse.json({ game: aGame(), items: [] })),
+      http.post('/api/games/:gameId/ads/:adId/solve', () =>
+        problem(409, 'AD_NOT_AVAILABLE', 'That ad is no longer on the board.'),
+      ),
+    )
+    const app = render()
+
+    await app.get('button').trigger('click')
+    await flushPromises()
+    await app.get('[aria-label="Solve: Help Robin Webster to steal a shipment of gold"]').trigger('click')
+    await flushPromises()
+
+    expect(app.text()).toContain('That job was already taken')
+    expect(app.find('[role="alert"]').exists()).toBe(false)
+  })
+
+  it('offers a free board refetch after a fault, and never a retry of the spent turn', async () => {
+    let solves = 0
+    server.use(
+      http.post('/api/games', () => HttpResponse.json(aGame())),
+      http.get('/api/games/:gameId/ads', () =>
+        HttpResponse.json({ game: aGame(), ads: [anAd({ adId: 'job' })] }),
+      ),
+      http.get('/api/games/:gameId/shop', () => HttpResponse.json({ game: aGame(), items: [] })),
+      http.post('/api/games/:gameId/ads/:adId/solve', () => {
+        solves += 1
+        return problem(503, 'UPSTREAM_UNAVAILABLE', 'The game service is not responding.')
+      }),
+    )
+    const app = render()
+
+    await app.get('button').trigger('click')
+    await flushPromises()
+    await app.get('[aria-label="Solve: Help Robin Webster to steal a shipment of gold"]').trigger('click')
+    await flushPromises()
+
+    const refresh = buttonLabelled(app, 'Refresh the board')
+    expect(refresh).toBeDefined()
+    await refresh?.trigger('click')
+    await flushPromises()
+
+    expect(solves).toBe(1)
+  })
+
+  it('moves focus to the panel that replaces the board, not back to the top of the page', async () => {
+    const dying = aGame({ lives: 1, score: 300, turn: 20 })
+    server.use(
+      http.post('/api/games', () => HttpResponse.json(dying)),
+      http.get('/api/games/:gameId/ads', () =>
+        HttpResponse.json({ game: dying, ads: [anAd({ adId: 'last' })] }),
+      ),
+      http.get('/api/games/:gameId/shop', () => HttpResponse.json({ game: dying, items: [] })),
+      http.post('/api/games/:gameId/ads/:adId/solve', () =>
+        HttpResponse.json({
+          game: aGame({ lives: 0, score: 300, turn: 21, finished: true }),
+          adId: 'last',
+          success: false,
+          message: 'You failed on the mission!',
+        }),
+      ),
+    )
+    const app = mount(App, { global: { plugins: [createPinia()] }, attachTo: document.body })
+
+    await app.get('button').trigger('click')
+    await flushPromises()
+    await app.get('[aria-label="Solve: Help Robin Webster to steal a shipment of gold"]').trigger('click')
+    await flushPromises()
+
+    expect(document.activeElement).toBe(app.get('[role="status"][tabindex="-1"]').element)
+    app.unmount()
   })
 })

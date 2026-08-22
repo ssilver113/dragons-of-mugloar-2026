@@ -142,9 +142,38 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
                         "That request contained an identifier we cannot accept."));
     }
 
-    private static ProblemDetail problem(HttpStatus status, ErrorCode code, String detail) {
+    /**
+     * Everything Spring itself rejects before a controller is reached — an unknown path, a method
+     * the endpoint does not take, a body it cannot read. These bypass the handlers above and would
+     * otherwise leave without a {@code code}, which is the one property the client is built to
+     * branch on. The framework's own body is discarded rather than amended: its {@code detail} is
+     * written for a developer reading a stack trace, not for a player.
+     */
+    @Override
+    protected ResponseEntity<Object> handleExceptionInternal(
+            Exception ex,
+            Object body,
+            HttpHeaders headers,
+            HttpStatusCode status,
+            WebRequest request) {
+        boolean ours = status.is5xxServerError();
+        if (ours) {
+            log.error("Unhandled failure", ex);
+        } else {
+            log.debug("Rejected a request the API does not accept: {}", ex.getMessage());
+        }
+        return ResponseEntity.status(status)
+                .headers(headers)
+                .body(ours
+                        ? problem(status, ErrorCode.INTERNAL_ERROR, "Something went wrong on our side.")
+                        : problem(status, ErrorCode.VALIDATION_FAILED,
+                                "This API does not accept that request."));
+    }
+
+    private static ProblemDetail problem(HttpStatusCode status, ErrorCode code, String detail) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(status, detail);
-        problem.setTitle(status.getReasonPhrase());
+        HttpStatus resolved = HttpStatus.resolve(status.value());
+        problem.setTitle(resolved == null ? "Error" : resolved.getReasonPhrase());
         problem.setProperty("code", code.name());
         return problem;
     }

@@ -7,7 +7,7 @@ import java.util.Set;
  * and the bot are always looking at the same numbers.
  *
  * <p>Left deliberately unsorted: ranking, filtering and re-ranking under a different risk posture
- * are the frontend's job (D3).
+ * are the frontend's job.
  *
  * @param adId               decoded, and the value that goes to {@code /solve}
  * @param message            decoded ad text

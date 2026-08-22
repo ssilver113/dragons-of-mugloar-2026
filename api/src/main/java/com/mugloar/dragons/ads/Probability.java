@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
  * <p>The prior lives on the {@link Tier}, not on the constant, because the labels within a tier are
  * statistically indistinguishable at the sample size we have — an earlier, smaller sample ranked
  * them differently and that ordering did not survive more data. Trusting a strict per-label ranking
- * would be reading noise (D21).
+ * would be reading noise.
  *
  * <p>Measured rates from the recon run (n = 992), for traceability:
  * Sure thing 0.88 / Walk in the park 0.88 / Piece of cake 0.87 · Quite likely 0.76 / Hmmm.... 0.72 ·
@@ -86,7 +86,7 @@ public enum Probability {
 
     /**
      * Never worth a turn at any reward: {@code Impossible} went 0 for 300 and
-     * {@code Suicide mission} 7 for 128. Excluded outright rather than down-weighted (D23).
+     * {@code Suicide mission} 7 for 128. Excluded outright rather than down-weighted.
      */
     public boolean neverAttempt() {
         return tier == Tier.DOOMED || tier == Tier.UNKNOWN;

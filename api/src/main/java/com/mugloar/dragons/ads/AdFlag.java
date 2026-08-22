@@ -12,7 +12,7 @@ public enum AdFlag {
      */
     OUT_OF_LEAGUE,
 
-    /** {@code Impossible} or {@code Suicide mission}: measured at 0/300 and 7/128 (D23). */
+    /** {@code Impossible} or {@code Suicide mission}: measured at 0/300 and 7/128. */
     NEVER_ATTEMPT,
 
     /** The cipher or the probability label was not one we recognise, so the ad cannot be scored. */

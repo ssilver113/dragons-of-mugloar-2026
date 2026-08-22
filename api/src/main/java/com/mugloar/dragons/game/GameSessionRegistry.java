@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 
 /**
  * In-memory session store, keyed by game id. No database: nothing here needs to outlive the
- * process, and games are short (D9).
+ * process, and games are short.
  *
  * <p>Eviction is lazy — checked on lookup, swept on registration — rather than scheduled. It costs
  * no background thread, and the only thing an unswept entry occupies is a little memory.

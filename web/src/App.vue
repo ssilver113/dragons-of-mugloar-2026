@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import AdList from './components/AdList.vue'
 import AutoPlayControls from './components/AutoPlayControls.vue'
 import CalibrationTable from './components/CalibrationTable.vue'
@@ -7,6 +7,7 @@ import DecisionLog from './components/DecisionLog.vue'
 import GameStats from './components/GameStats.vue'
 import MessageBanner from './components/MessageBanner.vue'
 import ShopPanel from './components/ShopPanel.vue'
+import { present } from './api/errorPresentation'
 import { useGameStore } from './stores/game'
 import { useAutoPlayStore } from './stores/autoplay'
 import { useCalibrationStore } from './stores/calibration'
@@ -32,6 +33,46 @@ const PANELS: { id: Panel; label: string }[] = [
 ]
 const view = ref<Panel>('board')
 const onlyOnMobile = (panel: Panel) => (view.value === panel ? '' : 'hidden lg:block')
+
+/**
+ * A failure, dressed for how much it matters. Terminal codes never arrive here — the store puts
+ * those on the game's state instead, and the panel that replaces the board says them.
+ */
+const failure = computed(() => {
+  const e = store.error
+  return e === null ? null : { ...present(e.code), message: e.message }
+})
+
+/**
+ * Where the run stopped, and what to say about it. A lost session is not a defeat: the dragon
+ * was fine, the server simply stopped tracking it, and telling the player their dragon fell
+ * would be a lie about their own game.
+ */
+const ENDINGS = {
+  finished: {
+    heading: 'The dragon has fallen',
+    action: 'Play again',
+  },
+  lost: {
+    heading: 'This game was lost',
+    action: 'Start a new game',
+  },
+} as const
+
+const ended = computed(() => (store.ending === null ? null : ENDINGS[store.ending]))
+
+/**
+ * The button that ended the run is gone by the time this renders, so keyboard focus would land
+ * back at the top of the document with no announcement of why. Moving it to the panel puts the
+ * explanation and the way out under the cursor that is already there.
+ */
+const endPanel = ref<HTMLElement | null>(null)
+watch(ended, async (now, before) => {
+  if (now && !before) {
+    await nextTick()
+    endPanel.value?.focus()
+  }
+})
 
 const banner = computed(() => {
   const last = outcome.value
@@ -70,14 +111,30 @@ const banner = computed(() => {
 
     <GameStats v-if="store.game" :game="store.game" />
 
+    <!--
+      `fault` is an alert and `note` is not: a refusal the server saw coming is not a failure, and
+      the app has usually already corrected itself by the time the sentence is read.
+    -->
     <MessageBanner
-      v-if="store.error"
-      tone="error"
-      :title="store.error.code === 'SESSION_EXPIRED' ? 'Game lost' : 'Something went wrong'"
+      v-if="failure"
+      :tone="failure.severity === 'fault' ? 'error' : 'info'"
+      :title="failure.title"
       dismissible
       @dismiss="store.dismissError()"
     >
-      {{ store.error.message }}
+      {{ failure.message }}
+      <!--
+        A refetch, never a retry of the action itself: a solve or a purchase that timed out may
+        already have landed upstream, and repeating it would spend a second turn.
+      -->
+      <button
+        v-if="failure.offerRefresh && store.playable"
+        type="button"
+        class="ml-1 rounded font-semibold text-accent underline hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        @click="store.refreshAds()"
+      >
+        Refresh the board
+      </button>
     </MessageBanner>
 
     <template v-if="!store.started">
@@ -96,15 +153,22 @@ const banner = computed(() => {
       </section>
     </template>
 
-    <template v-else-if="store.finished">
+    <template v-else-if="ended">
       <section
-        class="flex flex-col items-start gap-4 rounded-lg border border-ink-muted/20 p-6"
+        ref="endPanel"
+        tabindex="-1"
+        class="flex flex-col items-start gap-4 rounded-lg border border-ink-muted/20 p-6 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         role="status"
       >
-        <div>
-          <h2 class="text-lg font-semibold">The dragon has fallen</h2>
+        <div class="flex flex-col gap-1">
+          <h2 class="text-lg font-semibold">{{ ended.heading }}</h2>
+          <p v-if="store.ending === 'lost'" class="text-ink-muted">
+            The server is no longer tracking this game — it aged out, or the API restarted. A
+            session is never picked back up, so the run ends here.
+          </p>
           <p class="text-ink-muted">
-            Final score {{ store.game?.score }} after {{ store.game?.turn }} turns.
+            {{ store.ending === 'lost' ? 'It was worth' : 'Final score' }}
+            {{ store.game?.score }} points after {{ store.game?.turn }} turns.
           </p>
         </div>
         <button
@@ -113,7 +177,7 @@ const banner = computed(() => {
           :disabled="starting"
           @click="store.startGame()"
         >
-          {{ starting ? 'Starting…' : 'Play again' }}
+          {{ starting ? 'Starting…' : ended.action }}
         </button>
       </section>
 

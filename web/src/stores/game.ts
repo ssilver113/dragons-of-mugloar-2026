@@ -1,6 +1,7 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { ApiError, api } from '../api/client'
+import { endsTheSession, present } from '../api/errorPresentation'
 import { useCalibrationStore } from './calibration'
 import type { AdView, AutoPlayStepView, GameView, ShopItemView } from '../api/types'
 
@@ -26,12 +27,27 @@ export const useGameStore = defineStore('game', () => {
   const solvingAdId = ref<string | null>(null)
   const buyingItemId = ref<string | null>(null)
   const autoStepping = ref(false)
+  const sessionLost = ref(false)
   const error = ref<ApiError | null>(null)
   const lastOutcome = ref<TurnOutcome | null>(null)
   const advisorEnabled = ref(false)
 
   const started = computed(() => game.value !== null)
   const finished = computed(() => game.value?.finished ?? false)
+
+  /**
+   * Why this game is no longer playable, if it isn't. `lost` is the server having forgotten the
+   * session — unrecoverable by design, since a session is never re-adopted — and `finished` is
+   * the dragon dying, which is the game working. Both end the run, so both replace the board
+   * rather than sitting in a banner above one that can no longer be played.
+   */
+  const ending = computed<'lost' | 'finished' | null>(() => {
+    if (game.value === null) {
+      return null
+    }
+    return sessionLost.value ? 'lost' : game.value.finished ? 'finished' : null
+  })
+  const playable = computed(() => started.value && ending.value === null)
 
   /** A turn is in flight. Only one may be, whichever action started it — solver included. */
   const acting = computed(
@@ -45,6 +61,7 @@ export const useGameStore = defineStore('game', () => {
     startStatus.value = 'pending'
     boardStatus.value = 'idle'
     shopStatus.value = 'idle'
+    sessionLost.value = false
     error.value = null
     lastOutcome.value = null
     ads.value = []
@@ -59,13 +76,15 @@ export const useGameStore = defineStore('game', () => {
     } catch (e) {
       game.value = null
       startStatus.value = 'error'
-      error.value = asApiError(e)
+      error.value = classify(e)
     }
   }
 
   async function refreshAds(): Promise<void> {
     const current = game.value
-    if (!current) {
+    // Nothing to reconcile against a session the server has forgotten, and the retry would only
+    // fail the same way. The ending panel is the way out of that state, not another fetch.
+    if (!current || sessionLost.value) {
       return
     }
     boardStatus.value = 'pending'
@@ -76,14 +95,14 @@ export const useGameStore = defineStore('game', () => {
       boardStatus.value = 'ready'
     } catch (e) {
       boardStatus.value = 'error'
-      error.value = asApiError(e)
+      fail(e)
     }
   }
 
   /** The catalogue only, deliberately: the state riding along is older than a turn in flight. */
   async function refreshShop(): Promise<void> {
     const current = game.value
-    if (!current) {
+    if (!current || sessionLost.value) {
       return
     }
     shopStatus.value = 'pending'
@@ -92,7 +111,7 @@ export const useGameStore = defineStore('game', () => {
       shopStatus.value = 'ready'
     } catch (e) {
       shopStatus.value = 'error'
-      error.value = asApiError(e)
+      fail(e)
     }
   }
 
@@ -104,7 +123,7 @@ export const useGameStore = defineStore('game', () => {
    */
   async function solve(adId: string): Promise<void> {
     const current = game.value
-    if (!current || current.finished || acting.value) {
+    if (!playable.value || !current || acting.value) {
       return
     }
     const previousGame = current
@@ -137,8 +156,7 @@ export const useGameStore = defineStore('game', () => {
     } catch (e) {
       game.value = previousGame
       ads.value = previousAds
-      const failure = asApiError(e)
-      error.value = failure
+      const failure = fail(e)
       // A stale board is what causes both of these, and a board fetch costs no turn upstream.
       if (failure.code === 'AD_NOT_AVAILABLE' || failure.code === 'INVALID_ACTION') {
         await refreshAds()
@@ -156,7 +174,7 @@ export const useGameStore = defineStore('game', () => {
   async function buy(itemId: string): Promise<void> {
     const current = game.value
     const item = shopItems.value.find((candidate) => candidate.id === itemId)
-    if (!current || current.finished || acting.value || !item || item.cost > current.gold) {
+    if (!playable.value || !current || acting.value || !item || item.cost > current.gold) {
       return
     }
     const previousGame = current
@@ -184,7 +202,7 @@ export const useGameStore = defineStore('game', () => {
     } catch (e) {
       game.value = previousGame
       ads.value = previousAds
-      error.value = asApiError(e)
+      fail(e)
     } finally {
       buyingItemId.value = null
     }
@@ -201,7 +219,7 @@ export const useGameStore = defineStore('game', () => {
    */
   async function autoPlayStep(refreshBoard: boolean): Promise<AutoPlayStepView> {
     const current = game.value
-    if (!current || current.finished || acting.value) {
+    if (!playable.value || !current || acting.value) {
       throw new ApiError('INVALID_ACTION', 'The dragon cannot take a turn right now.', 0)
     }
     autoStepping.value = true
@@ -213,6 +231,11 @@ export const useGameStore = defineStore('game', () => {
         await refreshAds()
       }
       return step
+    } catch (e) {
+      // Classified, not parked: the loop shows the failure next to the log, but the two codes
+      // that end the session have to land on the state here or the loop would offer to resume a
+      // game that no longer exists.
+      throw classify(e)
     } finally {
       autoStepping.value = false
     }
@@ -246,6 +269,35 @@ export const useGameStore = defineStore('game', () => {
     error.value = null
   }
 
+  /**
+   * Record what a failure means for the game itself. A forgotten session cannot be recovered, and
+   * an upstream that says the game is over is describing a fact we had not caught up with — both
+   * would otherwise leave the player looking at a board they can no longer play.
+   *
+   * Callers roll the optimistic state back before calling this, so `game` is already the last
+   * state we actually saw from the server.
+   */
+  function classify(e: unknown): ApiError {
+    const failure = asApiError(e)
+    if (endsTheSession(failure.code)) {
+      sessionLost.value = true
+    } else if (failure.code === 'GAME_OVER' && game.value) {
+      game.value = { ...game.value, finished: true }
+    }
+    return failure
+  }
+
+  /**
+   * Classify, then show. A terminal failure is deliberately not parked in `error`: the panel that
+   * replaces the board says the same thing with somewhere to go, and a banner above it would only
+   * repeat itself.
+   */
+  function fail(e: unknown): ApiError {
+    const failure = classify(e)
+    error.value = present(failure.code).severity === 'terminal' ? null : failure
+    return failure
+  }
+
   return {
     game,
     ads,
@@ -256,11 +308,14 @@ export const useGameStore = defineStore('game', () => {
     solvingAdId,
     buyingItemId,
     autoStepping,
+    sessionLost,
     error,
     lastOutcome,
     advisorEnabled,
     started,
     finished,
+    ending,
+    playable,
     acting,
     busy,
     startGame,

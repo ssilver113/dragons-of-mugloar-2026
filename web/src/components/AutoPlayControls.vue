@@ -34,6 +34,14 @@ const status = computed(() => {
   return 'Idle. The solver takes a turn only when you ask it to.'
 })
 
+function toggle(): void {
+  if (props.running) {
+    emit('pause')
+  } else {
+    emit('run')
+  }
+}
+
 function onSpeed(event: Event): void {
   emit('update:speed', (event.target as HTMLSelectElement).value as SpeedId)
 }
@@ -48,22 +56,23 @@ function onSpeed(event: Event): void {
       <h2 id="autoplay-heading" class="text-lg font-semibold">Auto-play</h2>
 
       <div class="flex flex-wrap items-center gap-2">
+        <!--
+          One button that changes what it says, not two that swap places. A `v-if` pair would be
+          two different elements, so starting a run from the keyboard would drop focus to the top
+          of the document and the player would have to tab back to reach Pause.
+        -->
         <button
-          v-if="running"
           type="button"
-          class="rounded-md border border-ink-muted/40 px-3 py-1.5 text-sm font-medium hover:border-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-          @click="emit('pause')"
+          class="rounded-md px-3 py-1.5 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-40"
+          :class="
+            running
+              ? 'border border-ink-muted/40 font-medium hover:border-ink'
+              : 'bg-accent font-semibold text-surface hover:brightness-110'
+          "
+          :disabled="!running && blocked"
+          @click="toggle()"
         >
-          Pause
-        </button>
-        <button
-          v-else
-          type="button"
-          class="rounded-md bg-accent px-3 py-1.5 text-sm font-semibold text-surface hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-40"
-          :disabled="blocked"
-          @click="emit('run')"
-        >
-          Run
+          {{ running ? 'Pause' : 'Run' }}
         </button>
 
         <button

@@ -50,7 +50,11 @@ const filteredOut = computed(() => props.ads.length > 0 && visible.value.length 
 </script>
 
 <template>
-  <section aria-labelledby="board-heading" class="flex flex-col gap-3">
+  <section
+    aria-labelledby="board-heading"
+    class="flex flex-col gap-3"
+    :aria-busy="solvingAdId !== null || status === 'pending'"
+  >
     <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
       <h2 id="board-heading" class="text-lg font-semibold">Message board</h2>
       <div class="flex items-center gap-4">

@@ -240,4 +240,26 @@ class GameControllerTest {
                 .andExpect(status().isBadGateway())
                 .andExpect(jsonPath("$.code").value("UPSTREAM_ERROR"));
     }
+
+    /**
+     * The client branches on {@code code} and never on a status, so a response without one would
+     * be unreadable to it. These are the failures Spring raises before a controller is reached.
+     */
+    @Test
+    void anUnknownPathStillCarriesACode() throws Exception {
+        mockMvc.perform(get("/api/games/{gameId}/nonsense", GAME_ID))
+                .andExpect(status().isNotFound())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
+                .andExpect(jsonPath("$.detail").isNotEmpty());
+    }
+
+    @Test
+    void aMethodTheEndpointDoesNotTakeStillCarriesACode() throws Exception {
+        mockMvc.perform(get("/api/games/{gameId}/ads/{adId}/solve", GAME_ID, AD_ID))
+                .andExpect(status().isMethodNotAllowed())
+                .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"));
+
+        verify(games, never()).solve(anyString(), anyString());
+    }
 }

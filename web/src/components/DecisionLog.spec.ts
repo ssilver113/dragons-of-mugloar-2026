@@ -101,4 +101,15 @@ describe('DecisionLog', () => {
     await log.get('[role="alert"] button').trigger('click')
     expect(log.emitted('retry')).toHaveLength(1)
   })
+
+  it('does not offer to resume a run that cannot be resumed', () => {
+    const halt: Halt = {
+      kind: 'error',
+      error: new ApiError('SESSION_EXPIRED', 'This game is no longer being tracked.', 404),
+    }
+    const log = render([], halt)
+
+    expect(log.get('[role="alert"]').text()).toContain('no longer being tracked')
+    expect(log.find('[role="alert"] button').exists()).toBe(false)
+  })
 })

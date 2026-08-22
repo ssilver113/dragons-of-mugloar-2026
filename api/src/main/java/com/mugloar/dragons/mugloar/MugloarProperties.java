@@ -15,7 +15,7 @@ import org.springframework.validation.annotation.Validated;
  * @param baseUrl        root of the upstream API, without a trailing slash
  * @param userAgent      sent explicitly: the API sits behind Cloudflare, which bans some client
  *                       signatures outright, and a descriptive UA turns a future rule change into
- *                       an obvious misconfiguration rather than a mystery outage (D27)
+ *                       an obvious misconfiguration rather than a mystery outage
  * @param connectTimeout how long to wait for the connection to be established
  * @param readTimeout    how long to wait for the response once connected
  * @param maxRetries     retries *after* the initial attempt, and only for idempotent calls

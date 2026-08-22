@@ -151,6 +151,24 @@ describe('a step that fails', () => {
     expect(autoPlay.halt).toMatchObject({ kind: 'error' })
     expect(autoPlay.running).toBe(false)
   })
+
+  it('will not offer to resume a game the server has forgotten', async () => {
+    const { autoPlay } = await playing()
+    stubSteps([problem(404, 'SESSION_EXPIRED', 'That game is no longer on file.')])
+
+    await autoPlay.run()
+
+    expect(autoPlay.canPlay).toBe(false)
+  })
+
+  it('keeps offering to resume when only the request failed', async () => {
+    const { autoPlay } = await playing()
+    stubSteps([problem(502, 'UPSTREAM_ERROR', 'The game service failed unexpectedly.')])
+
+    await autoPlay.run()
+
+    expect(autoPlay.canPlay).toBe(true)
+  })
 })
 
 describe('a rate limit', () => {

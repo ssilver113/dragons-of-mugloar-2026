@@ -63,4 +63,13 @@ describe('AutoPlayControls', () => {
 
     expect(controls.emitted('update:speed')).toEqual([['max']])
   })
+
+  it('keeps the same element when Run becomes Pause, so keyboard focus survives it', async () => {
+    const controls = render()
+    const before = buttonLabelled(controls, 'Run')?.element
+
+    await controls.setProps({ running: true })
+
+    expect(buttonLabelled(controls, 'Pause')?.element).toBe(before)
+  })
 })

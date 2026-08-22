@@ -7,7 +7,7 @@ package com.mugloar.dragons.ads;
  * gold, 0.50 at 100–150 and <b>0.00 at 150–200</b> — all at level 0. The same 150–200 band runs
  * 0.50 at levels 2–6 and 0.94 at level 12. A label is a difficulty rating relative to your dragon,
  * so the estimate is the tier prior scaled by how far the reward overshoots what that level can
- * comfortably handle (D21).
+ * comfortably handle.
  *
  * <p>The correction is a logistic in the reward, which keeps the estimate smooth and monotonic —
  * a cliff would make the UI's what-if ranking jump and would throw away the measured 0.50 band.
