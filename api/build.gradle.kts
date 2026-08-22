@@ -30,6 +30,30 @@ dependencies {
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
+/**
+ * Plays N games headlessly through the solver and prints the score distribution. Hits the live
+ * Mugloar API, paced — see bench.* in application-bench.yaml.
+ *
+ *   ./gradlew bench -Pgames=40
+ */
+tasks.register<org.springframework.boot.gradle.tasks.run.BootRun>("bench") {
+    group = "verification"
+    description = "Plays games headlessly and reports the score distribution."
+    mainClass = "com.mugloar.dragons.DragonsApiApplication"
+    classpath = sourceSets["main"].runtimeClasspath
+    args("--spring.profiles.active=bench")
+    if (project.hasProperty("games")) {
+        args("--bench.games=${project.property("games")}")
+    }
+    if (project.hasProperty("interval")) {
+        args("--bench.request-interval=${project.property("interval")}")
+    }
+    // Anything else the run wants to override, e.g. -Pargs="--bench.strategy.target-level-per-turn=0.1"
+    if (project.hasProperty("args")) {
+        args(project.property("args").toString().split(" ").filter { it.isNotBlank() })
+    }
+}
+
 tasks.withType<Test> {
     useJUnitPlatform()
     finalizedBy(tasks.jacocoTestReport)

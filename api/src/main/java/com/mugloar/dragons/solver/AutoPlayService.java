@@ -5,7 +5,9 @@ import com.mugloar.dragons.game.GameService;
 import com.mugloar.dragons.game.SolveOutcome;
 import com.mugloar.dragons.shop.PurchaseOutcome;
 import com.mugloar.dragons.shop.ShopCatalogue;
+import com.mugloar.dragons.shop.ShopItem;
 import com.mugloar.dragons.shop.ShopService;
+import java.util.List;
 import org.springframework.stereotype.Service;
 
 /**
@@ -35,7 +37,22 @@ public class AutoPlayService {
     public AutoPlayStep step(String gameId) {
         AdBoard board = games.listAds(gameId);
         ShopCatalogue catalogue = shop.listItems(gameId);
-        Decision decision = strategy.decide(board.game(), board.ads(), catalogue.items());
+        return act(gameId, board, catalogue.items());
+    }
+
+    /**
+     * One turn against a catalogue the caller already holds.
+     *
+     * <p>Prices do not change for the life of a game, so something playing hundreds of them can
+     * read the shop once instead of once a turn and spend a third fewer upstream calls. The board
+     * is still refreshed every turn: unlike prices, it moves.
+     */
+    public AutoPlayStep step(String gameId, List<ShopItem> catalogue) {
+        return act(gameId, games.listAds(gameId), catalogue);
+    }
+
+    private AutoPlayStep act(String gameId, AdBoard board, List<ShopItem> catalogue) {
+        Decision decision = strategy.decide(board.game(), board.ads(), catalogue);
 
         return switch (decision.move().type()) {
             case SOLVE_AD -> {

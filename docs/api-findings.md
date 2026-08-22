@@ -104,7 +104,29 @@ A `Piece of cake` worth 180 gold is a **certain loss at level 0** and roughly a 
 
 The reward band matters only *relative to level*: the same 150–200 band runs 0.00 at level 0, 0.50 at levels 2–6 and 0.94 at level 12. Note that a naive within-label tercile split, pooled across levels, shows only a mild decline (`Piece of cake`: 0.93 / 0.89 / 0.78) — pooling hides the effect, because high-reward ads are mostly drawn at high level where they are safe. The banded-by-level table above is the clean view and the one to design against.
 
-Approximate safe-reward ceiling: **~100 at level 0, ~150 at levels 2–6, ~250+ at level 12** — roughly `100 + 12·level`. That linear fit is a working approximation from limited data, not a derived rule; Phase 10's benchmark should refine it.
+Approximate safe-reward ceiling: **~100 at level 0, ~150 at levels 2–6, ~250+ at level 12** — roughly `100 + 12·level`. That linear fit came from the exploration alone, over levels 0–12 and turns under 50. **It has since been superseded — see the refit below.**
+
+### The ceiling refitted, from 2,486 recorded solves
+
+The headless benchmark plays whole games through the solver and logs every attempt with the state it was scored against, which reaches levels and turn counts no hand-driven exploration visits. Fitting the same curve by maximum likelihood over 2,486 of those attempts, together with the table above at its measured weight, gives a materially different shape:
+
+| | level 0 | level 4 | level 12 | level 18 | level 26 |
+|---|---:|---:|---:|---:|---:|
+| exploration fit, `100 + 12·level` | 100 | 148 | 244 | 316 | 412 |
+| refit, `112 + 8.05·level` | 112 | 145 | 209 | 257 | 322 |
+
+**The ceiling starts higher and climbs slower.** The first fit was mildly pessimistic at low level and badly optimistic at high level, which is exactly what long runs kept showing: games reaching level 18 and beyond failed strings of solves they had scored favourably.
+
+**The curve is also far sharper than assumed.** The logistic's width fell from 0.18 of the ceiling to 0.066, so the estimate falls from most of the label's prior to nearly nothing across a band about a tenth of the ceiling wide. The game behaves much more like a threshold than like a slope. Concretely, ads more than 1.2× the old ceiling were given 0.29 by the first fit and came in at **0.08 across 265 attempts**.
+
+After the refit, mean prediction tracks observed rate within 0.04 in every level band and every richness band. The fit is reproducible from a corpus the harness writes:
+
+```bash
+cd api && ./gradlew bench -Pgames=40
+python tools/fit-success-model.py api/build/bench/attempts-*.csv
+```
+
+**Caveat that travels with these numbers.** Both corpora are selection-biased: the solver only attempts ads it already scores favourably, and the exploration sampled by hand. The refit is therefore the right basis for making the solver's own estimates truthful, and the wrong basis for claiming a general law about the game. The two are pooled precisely because they are biased in different directions — the solver avoids rich ads at low level, and that corner is the one the exploration measured.
 
 **Consequence:** `EV = reward × P(label)` is wrong. The estimator needs `P(success | label, reward, level)`. And levelling is not optional — a bot that never upgrades decays to near-certain failure, because the board outgrows it.
 

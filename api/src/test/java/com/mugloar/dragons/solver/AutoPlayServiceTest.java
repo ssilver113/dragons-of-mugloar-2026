@@ -15,6 +15,8 @@ import com.mugloar.dragons.mugloar.dto.PurchaseResponse;
 import com.mugloar.dragons.mugloar.dto.ReputationResponse;
 import com.mugloar.dragons.mugloar.dto.ShopItemResponse;
 import com.mugloar.dragons.mugloar.dto.SolveResponse;
+import com.mugloar.dragons.shop.ItemEffect;
+import com.mugloar.dragons.shop.ShopItem;
 import com.mugloar.dragons.shop.ShopService;
 import java.time.Clock;
 import java.time.Duration;
@@ -162,5 +164,31 @@ class AutoPlayServiceTest {
 
         verify(client).listAds(GAME_ID);
         verify(client).listShopItems(GAME_ID);
+    }
+
+    /**
+     * The overload something playing hundreds of games uses. Prices never move within a game, so a
+     * caller holding the catalogue skips a third of the upstream calls; the board is still read
+     * every turn, because that does move.
+     */
+    @Test
+    void takesTheSameTurnAgainstACatalogueTheCallerAlreadyHolds() {
+        gameIs(3, 0, 5, 0);
+        boardIs(ad("safe", 60, "Piece of cake"));
+        when(client.solve(GAME_ID, "safe"))
+                .thenReturn(new SolveResponse(true, 3, 60, 460, 1, "You successfully solved the mission!"));
+        List<ShopItem> catalogue = List.of(
+                new ShopItem("hpot", "Healing potion", 50, ItemEffect.EXTRA_LIFE),
+                new ShopItem("cs", "Claw Sharpening", 100, ItemEffect.LEVEL_UP),
+                new ShopItem("ch", "Copper Plate Mail", 300, ItemEffect.DOUBLE_LEVEL_UP));
+
+        AutoPlayStep step = autoPlay.step(GAME_ID, catalogue);
+
+        assertThat(step.decision().move()).isEqualTo(Move.solve("safe"));
+        assertThat(step.decision().items()).extracting(ItemOption::itemId)
+                .containsExactly("hpot", "cs", "ch");
+        assertThat(step.game()).isEqualTo(new GameState(GAME_ID, 3, 60, 5, 460, 1));
+        verify(client).listAds(GAME_ID);
+        verify(client, never()).listShopItems(GAME_ID);
     }
 }

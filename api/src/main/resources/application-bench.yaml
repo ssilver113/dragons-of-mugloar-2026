@@ -1,0 +1,42 @@
+spring:
+  main:
+    web-application-type: none
+    banner-mode: "off"
+
+logging:
+  level:
+    root: warn
+    com.mugloar.dragons.bench: info
+    com.mugloar.dragons.mugloar: warn
+  pattern:
+    console: "%d{HH:mm:ss} %-5level %msg%n"
+
+bench:
+  games: 40
+  # Concurrency hides the round trip; the request interval, not this, sets the throughput.
+  concurrency: 4
+  # A guess, and deliberately a cautious one: the upstream limits on burst and publishes no
+  # threshold, so a run widens this on its own the first time it is turned away.
+  request-interval: 200ms
+  max-request-interval: 2s
+  slowdown-factor: 1.5
+  max-turns: 400
+  max-consecutive-passes: 40
+  abort-cooldown: 30s
+  output-dir: build/bench
+  label: default
+  score-target: 1000
+
+  # The compiled-in defaults, restated so a sweep overrides one line rather than supplying all five.
+  strategy:
+    life-value-gold: 300
+    potion-threshold-lives: 1
+    target-level-base: 2
+    target-level-per-turn: 0.2
+    dear-tier-gold-floor: 600
+
+  model:
+    ceiling-base: 112.32
+    ceiling-per-level: 8.05
+    midpoint-factor: 1.25
+    softness-factor: 0.0655
