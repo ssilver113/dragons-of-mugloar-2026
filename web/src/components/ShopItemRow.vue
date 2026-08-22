@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { itemArt } from '../assets/artwork'
 import type { ShopItemView } from '../api/types'
 
 const props = defineProps<{
@@ -26,6 +27,10 @@ const effect = computed(() => {
   return parts.join(' and ')
 })
 
+const icon = computed(() =>
+  itemArt(props.item.id, props.item.livesGained, props.item.levelsGained),
+)
+
 const affordable = computed(() => props.item.cost <= props.gold)
 const shortfall = computed(() => props.item.cost - props.gold)
 </script>
@@ -35,7 +40,18 @@ const shortfall = computed(() => props.item.cost - props.gold)
     class="flex items-center justify-between gap-3 rounded-lg border border-ink-muted/20 bg-surface-raised px-3 py-2"
     :class="{ 'opacity-60': !affordable }"
   >
-    <div class="min-w-0">
+    <!-- Decorative: the item's name and effect are spelled out immediately to its right. -->
+    <img
+      :src="icon"
+      alt=""
+      aria-hidden="true"
+      width="28"
+      height="28"
+      loading="lazy"
+      decoding="async"
+      class="size-7 shrink-0"
+    />
+    <div class="min-w-0 flex-1">
       <p class="truncate text-sm font-medium">{{ item.name }}</p>
       <p class="text-xs text-ink-muted">
         <span class="tabular-nums">{{ item.cost }}g</span>

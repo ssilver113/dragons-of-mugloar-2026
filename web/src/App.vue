@@ -1,12 +1,16 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
 import AdList from './components/AdList.vue'
+import AppBackdrop from './components/AppBackdrop.vue'
 import AutoPlayControls from './components/AutoPlayControls.vue'
 import CalibrationTable from './components/CalibrationTable.vue'
 import DecisionLog from './components/DecisionLog.vue'
+import DragonSigil from './components/DragonSigil.vue'
 import GameStats from './components/GameStats.vue'
 import MessageBanner from './components/MessageBanner.vue'
+import ReputationPanel from './components/ReputationPanel.vue'
 import ShopPanel from './components/ShopPanel.vue'
+import type { DragonMood } from './assets/artwork'
 import { present } from './api/errorPresentation'
 import { useGameStore } from './stores/game'
 import { useAutoPlayStore } from './stores/autoplay'
@@ -74,10 +78,50 @@ watch(ended, async (now, before) => {
   }
 })
 
+/**
+ * What the seal shows. A win is a moment rather than a state, so it is held for a beat and then
+ * released; everything else is read straight off the game.
+ *
+ * A lost session is deliberately not a defeat. The dragon was fine — the server stopped tracking
+ * it — and stamping the fallen seal on that would be a lie about the player's own game, the same
+ * one the ending copy takes care not to tell.
+ */
+const triumphant = ref(false)
+let fading: ReturnType<typeof setTimeout> | undefined
+
+watch(outcome, (last) => {
+  const won =
+    last !== null &&
+    ((last.kind === 'solve' && last.success) ||
+      (last.kind === 'purchase' && last.success && last.item.levelsGained > 0))
+  if (!won) {
+    return
+  }
+  triumphant.value = true
+  clearTimeout(fading)
+  fading = setTimeout(() => (triumphant.value = false), 2000)
+})
+
+onUnmounted(() => clearTimeout(fading))
+
+const mood = computed<DragonMood>(() => {
+  if (store.ending === 'finished') {
+    return 'defeated'
+  }
+  return triumphant.value ? 'victorious' : 'idle'
+})
+
 const banner = computed(() => {
   const last = outcome.value
   if (!last) {
     return null
+  }
+  if (last.kind === 'investigation') {
+    return {
+      tone: 'info' as const,
+      title: 'The scouts are back',
+      body: 'A turn spent and nothing risked. Every ad on the board is a turn older.',
+    }
   }
   if (last.kind === 'solve') {
     return {
@@ -101,12 +145,18 @@ const banner = computed(() => {
 </script>
 
 <template>
+  <AppBackdrop />
+
   <main class="mx-auto flex min-h-dvh max-w-6xl flex-col gap-6 px-4 py-8">
-    <header class="flex flex-col gap-1">
-      <h1 class="text-2xl font-semibold text-accent sm:text-3xl">Dragons of Mugloar</h1>
-      <p class="text-sm text-ink-muted">
-        Take the jobs your dragon can survive. Every action costs a turn.
-      </p>
+    <header class="flex items-center justify-between gap-4">
+      <div class="flex flex-col gap-1">
+        <!-- Cinzel is a wide face: at 24px the title wraps beside the seal on a 375px screen. -->
+        <h1 class="text-xl font-semibold text-accent sm:text-3xl">Dragons of Mugloar</h1>
+        <p class="text-sm text-ink-muted">
+          Take the jobs your dragon can survive. Every action costs a turn.
+        </p>
+      </div>
+      <DragonSigil :mood="mood" :size="80" class="size-14 sm:size-20" />
     </header>
 
     <GameStats v-if="store.game" :game="store.game" />
@@ -160,6 +210,12 @@ const banner = computed(() => {
         class="flex flex-col items-start gap-4 rounded-lg border border-ink-muted/20 p-6 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         role="status"
       >
+        <DragonSigil
+          v-if="store.ending === 'finished'"
+          mood="defeated"
+          :size="112"
+          class="size-24 self-center sm:size-28"
+        />
         <div class="flex flex-col gap-1">
           <h2 class="text-lg font-semibold">{{ ended.heading }}</h2>
           <p v-if="store.ending === 'lost'" class="text-ink-muted">
@@ -258,7 +314,7 @@ const banner = computed(() => {
             />
           </div>
         </div>
-        <div :class="onlyOnMobile('shop')" class="min-w-0">
+        <div :class="onlyOnMobile('shop')" class="flex min-w-0 flex-col gap-4">
           <ShopPanel
             :items="store.shopItems"
             :gold="store.game?.gold ?? 0"
@@ -267,6 +323,12 @@ const banner = computed(() => {
             :disabled="store.busy || autoPlay.active"
             @buy="store.buy($event)"
             @refresh="store.refreshShop()"
+          />
+          <ReputationPanel
+            :reputation="store.reputation"
+            :scouting="store.investigating"
+            :disabled="store.busy || autoPlay.active"
+            @scout="store.investigate()"
           />
         </div>
       </div>

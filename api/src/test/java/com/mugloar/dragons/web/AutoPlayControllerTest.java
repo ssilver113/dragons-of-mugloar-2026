@@ -2,6 +2,7 @@ package com.mugloar.dragons.web;
 
 import com.mugloar.dragons.game.GameNotRunningException;
 import com.mugloar.dragons.game.GameState;
+import com.mugloar.dragons.game.Reputation;
 import com.mugloar.dragons.solver.AdOption;
 import com.mugloar.dragons.solver.AutoPlayService;
 import com.mugloar.dragons.solver.AutoPlayStep;
@@ -51,7 +52,7 @@ class AutoPlayControllerTest {
                         new AdOption("trap", "Slay a dragon", 400, 3, "Piece of cake", "SAFE",
                                 0.0004, -99.5, Verdict.NOT_WORTH_A_LIFE)),
                 List.of(new ItemOption("hpot", "Healing potion", 50, 1, 0, Verdict.NOT_NEEDED)));
-        when(autoPlay.step(GAME_ID)).thenReturn(new AutoPlayStep(
+        when(autoPlay.step(GAME_ID)).thenReturn(AutoPlayStep.of(
                 new GameState(GAME_ID, 3, 60, 5, 460, 1),
                 decision,
                 true,
@@ -78,7 +79,10 @@ class AutoPlayControllerTest {
                 .andExpect(jsonPath("$.decision.items[0].verdict").value("NOT_NEEDED"));
     }
 
-    /** A pass aims at nothing, and the wire has to say so rather than invent a target. */
+    /**
+     * A pass aims at nothing, and the wire has to say so rather than invent a target. It is also
+     * the one move that reports standing, so the figures ride along on the same response.
+     */
     @Test
     void reportsAPassWithNoTargetAndNoMessage() throws Exception {
         when(autoPlay.step(GAME_ID)).thenReturn(new AutoPlayStep(
@@ -86,13 +90,31 @@ class AutoPlayControllerTest {
                 new Decision(Move.investigateReputation(), Reason.PASSING_NOTHING_WORTH_A_TURN,
                         List.of(), List.of()),
                 true,
-                null));
+                null,
+                new Reputation(12.5, -3.25, 40.123456)));
 
         mockMvc.perform(post("/api/games/{gameId}/autoplay/step", GAME_ID))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.decision.move").value("INVESTIGATE_REPUTATION"))
                 .andExpect(jsonPath("$.decision.targetId").doesNotExist())
-                .andExpect(jsonPath("$.message").doesNotExist());
+                .andExpect(jsonPath("$.message").doesNotExist())
+                .andExpect(jsonPath("$.reputation.people").value(12.5))
+                .andExpect(jsonPath("$.reputation.state").value(-3.25))
+                .andExpect(jsonPath("$.reputation.underworld").value(40.1235));
+    }
+
+    /** Every other move reports no standing, and must not invent a zero for one. */
+    @Test
+    void omitsStandingFromEveryMoveThatDidNotBuyIt() throws Exception {
+        when(autoPlay.step(GAME_ID)).thenReturn(AutoPlayStep.of(
+                new GameState(GAME_ID, 3, 10, 4, 500, 6),
+                new Decision(Move.buy("hpot"), Reason.HEALING_LOW_ON_LIVES, List.of(), List.of()),
+                true,
+                null));
+
+        mockMvc.perform(post("/api/games/{gameId}/autoplay/step", GAME_ID))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.reputation").doesNotExist());
     }
 
     @Test

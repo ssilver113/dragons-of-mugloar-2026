@@ -3,7 +3,13 @@ import { defineStore } from 'pinia'
 import { ApiError, api } from '../api/client'
 import { endsTheSession, present } from '../api/errorPresentation'
 import { useCalibrationStore } from './calibration'
-import type { AdView, AutoPlayStepView, GameView, ShopItemView } from '../api/types'
+import type {
+  AdView,
+  AutoPlayStepView,
+  GameView,
+  ReputationView,
+  ShopItemView,
+} from '../api/types'
 
 export type RequestStatus = 'idle' | 'pending' | 'ready' | 'error'
 
@@ -14,6 +20,7 @@ export type RequestStatus = 'idle' | 'pending' | 'ready' | 'error'
 export type TurnOutcome =
   | { kind: 'solve'; success: boolean; message: string }
   | { kind: 'purchase'; success: boolean; item: ShopItemView }
+  | { kind: 'investigation' }
 
 export const useGameStore = defineStore('game', () => {
   const calibration = useCalibrationStore()
@@ -26,11 +33,18 @@ export const useGameStore = defineStore('game', () => {
   const shopStatus = ref<RequestStatus>('idle')
   const solvingAdId = ref<string | null>(null)
   const buyingItemId = ref<string | null>(null)
+  const investigating = ref(false)
   const autoStepping = ref(false)
   const sessionLost = ref(false)
   const error = ref<ApiError | null>(null)
   const lastOutcome = ref<TurnOutcome | null>(null)
   const advisorEnabled = ref(false)
+  /**
+   * The last standing the scouts reported, or null if this game has never paid for one. It is
+   * never inferred: nothing else on the wire carries it, so an unscouted game says so rather
+   * than showing three zeroes that would look like a measurement.
+   */
+  const reputation = ref<ReputationView | null>(null)
 
   const started = computed(() => game.value !== null)
   const finished = computed(() => game.value?.finished ?? false)
@@ -51,7 +65,11 @@ export const useGameStore = defineStore('game', () => {
 
   /** A turn is in flight. Only one may be, whichever action started it — solver included. */
   const acting = computed(
-    () => solvingAdId.value !== null || buyingItemId.value !== null || autoStepping.value,
+    () =>
+      solvingAdId.value !== null ||
+      buyingItemId.value !== null ||
+      investigating.value ||
+      autoStepping.value,
   )
   const busy = computed(
     () => startStatus.value === 'pending' || boardStatus.value === 'pending' || acting.value,
@@ -66,6 +84,7 @@ export const useGameStore = defineStore('game', () => {
     lastOutcome.value = null
     ads.value = []
     shopItems.value = []
+    reputation.value = null
     try {
       game.value = await api.startGame()
       startStatus.value = 'ready'
@@ -209,6 +228,43 @@ export const useGameStore = defineStore('game', () => {
   }
 
   /**
+   * Spend a turn on scouting. It is the only move that cannot cost a life, which is what makes it
+   * worth offering by hand: when every ad on the board is a bad bet, a fresh board is worth more
+   * than the best of them. It ages every ad exactly as any other turn does, so the board is
+   * predicted the same way a purchase is.
+   */
+  async function investigate(): Promise<void> {
+    const current = game.value
+    if (!playable.value || !current || acting.value) {
+      return
+    }
+    const previousGame = current
+    const previousAds = ads.value
+
+    error.value = null
+    lastOutcome.value = null
+    investigating.value = true
+    game.value = { ...current, turn: current.turn + 1 }
+    ads.value = ageBoard(previousAds)
+
+    try {
+      const result = await api.investigate(current.gameId)
+      game.value = result.game
+      reputation.value = result.reputation
+      lastOutcome.value = { kind: 'investigation' }
+      if (!result.game.finished) {
+        await refreshAds()
+      }
+    } catch (e) {
+      game.value = previousGame
+      ads.value = previousAds
+      fail(e)
+    } finally {
+      investigating.value = false
+    }
+  }
+
+  /**
    * One turn taken by the solver. There is nothing to predict optimistically here — which move it
    * will pick is exactly what the call returns — so the state is only ever written from the
    * response, and a failure leaves everything as it was.
@@ -226,6 +282,11 @@ export const useGameStore = defineStore('game', () => {
     try {
       const step = await api.autoPlayStep(current.gameId)
       game.value = step.game
+      // The solver passes for the turn rather than for the answer, but the answer was paid for
+      // all the same, so the crests fill in from an auto-played scout exactly as from a manual one.
+      if (step.reputation) {
+        reputation.value = step.reputation
+      }
       recordSolverAttempt(step)
       if (refreshBoard && !step.game.finished) {
         await refreshAds()
@@ -307,7 +368,9 @@ export const useGameStore = defineStore('game', () => {
     shopStatus,
     solvingAdId,
     buyingItemId,
+    investigating,
     autoStepping,
+    reputation,
     sessionLost,
     error,
     lastOutcome,
@@ -323,6 +386,7 @@ export const useGameStore = defineStore('game', () => {
     refreshShop,
     solve,
     buy,
+    investigate,
     autoPlayStep,
     toggleAdvisor,
     dismissError,

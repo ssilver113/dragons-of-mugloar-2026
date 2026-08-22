@@ -1,0 +1,75 @@
+/**
+ * The artwork registry: the one place that decides which file a piece of art resolves to.
+ *
+ * Hand-authored SVG ships as the default. A generated raster set can be dropped into the same
+ * folders later without touching a component or this list — a file with the same stem and a
+ * raster extension wins, best format first — which is why nothing here is imported by name.
+ */
+const FILES = import.meta.glob('./art/**/*.{svg,png,webp,avif}', {
+  eager: true,
+  query: '?url',
+  import: 'default',
+}) as Record<string, string>
+
+/** Best first. A format later in this list never displaces one earlier. */
+const PRECEDENCE = ['avif', 'webp', 'png', 'svg']
+
+const ART = ((): Record<string, string> => {
+  const best: Record<string, { rank: number; url: string }> = {}
+  for (const [path, url] of Object.entries(FILES)) {
+    const match = /\.\/art\/([^/]+)\/(.+)\.([^.]+)$/.exec(path)
+    if (!match) {
+      continue
+    }
+    const [, folder, stem, extension] = match
+    const rank = PRECEDENCE.indexOf(extension)
+    const key = `${folder}/${stem}`
+    if (rank >= 0 && (best[key] === undefined || rank < best[key].rank)) {
+      best[key] = { rank, url }
+    }
+  }
+  return Object.fromEntries(Object.entries(best).map(([key, { url }]) => [key, url]))
+})()
+
+const art = (key: string): string => {
+  const url = ART[key]
+  if (url === undefined) {
+    throw new Error(`No artwork for ${key}`)
+  }
+  return url
+}
+
+export type DragonMood = 'idle' | 'victorious' | 'defeated'
+export type Faction = 'people' | 'state' | 'underworld'
+
+/**
+ * The icon for a shop item.
+ *
+ * Every id recon saw has its own drawing. An id it did not see falls back on what the item
+ * *does* rather than on what it is called — which is also how the rest of the app describes a
+ * purchase, since the names are flavour and the price is what carries the effect.
+ */
+export function itemArt(itemId: string, livesGained: number, levelsGained: number): string {
+  const known = ART[`items/${itemId}`]
+  if (known !== undefined) {
+    return known
+  }
+  if (livesGained > 0) {
+    return art('items/hpot')
+  }
+  if (levelsGained >= 2) {
+    return art('items/iron')
+  }
+  if (levelsGained === 1) {
+    return art('items/wax')
+  }
+  return art('items/unknown')
+}
+
+export const dragonArt = (mood: DragonMood): string => art(`dragon/${mood}`)
+
+export const crestArt = (faction: Faction): string => art(`crests/${faction}`)
+
+export const backdropArt = art('scene/backdrop')
+
+export const fogArt = art('scene/fog')

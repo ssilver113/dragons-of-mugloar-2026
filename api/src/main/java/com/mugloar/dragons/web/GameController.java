@@ -3,6 +3,7 @@ package com.mugloar.dragons.web;
 import com.mugloar.dragons.game.GameService;
 import com.mugloar.dragons.web.dto.AdBoardView;
 import com.mugloar.dragons.web.dto.GameView;
+import com.mugloar.dragons.web.dto.InvestigationView;
 import com.mugloar.dragons.web.dto.SolveResultView;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -37,6 +38,17 @@ public class GameController {
     @Operation(summary = "List the board, decoded and scored for this dragon's level")
     public AdBoardView listAds(@PathVariable @Pattern(regexp = Identifiers.ID_PATTERN) String gameId) {
         return AdBoardView.from(games.listAds(gameId));
+    }
+
+    @PostMapping("/{gameId}/investigate")
+    @Operation(
+            summary = "Scout the three factions' standing",
+            description =
+                    "Costs a turn and ages every ad by one, but is the only action that cannot"
+                            + " cost a life — worth it when nothing on the board is worth trying.")
+    public InvestigationView investigate(
+            @PathVariable @Pattern(regexp = Identifiers.ID_PATTERN) String gameId) {
+        return InvestigationView.from(games.passTurn(gameId));
     }
 
     @PostMapping("/{gameId}/ads/{adId}/solve")

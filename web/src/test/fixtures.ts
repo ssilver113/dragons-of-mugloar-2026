@@ -100,6 +100,7 @@ export function aStep(overrides: Partial<AutoPlayStepView> = {}): AutoPlayStepVi
     decision: aDecision(),
     succeeded: true,
     message: 'You successfully solved the mission!',
+    reputation: null,
     ...overrides,
   }
 }

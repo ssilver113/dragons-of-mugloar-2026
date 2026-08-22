@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true" focusable="false">
+  <defs><clipPath id="hpot-body"><path d="M20 9h8v9.2a11.5 11.5 0 1 1-8 0Z"/></clipPath></defs>
+  <path d="M20 9h8v9.2a11.5 11.5 0 1 1-8 0Z" fill="#151a27"/>
+  <rect x="12" y="26" width="24" height="20" fill="#e05a55" clip-path="url(#hpot-body)"/>
+  <path d="M20 9h8v9.2a11.5 11.5 0 1 1-8 0Z" stroke="#dfb956" stroke-width="2.4" stroke-linejoin="round"/>
+  <rect x="17.5" y="4" width="13" height="6" rx="2" fill="#dfb956"/>
+  <path d="M24 28.5v9M19.5 33h9" stroke="#efe7d8" stroke-width="3" stroke-linecap="round"/>
+</svg>

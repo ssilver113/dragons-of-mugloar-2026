@@ -3,6 +3,7 @@ import type {
   AutoPlayStepView,
   ErrorCode,
   GameView,
+  InvestigationView,
   ProblemDetail,
   PurchaseResultView,
   ShopView,
@@ -82,6 +83,11 @@ export const api = {
       `${games}/${encodeURIComponent(gameId)}/ads/${encodeURIComponent(adId)}/solve`,
       { method: 'POST' },
     ),
+
+  investigate: (gameId: string): Promise<InvestigationView> =>
+    request<InvestigationView>(`${games}/${encodeURIComponent(gameId)}/investigate`, {
+      method: 'POST',
+    }),
 
   listShop: (gameId: string): Promise<ShopView> =>
     request<ShopView>(`${games}/${encodeURIComponent(gameId)}/shop`),

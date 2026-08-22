@@ -3,6 +3,7 @@ package com.mugloar.dragons.game;
 import com.mugloar.dragons.ads.AdEnricher;
 import com.mugloar.dragons.ads.EnrichedAd;
 import com.mugloar.dragons.mugloar.MugloarClient;
+import com.mugloar.dragons.mugloar.dto.ReputationResponse;
 import com.mugloar.dragons.mugloar.dto.SolveResponse;
 import java.util.List;
 import org.springframework.stereotype.Service;
@@ -66,16 +67,17 @@ public class GameService {
      * costs a turn and cannot cost a life. Worth having when no ad on the board is worth attempting
      * and there is nothing affordable to buy: a fresh board beats a mission we expect to lose.
      *
-     * <p>The reputation figures themselves are discarded. Nothing has been shown to depend on them,
-     * so the call is here for its turn, not its answer.
+     * <p>The figures it returns steer nothing. No measured effect of standing on success has ever
+     * been found, so the solver still passes for the turn rather than for the answer; the answer is
+     * carried out only because the player paid for it and may as well see it.
      */
-    public GameState passTurn(String gameId) {
+    public PassOutcome passTurn(String gameId) {
         GameSession session = sessions.require(gameId);
         GameState state = session.requireRunning();
 
-        client.investigateReputation(gameId);
+        ReputationResponse standing = client.investigateReputation(gameId);
         GameState updated = state.afterTurnSpent();
         session.setState(updated);
-        return updated;
+        return new PassOutcome(updated, Reputation.from(standing));
     }
 }

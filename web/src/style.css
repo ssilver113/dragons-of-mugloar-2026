@@ -1,21 +1,37 @@
 @import "tailwindcss";
 
-/* Theme tokens live here rather than in a config file (Tailwind v4).
-   Phase 11 replaces these placeholders with the real fantasy palette. */
+/* Cinzel, self-hosted from npm rather than a CDN, so the app renders the same offline, behind a
+   proxy and inside the Docker image. Two subsets ship; a browser fetches only the one the text
+   needs, which for this app is latin. SIL Open Font License 1.1 — see README. */
+@import "@fontsource-variable/cinzel";
+
+/* Ink and parchment. A night-blue ground, warm parchment for text rather than a cold white, and
+   antique gold reserved for what the player can act on.
+
+   Contrast is measured, not asserted: every colour below is set as text on --color-surface-raised
+   somewhere, so lightness is chosen to clear WCAG AA (4.5:1) against the *raised* panel, not only
+   against the darker page behind it. Lowest is danger at 5.96:1.
+
+   Gold and amber sit thirty degrees apart on purpose. The accent means "act on this" and the
+   warning means "be careful with this", and a theme that let them converge would erase the
+   difference — which is why warning is pushed towards orange rather than left at its old hue. */
 @theme {
-  --color-surface: oklch(21% 0.02 265);
-  --color-surface-raised: oklch(26% 0.02 265);
-  --color-ink: oklch(94% 0.01 265);
-  --color-ink-muted: oklch(72% 0.02 265);
-  --color-accent: oklch(70% 0.17 45);
+  --color-surface: oklch(16% 0.022 265);
+  --color-surface-raised: oklch(22% 0.026 265);
+  --color-ink: oklch(93% 0.022 85);
+  --color-ink-muted: oklch(75% 0.028 82);
+  --color-accent: oklch(80% 0.125 88);
 
   /* State colours, used by banners and ad flags. Phase 8 builds the EV scale on top of these,
-     always alongside a non-colour cue.
-     Every one of these is set as text on --color-surface-raised somewhere, so lightness is
-     chosen to clear WCAG AA (4.5:1) against it, not only against the darker page background. */
+     always alongside a non-colour cue. */
   --color-danger: oklch(70% 0.19 25);
-  --color-warning: oklch(78% 0.15 75);
-  --color-success: oklch(72% 0.15 150);
+  --color-warning: oklch(76% 0.16 58);
+  --color-success: oklch(74% 0.14 155);
+
+  /* Headings and figures that are meant to read as inscription. Body text stays on the system
+     stack: a display face at 14px costs legibility and buys nothing. */
+  --font-display: "Cinzel Variable", "Cinzel", Georgia, "Times New Roman", serif;
+  --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
 html {
@@ -27,5 +43,15 @@ body {
   min-height: 100dvh;
   background-color: var(--color-surface);
   color: var(--color-ink);
-  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-family: var(--font-sans);
+}
+
+@layer base {
+  /* Set here rather than as a utility on every heading, so a heading added later is themed by
+     default instead of by being remembered. */
+  h1,
+  h2 {
+    font-family: var(--font-display);
+    letter-spacing: 0.01em;
+  }
 }

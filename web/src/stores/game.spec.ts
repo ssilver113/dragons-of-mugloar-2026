@@ -566,3 +566,87 @@ describe('a failure that ends the run', () => {
     expect(store.playable).toBe(true)
   })
 })
+
+describe('investigating reputation', () => {
+  const standing = { people: 12.5, state: -3.25, underworld: 40 }
+
+  function stubInvestigate(game: GameView, reputation = standing): void {
+    server.use(
+      http.post('/api/games/:gameId/investigate', () => HttpResponse.json({ game, reputation })),
+    )
+  }
+
+  it('starts with nothing, because nothing on the wire reports standing until it is paid for', async () => {
+    const store = await startedStore()
+
+    expect(store.reputation).toBeNull()
+  })
+
+  it('spends a turn, ages the board and keeps what the scouts found', async () => {
+    upstream.ads = [anAd({ adId: 'a', expiresIn: 5 }), anAd({ adId: 'b', expiresIn: 4 })]
+    const store = await startedStore()
+    upstream.game = aGame({ turn: 1 })
+    stubInvestigate(upstream.game)
+
+    await store.investigate()
+
+    expect(store.game?.turn).toBe(1)
+    expect(store.reputation).toEqual(standing)
+    expect(store.lastOutcome).toEqual({ kind: 'investigation' })
+  })
+
+  it('leaves the game exactly as it was when the call fails', async () => {
+    upstream.ads = [anAd({ adId: 'a', expiresIn: 5 })]
+    const store = await startedStore()
+    const before = store.game
+    server.use(
+      http.post('/api/games/:gameId/investigate', () =>
+        problem(503, 'UPSTREAM_UNAVAILABLE', 'The game service is not responding.'),
+      ),
+    )
+
+    await store.investigate()
+
+    expect(store.game).toEqual(before)
+    expect(store.ads[0].expiresIn).toBe(5)
+    expect(store.reputation).toBeNull()
+    expect(store.error?.code).toBe('UPSTREAM_UNAVAILABLE')
+  })
+
+  it('fills the crests in from a solver pass too, since that turn was paid for as well', async () => {
+    const store = await startedStore()
+    stubAutoPlayStep(
+      aStep({
+        decision: aDecision({ move: 'INVESTIGATE_REPUTATION', targetId: null, ads: [] }),
+        message: null,
+        reputation: standing,
+      }),
+    )
+
+    await store.autoPlayStep(false)
+
+    expect(store.reputation).toEqual(standing)
+  })
+
+  it('keeps the last reading when a later turn reports none', async () => {
+    const store = await startedStore()
+    stubInvestigate(upstream.game)
+    await store.investigate()
+    stubAutoPlayStep(aStep({ reputation: null }))
+
+    await store.autoPlayStep(false)
+
+    expect(store.reputation).toEqual(standing)
+  })
+
+  it("forgets the previous game's standing when a new one starts", async () => {
+    const store = await startedStore()
+    stubInvestigate(upstream.game)
+    await store.investigate()
+
+    stubGame()
+    await store.startGame()
+
+    expect(store.reputation).toBeNull()
+  })
+})

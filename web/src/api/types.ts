@@ -19,6 +19,19 @@ export interface GameView {
   finished: boolean
 }
 
+/** Standing with the three factions, as of the turn that paid for it. */
+export interface ReputationView {
+  people: number
+  state: number
+  underworld: number
+}
+
+/** Response of the investigate endpoint. The turn is spent whatever the figures say. */
+export interface InvestigationView {
+  game: GameView
+  reputation: ReputationView
+}
+
 export interface AdView {
   adId: string
   message: string
@@ -168,4 +181,6 @@ export interface AutoPlayStepView {
   decision: DecisionView
   succeeded: boolean
   message: string | null
+  /** Null for every move but a pass — investigating is the only one that reports any. */
+  reputation: ReputationView | null
 }

@@ -198,8 +198,20 @@ class GameServiceTest {
         sessions.require(GAME_ID).setState(new GameState(GAME_ID, 2, 140, 3, 400, 9));
         when(client.investigateReputation(GAME_ID)).thenReturn(new ReputationResponse(0, 0, 0));
 
-        assertThat(service.passTurn(GAME_ID)).isEqualTo(new GameState(GAME_ID, 2, 140, 3, 400, 10));
+        assertThat(service.passTurn(GAME_ID).game())
+                .isEqualTo(new GameState(GAME_ID, 2, 140, 3, 400, 10));
         assertThat(sessions.require(GAME_ID).state().turn()).isEqualTo(10);
         verify(client, never()).solve(anyString(), anyString());
+    }
+
+    /** The turn is paid for either way, so what it bought is carried out rather than dropped. */
+    @Test
+    void passingReportsTheStandingItPaidFor() {
+        startGame();
+        when(client.investigateReputation(GAME_ID))
+                .thenReturn(new ReputationResponse(12.5, -3.25, 40.0));
+
+        assertThat(service.passTurn(GAME_ID).reputation())
+                .isEqualTo(new Reputation(12.5, -3.25, 40.0));
     }
 }

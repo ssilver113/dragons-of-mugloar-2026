@@ -8,6 +8,8 @@ import com.mugloar.dragons.game.AdNotAvailableException;
 import com.mugloar.dragons.game.GameNotRunningException;
 import com.mugloar.dragons.game.GameService;
 import com.mugloar.dragons.game.GameState;
+import com.mugloar.dragons.game.PassOutcome;
+import com.mugloar.dragons.game.Reputation;
 import com.mugloar.dragons.game.SessionExpiredException;
 import com.mugloar.dragons.game.SolveOutcome;
 import com.mugloar.dragons.mugloar.exception.GameNotFoundException;
@@ -113,6 +115,20 @@ class GameControllerTest {
                 .andExpect(jsonPath("$.success").value(false))
                 .andExpect(jsonPath("$.message").value("You failed on the mission!"))
                 .andExpect(jsonPath("$.game.lives").value(2));
+    }
+
+    /** Scouting spends a turn and returns what it bought, rounded like every other estimate. */
+    @Test
+    void investigatingReturnsTheStandingAndTheTurnItCost() throws Exception {
+        when(games.passTurn(GAME_ID)).thenReturn(
+                new PassOutcome(state(2), new Reputation(12.5, -3.25, 40.123456)));
+
+        mockMvc.perform(post("/api/games/{gameId}/investigate", GAME_ID))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.game.turn").value(9))
+                .andExpect(jsonPath("$.reputation.people").value(12.5))
+                .andExpect(jsonPath("$.reputation.state").value(-3.25))
+                .andExpect(jsonPath("$.reputation.underworld").value(40.1235));
     }
 
     @Test

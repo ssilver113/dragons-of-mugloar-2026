@@ -2,6 +2,7 @@ package com.mugloar.dragons.solver;
 
 import com.mugloar.dragons.game.AdBoard;
 import com.mugloar.dragons.game.GameService;
+import com.mugloar.dragons.game.PassOutcome;
 import com.mugloar.dragons.game.SolveOutcome;
 import com.mugloar.dragons.shop.PurchaseOutcome;
 import com.mugloar.dragons.shop.ShopCatalogue;
@@ -57,15 +58,18 @@ public class AutoPlayService {
         return switch (decision.move().type()) {
             case SOLVE_AD -> {
                 SolveOutcome outcome = games.solve(gameId, decision.move().targetId());
-                yield new AutoPlayStep(
+                yield AutoPlayStep.of(
                         outcome.game(), decision, outcome.success(), outcome.message());
             }
             case BUY_ITEM -> {
                 PurchaseOutcome outcome = shop.buy(gameId, decision.move().targetId());
-                yield new AutoPlayStep(outcome.game(), decision, outcome.success(), null);
+                yield AutoPlayStep.of(outcome.game(), decision, outcome.success(), null);
             }
-            case INVESTIGATE_REPUTATION ->
-                    new AutoPlayStep(games.passTurn(gameId), decision, true, null);
+            case INVESTIGATE_REPUTATION -> {
+                PassOutcome outcome = games.passTurn(gameId);
+                yield new AutoPlayStep(
+                        outcome.game(), decision, true, null, outcome.reputation());
+            }
         };
     }
 }
