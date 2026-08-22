@@ -138,6 +138,7 @@ export interface AdOptionView {
   reward: number
   expiresIn: number
   probability: string
+  probabilityTier: ProbabilityTier
   successProbability: number
   score: number
   verdict: Verdict

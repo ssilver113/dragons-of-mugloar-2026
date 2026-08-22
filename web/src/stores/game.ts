@@ -1,6 +1,7 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { ApiError, api } from '../api/client'
+import { useCalibrationStore } from './calibration'
 import type { AdView, AutoPlayStepView, GameView, ShopItemView } from '../api/types'
 
 export type RequestStatus = 'idle' | 'pending' | 'ready' | 'error'
@@ -14,6 +15,8 @@ export type TurnOutcome =
   | { kind: 'purchase'; success: boolean; item: ShopItemView }
 
 export const useGameStore = defineStore('game', () => {
+  const calibration = useCalibrationStore()
+
   const game = ref<GameView | null>(null)
   const ads = ref<AdView[]>([])
   const shopItems = ref<ShopItemView[]>([])
@@ -38,17 +41,6 @@ export const useGameStore = defineStore('game', () => {
     () => startStatus.value === 'pending' || boardStatus.value === 'pending' || acting.value,
   )
 
-  /**
-   * Ranking by our own estimate is itself advice, so it only applies when the player has asked
-   * for advice. Off, the board stays exactly as the game posted it. Phase 8 puts the sort key in
-   * the player's hands.
-   */
-  const orderedAds = computed(() =>
-    advisorEnabled.value
-      ? [...ads.value].sort((a, b) => b.expectedValue - a.expectedValue || a.expiresIn - b.expiresIn)
-      : ads.value,
-  )
-
   async function startGame(): Promise<void> {
     startStatus.value = 'pending'
     boardStatus.value = 'idle'
@@ -60,6 +52,7 @@ export const useGameStore = defineStore('game', () => {
     try {
       game.value = await api.startGame()
       startStatus.value = 'ready'
+      calibration.noteGame()
       // The shop is static for the life of a game and listing it costs no turn, so it is fetched
       // once, up front: affordability is then answerable the moment the player looks.
       await Promise.all([refreshAds(), refreshShop()])
@@ -116,6 +109,9 @@ export const useGameStore = defineStore('game', () => {
     }
     const previousGame = current
     const previousAds = ads.value
+    // Read before the optimistic update takes the ad off the board: its label and the estimate
+    // it carried are half of the calibration record, and the outcome is the other half.
+    const attempted = previousAds.find((ad) => ad.adId === adId)
 
     error.value = null
     lastOutcome.value = null
@@ -127,6 +123,14 @@ export const useGameStore = defineStore('game', () => {
       const result = await api.solve(current.gameId, adId)
       game.value = result.game
       lastOutcome.value = { kind: 'solve', success: result.success, message: result.message }
+      if (attempted) {
+        calibration.record({
+          label: attempted.probability,
+          tier: attempted.probabilityTier,
+          predicted: attempted.successProbability,
+          success: result.success,
+        })
+      }
       if (!result.game.finished) {
         await refreshAds()
       }
@@ -204,12 +208,33 @@ export const useGameStore = defineStore('game', () => {
     try {
       const step = await api.autoPlayStep(current.gameId)
       game.value = step.game
+      recordSolverAttempt(step)
       if (refreshBoard && !step.game.finished) {
         await refreshAds()
       }
       return step
     } finally {
       autoStepping.value = false
+    }
+  }
+
+  /**
+   * The solver's turns feed the same ledger the player's do. The ad is read off the decision
+   * rather than off the board, which at max speed is a turn or more out of date.
+   */
+  function recordSolverAttempt(step: AutoPlayStepView): void {
+    const { move, targetId, ads: weighed } = step.decision
+    if (move !== 'SOLVE_AD' || targetId === null) {
+      return
+    }
+    const chosen = weighed.find((option) => option.adId === targetId)
+    if (chosen) {
+      calibration.record({
+        label: chosen.probability,
+        tier: chosen.probabilityTier,
+        predicted: chosen.successProbability,
+        success: step.succeeded,
+      })
     }
   }
 
@@ -238,7 +263,6 @@ export const useGameStore = defineStore('game', () => {
     finished,
     acting,
     busy,
-    orderedAds,
     startGame,
     refreshAds,
     refreshShop,

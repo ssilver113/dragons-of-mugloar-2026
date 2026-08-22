@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import AdCard from './AdCard.vue'
+import AdToolbar from './AdToolbar.vue'
+import { filterBoard, lifeCost, meanReward, scoreBoard, sortBoard } from '../advisor/ranking'
+import type { AdRead, FilterId, Posture, SortKey } from '../advisor/ranking'
 import type { AdView } from '../api/types'
 import type { RequestStatus } from '../stores/game'
 
@@ -9,15 +12,41 @@ const props = defineProps<{
   status: RequestStatus
   solvingAdId: string | null
   advisor: boolean
+  lives: number
   disabled: boolean
 }>()
 defineEmits<{ solve: [adId: string]; refresh: []; 'toggle-advisor': [] }>()
+
+// How the player wants the board presented is theirs, not the game's, so it lives with the list
+// rather than in a store: nothing outside this section acts on it, and it outlives no game.
+const sort = ref<SortKey>('value')
+const posture = ref<Posture>('balanced')
+const filters = ref<FilterId[]>([])
+
+const scored = computed(() => scoreBoard(props.ads, posture.value, props.lives))
+const average = computed(() => meanReward(props.ads))
+
+const visible = computed<{ ad: AdView; read: AdRead | null }[]>(() =>
+  props.advisor
+    ? sortBoard(filterBoard(scored.value, new Set(filters.value), average.value), sort.value).map(
+        (entry) => ({ ad: entry.ad, read: entry }),
+      )
+    : props.ads.map((ad) => ({ ad, read: null })),
+)
+
+function toggleFilter(id: FilterId): void {
+  filters.value = filters.value.includes(id)
+    ? filters.value.filter((current) => current !== id)
+    : [...filters.value, id]
+}
 
 // A refetch after a solve leaves the optimistic board on screen; only a board with nothing to
 // show falls back to the skeleton, so the list never flashes empty between turns.
 const loading = computed(() => props.status === 'pending' && props.ads.length === 0)
 const failed = computed(() => props.status === 'error' && props.ads.length === 0)
 const empty = computed(() => props.status === 'ready' && props.ads.length === 0)
+// Filtered to nothing is a different situation from an empty board, and has a different way out.
+const filteredOut = computed(() => props.ads.length > 0 && visible.value.length === 0)
 </script>
 
 <template>
@@ -53,6 +82,20 @@ const empty = computed(() => props.status === 'ready' && props.ads.length === 0)
       }}
     </p>
 
+    <AdToolbar
+      v-if="advisor"
+      :sort="sort"
+      :posture="posture"
+      :filters="filters"
+      :shown="visible.length"
+      :total="ads.length"
+      :life-cost="lifeCost(posture, lives)"
+      @update:sort="sort = $event"
+      @update:posture="posture = $event"
+      @toggle-filter="toggleFilter"
+      @clear-filters="filters = []"
+    />
+
     <ul v-if="loading" class="flex flex-col gap-3" aria-hidden="true">
       <li
         v-for="n in 3"
@@ -77,13 +120,20 @@ const empty = computed(() => props.status === 'ready' && props.ads.length === 0)
       No ads on the board right now. Refresh to see what comes in.
     </p>
 
+    <p
+      v-else-if="filteredOut"
+      class="rounded-lg border border-ink-muted/20 p-6 text-center text-ink-muted"
+    >
+      Every job on the board is filtered out. Loosen the filters to see them.
+    </p>
+
     <ul v-else class="grid gap-3 sm:grid-cols-2">
       <AdCard
-        v-for="ad in ads"
-        :key="ad.adId"
-        :ad="ad"
-        :advisor="advisor"
-        :solving="ad.adId === solvingAdId"
+        v-for="entry in visible"
+        :key="entry.ad.adId"
+        :ad="entry.ad"
+        :read="entry.read"
+        :solving="entry.ad.adId === solvingAdId"
         :disabled="disabled"
         @solve="$emit('solve', $event)"
       />

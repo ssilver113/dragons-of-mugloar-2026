@@ -15,6 +15,7 @@ public record AdOption(
         int reward,
         int expiresIn,
         String probability,
+        String probabilityTier,
         double successProbability,
         double score,
         Verdict verdict) {

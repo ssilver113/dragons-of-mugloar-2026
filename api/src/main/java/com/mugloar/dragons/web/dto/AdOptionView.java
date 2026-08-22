@@ -16,6 +16,7 @@ public record AdOptionView(
         int reward,
         int expiresIn,
         String probability,
+        String probabilityTier,
         double successProbability,
         double score,
         Verdict verdict) {
@@ -27,6 +28,7 @@ public record AdOptionView(
                 option.reward(),
                 option.expiresIn(),
                 option.probability(),
+                option.probabilityTier(),
                 Rounding.estimate(option.successProbability()),
                 Rounding.estimate(option.score()),
                 option.verdict());

@@ -63,6 +63,7 @@ export function anAdOption(overrides: Partial<AdOptionView> = {}): AdOptionView 
     reward: 15,
     expiresIn: 7,
     probability: 'Piece of cake',
+    probabilityTier: 'SAFE',
     successProbability: 0.86,
     score: 8.9,
     verdict: 'CHOSEN',

@@ -46,9 +46,9 @@ class AutoPlayControllerTest {
                 Move.solve("safe"),
                 Reason.BEST_RISK_ADJUSTED_AD,
                 List.of(
-                        new AdOption("safe", "Help someone", 60, 5, "Piece of cake",
+                        new AdOption("safe", "Help someone", 60, 5, "Piece of cake", "SAFE",
                                 0.845678, 71.234567, Verdict.CHOSEN),
-                        new AdOption("trap", "Slay a dragon", 400, 3, "Piece of cake",
+                        new AdOption("trap", "Slay a dragon", 400, 3, "Piece of cake", "SAFE",
                                 0.0004, -99.5, Verdict.NOT_WORTH_A_LIFE)),
                 List.of(new ItemOption("hpot", "Healing potion", 50, 1, 0, Verdict.NOT_NEEDED)));
         when(autoPlay.step(GAME_ID)).thenReturn(new AutoPlayStep(
@@ -68,6 +68,8 @@ class AutoPlayControllerTest {
                 .andExpect(jsonPath("$.decision.targetId").value("safe"))
                 .andExpect(jsonPath("$.decision.reason").value("BEST_RISK_ADJUSTED_AD"))
                 .andExpect(jsonPath("$.decision.ads[0].verdict").value("CHOSEN"))
+                .andExpect(jsonPath("$.decision.ads[0].probability").value("Piece of cake"))
+                .andExpect(jsonPath("$.decision.ads[0].probabilityTier").value("SAFE"))
                 .andExpect(jsonPath("$.decision.ads[0].successProbability").value(0.8457))
                 .andExpect(jsonPath("$.decision.ads[0].score").value(71.2346))
                 .andExpect(jsonPath("$.decision.ads[1].score").value(-99.5))

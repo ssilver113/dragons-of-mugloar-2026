@@ -2,15 +2,18 @@
 import { computed, ref } from 'vue'
 import AdList from './components/AdList.vue'
 import AutoPlayControls from './components/AutoPlayControls.vue'
+import CalibrationTable from './components/CalibrationTable.vue'
 import DecisionLog from './components/DecisionLog.vue'
 import GameStats from './components/GameStats.vue'
 import MessageBanner from './components/MessageBanner.vue'
 import ShopPanel from './components/ShopPanel.vue'
 import { useGameStore } from './stores/game'
 import { useAutoPlayStore } from './stores/autoplay'
+import { useCalibrationStore } from './stores/calibration'
 
 const store = useGameStore()
 const autoPlay = useAutoPlayStore()
+const calibration = useCalibrationStore()
 
 const starting = computed(() => store.startStatus === 'pending')
 const outcome = computed(() => store.lastOutcome)
@@ -122,6 +125,14 @@ const banner = computed(() => {
         @keep-going="autoPlay.keepGoing()"
         @retry="autoPlay.run()"
       />
+
+      <CalibrationTable
+        v-if="calibration.attempts"
+        :rows="calibration.rows"
+        :attempts="calibration.attempts"
+        :games="calibration.games"
+        @reset="calibration.reset()"
+      />
     </template>
 
     <template v-else>
@@ -161,19 +172,29 @@ const banner = computed(() => {
       </div>
 
       <div class="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <div :class="onlyOnMobile('board')">
-          <AdList
-            :ads="store.orderedAds"
-            :status="store.boardStatus"
-            :solving-ad-id="store.solvingAdId"
-            :advisor="store.advisorEnabled"
-            :disabled="store.busy || autoPlay.active"
-            @solve="store.solve($event)"
-            @refresh="store.refreshAds()"
-            @toggle-advisor="store.toggleAdvisor()"
-          />
+        <div :class="onlyOnMobile('board')" class="min-w-0">
+          <div class="flex flex-col gap-4">
+            <AdList
+              :ads="store.ads"
+              :status="store.boardStatus"
+              :solving-ad-id="store.solvingAdId"
+              :advisor="store.advisorEnabled"
+              :lives="store.game?.lives ?? 1"
+              :disabled="store.busy || autoPlay.active"
+              @solve="store.solve($event)"
+              @refresh="store.refreshAds()"
+              @toggle-advisor="store.toggleAdvisor()"
+            />
+            <CalibrationTable
+              v-if="store.advisorEnabled"
+              :rows="calibration.rows"
+              :attempts="calibration.attempts"
+              :games="calibration.games"
+              @reset="calibration.reset()"
+            />
+          </div>
         </div>
-        <div :class="onlyOnMobile('shop')">
+        <div :class="onlyOnMobile('shop')" class="min-w-0">
           <ShopPanel
             :items="store.shopItems"
             :gold="store.game?.gold ?? 0"

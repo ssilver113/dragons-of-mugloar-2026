@@ -9,12 +9,28 @@ function render(props: {
   ads?: AdView[]
   status: RequestStatus
   advisor?: boolean
+  lives?: number
   disabled?: boolean
 }) {
   return mount(AdList, {
-    props: { ads: [], solvingAdId: null, advisor: false, disabled: false, ...props },
+    props: {
+      ads: [],
+      solvingAdId: null,
+      advisor: false,
+      lives: 3,
+      disabled: false,
+      ...props,
+    },
   })
 }
+
+const messages = (list: ReturnType<typeof render>) =>
+  list.findAll('[aria-label^="Solve:"]').map((button) => button.attributes('aria-label'))
+
+/** Three ads that rank differently under every sort the toolbar offers. */
+const RICH = anAd({ adId: 'rich', message: 'Rich', reward: 400, successProbability: 0.15, expiresIn: 2 })
+const SAFE = anAd({ adId: 'safe', message: 'Safe', reward: 50, successProbability: 0.86, expiresIn: 5 })
+const MID = anAd({ adId: 'mid', message: 'Mid', reward: 30, successProbability: 0.8, expiresIn: 9 })
 
 describe('AdList', () => {
   it('shows a skeleton and announces the wait while the first board loads', () => {
@@ -78,5 +94,83 @@ describe('AdList', () => {
     const list = render({ status: 'ready', ads: [anAd()], advisor: true })
 
     expect(list.text()).toContain('ranked by what the advisor thinks')
+  })
+
+  it('keeps the toolbar behind the advisor toggle, like the rest of the advice', () => {
+    expect(render({ status: 'ready', ads: [anAd()] }).find('#ad-sort').exists()).toBe(false)
+    expect(render({ status: 'ready', ads: [anAd()], advisor: true }).find('#ad-sort').exists())
+      .toBe(true)
+  })
+})
+
+describe('AdList ranking', () => {
+  const board = { status: 'ready' as const, ads: [RICH, SAFE, MID], advisor: true }
+
+  it('leaves the board as the game posted it while the advisor is off', () => {
+    expect(messages(render({ ...board, advisor: false }))).toEqual([
+      'Solve: Rich',
+      'Solve: Safe',
+      'Solve: Mid',
+    ])
+  })
+
+  it('ranks by what an ad is worth once the risk is priced in, by default', () => {
+    expect(messages(render(board))).toEqual(['Solve: Safe', 'Solve: Mid', 'Solve: Rich'])
+  })
+
+  it('re-ranks on the sort the player picks', async () => {
+    const list = render(board)
+
+    await list.get('#ad-sort').setValue('reward')
+
+    expect(messages(list)).toEqual(['Solve: Rich', 'Solve: Safe', 'Solve: Mid'])
+  })
+
+  it('re-orders as turns age the board, so the ad about to vanish rises on its own', async () => {
+    const list = render(board)
+    await list.get('#ad-sort').setValue('expiry')
+    expect(messages(list)).toEqual(['Solve: Rich', 'Solve: Safe', 'Solve: Mid'])
+
+    // A turn has passed: the board comes back a turn older, and MID is now the urgent one.
+    await list.setProps({
+      ads: [
+        { ...RICH, expiresIn: 8 },
+        { ...SAFE, expiresIn: 4 },
+        { ...MID, expiresIn: 1 },
+      ],
+    })
+
+    expect(messages(list)).toEqual(['Solve: Mid', 'Solve: Safe', 'Solve: Rich'])
+  })
+
+  it('re-ranks under a different risk posture without asking the server anything', async () => {
+    const list = render({ ...board, ads: [SAFE, MID], lives: 1 })
+    expect(list.text()).toContain('Not worth a life')
+
+    await list.get('input[name="posture"][value="bold"]').setValue()
+
+    expect(list.text()).not.toContain('Not worth a life')
+  })
+
+  it('filters the board down and offers the way back', async () => {
+    const list = render(board)
+
+    await list.get('input[type="checkbox"][value="expiring"]').setValue(true)
+
+    expect(messages(list)).toEqual(['Solve: Rich'])
+    expect(list.text()).toContain('Showing 1 of 3 jobs, 2 filtered out')
+
+    await list.get('[role="status"] button').trigger('click')
+
+    expect(messages(list)).toHaveLength(3)
+  })
+
+  it('tells the player the board is filtered rather than empty', async () => {
+    const list = render({ ...board, ads: [RICH] })
+
+    await list.get('input[type="checkbox"][value="worthwhile"]').setValue(true)
+
+    expect(list.text()).toContain('Every job on the board is filtered out')
+    expect(list.text()).not.toContain('No ads on the board')
   })
 })

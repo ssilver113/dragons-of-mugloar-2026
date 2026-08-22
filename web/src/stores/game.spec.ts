@@ -3,8 +3,9 @@ import { createPinia, setActivePinia } from 'pinia'
 import { http, HttpResponse } from 'msw'
 import { server } from '../mocks/server'
 import { useGameStore } from './game'
-import { aGame, anAd, anItem, problem } from '../test/fixtures'
-import type { AdView, GameView, ShopItemView, SolveResultView } from '../api/types'
+import { useCalibrationStore } from './calibration'
+import { aDecision, aGame, aStep, anAd, anAdOption, anItem, problem } from '../test/fixtures'
+import type { AdView, AutoPlayStepView, GameView, ShopItemView, SolveResultView } from '../api/types'
 
 /** What the fake server currently believes; tests move it to set up the next response. */
 const upstream = {
@@ -44,6 +45,10 @@ function stubSolve(result: Partial<SolveResultView> & { game: GameView }): void 
       }),
     ),
   )
+}
+
+function stubAutoPlayStep(step: AutoPlayStepView): void {
+  server.use(http.post('/api/games/:gameId/autoplay/step', () => HttpResponse.json(step)))
 }
 
 async function startedStore() {
@@ -103,30 +108,6 @@ describe('starting a game', () => {
 
     expect(store.ads).toEqual([])
     expect(store.game).toBeNull()
-  })
-})
-
-describe('ordering', () => {
-  beforeEach(() => {
-    upstream.ads = [
-      anAd({ adId: 'low', expectedValue: 4 }),
-      anAd({ adId: 'tie-late', expectedValue: 30, expiresIn: 6 }),
-      anAd({ adId: 'tie-soon', expectedValue: 30, expiresIn: 2 }),
-    ]
-  })
-
-  it('leaves the board as the game posted it while the advisor is off', async () => {
-    const store = await startedStore()
-
-    expect(store.orderedAds.map((ad) => ad.adId)).toEqual(['low', 'tie-late', 'tie-soon'])
-  })
-
-  it('orders by expected value once advice is asked for, ties going to the ad about to expire', async () => {
-    const store = await startedStore()
-
-    store.toggleAdvisor()
-
-    expect(store.orderedAds.map((ad) => ad.adId)).toEqual(['tie-soon', 'tie-late', 'low'])
   })
 })
 
@@ -407,5 +388,83 @@ describe('loading the shop', () => {
     expect(store.shopItems).toEqual([])
     expect(store.error).toMatchObject({ code: 'UPSTREAM_UNAVAILABLE' })
     expect(store.ads).toHaveLength(1)
+  })
+})
+
+describe('calibration', () => {
+  it('records what the advisor predicted against how the job actually went', async () => {
+    const store = await startedStore()
+    const calibration = useCalibrationStore()
+    upstream.ads = [
+      anAd({ adId: 'job', probability: 'Gamble', probabilityTier: 'EVEN', successProbability: 0.4 }),
+    ]
+    await store.refreshAds()
+    stubSolve({ game: aGame({ score: 30 }), success: false })
+
+    await store.solve('job')
+
+    expect(calibration.rows).toMatchObject([
+      { label: 'Gamble', tier: 'EVEN', attempts: 1, successes: 0, predicted: 0.4 },
+    ])
+  })
+
+  it('counts the solver’s turns into the same tally as the player’s', async () => {
+    const store = await startedStore()
+    const calibration = useCalibrationStore()
+    stubAutoPlayStep(
+      aStep({
+        decision: aDecision({
+          targetId: 'chosen',
+          ads: [
+            anAdOption({ adId: 'chosen', probability: 'Risky', probabilityTier: 'EVEN', successProbability: 0.37 }),
+            anAdOption({ adId: 'other', verdict: 'OUTRANKED' }),
+          ],
+        }),
+        succeeded: true,
+      }),
+    )
+
+    await store.autoPlayStep(false)
+
+    expect(calibration.rows).toMatchObject([
+      { label: 'Risky', attempts: 1, successes: 1, predicted: 0.37 },
+    ])
+  })
+
+  it('records nothing for a turn that attempted no ad', async () => {
+    const store = await startedStore()
+    const calibration = useCalibrationStore()
+    stubAutoPlayStep(
+      aStep({
+        decision: aDecision({ move: 'INVESTIGATE_REPUTATION', targetId: null, ads: [] }),
+        message: null,
+      }),
+    )
+
+    await store.autoPlayStep(false)
+
+    expect(calibration.rows).toEqual([])
+  })
+
+  it('records nothing when the attempt never reached the server', async () => {
+    const store = await startedStore()
+    const calibration = useCalibrationStore()
+    server.use(
+      http.post('/api/games/:gameId/ads/:adId/solve', () =>
+        problem(503, 'UPSTREAM_UNAVAILABLE', 'Not responding.'),
+      ),
+    )
+
+    await store.solve(upstream.ads[0].adId)
+
+    expect(calibration.rows).toEqual([])
+  })
+
+  it('counts each game it has seen, so the tally can say what it spans', async () => {
+    const calibration = useCalibrationStore()
+    const store = await startedStore()
+    await store.startGame()
+
+    expect(calibration.games).toBe(2)
   })
 })

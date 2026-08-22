@@ -110,6 +110,7 @@ public class RiskAdjustedStrategy implements Strategy {
                 scored.ad().reward(),
                 scored.ad().expiresIn(),
                 scored.ad().probabilityLabel(),
+                scored.ad().probability().tier().name(),
                 scored.ad().successProbability(),
                 scored.score(),
                 verdict(scored, move))).toList();

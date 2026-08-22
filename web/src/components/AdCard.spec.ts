@@ -3,13 +3,18 @@ import { mount } from '@vue/test-utils'
 import AdCard from './AdCard.vue'
 import { anAd } from '../test/fixtures'
 import type { AdView } from '../api/types'
+import type { AdRead } from '../advisor/ranking'
+
+function aRead(overrides: Partial<AdRead> = {}): AdRead {
+  return { score: 12, band: 'fair', trap: false, ...overrides }
+}
 
 function render(
   ad: Partial<AdView> = {},
-  props: { advisor?: boolean; solving?: boolean; disabled?: boolean } = {},
+  props: { read?: AdRead | null; solving?: boolean; disabled?: boolean } = {},
 ) {
   return mount(AdCard, {
-    props: { ad: anAd(ad), advisor: false, solving: false, disabled: false, ...props },
+    props: { ad: anAd(ad), read: null, solving: false, disabled: false, ...props },
   })
 }
 
@@ -27,12 +32,31 @@ describe('AdCard', () => {
   it('attributes the estimate to the advisor and hedges it, once switched on', () => {
     const card = render(
       { reward: 42, successProbability: 0.74, expectedValue: 31.1 },
-      { advisor: true },
+      { read: aRead() },
     )
 
     expect(card.text()).toContain("Advisor's read")
     expect(card.text()).toContain('~75%')
     expect(card.text()).toContain('~31g')
+  })
+
+  it('names the value band as well as colouring it, and signs the number', () => {
+    expect(render({}, { read: aRead({ score: 41, band: 'strong' }) }).text()).toContain('+41g')
+    expect(render({}, { read: aRead({ score: 41, band: 'strong' }) }).text()).toContain('Strong')
+
+    const losing = render({}, { read: aRead({ score: -18, band: 'poor' }) })
+    expect(losing.text()).toContain('-18g')
+    expect(losing.text()).toContain('Not worth a life')
+  })
+
+  it('calls out a trap, which is the one ad a human is likelier to take than the bot', () => {
+    const trap = render({ reward: 400 }, { read: aRead({ score: -120, band: 'poor', trap: true }) })
+
+    expect(trap.text()).toContain('Trap')
+    expect(trap.text()).toContain('the job that ends a run')
+
+    const plain = render({ reward: 400 }, { read: aRead() })
+    expect(plain.text()).not.toContain('Trap')
   })
 
   it('keeps the model’s judgement out of the board’s own facts', () => {
@@ -43,7 +67,7 @@ describe('AdCard', () => {
     expect(plain.text()).not.toContain('richer than your level')
     expect(plain.text()).not.toContain('Never worth a turn')
 
-    const advised = render({ flags }, { advisor: true })
+    const advised = render({ flags }, { read: aRead() })
     expect(advised.text()).toContain('richer than your level')
     expect(advised.text()).toContain('Never worth a turn')
   })
@@ -54,7 +78,7 @@ describe('AdCard', () => {
   })
 
   it('still offers a hopeless ad, because which risks to take is the player’s call', async () => {
-    const card = render({ adId: 'doomed', flags: ['NEVER_ATTEMPT'] }, { advisor: true })
+    const card = render({ adId: 'doomed', flags: ['NEVER_ATTEMPT'] }, { read: aRead() })
 
     await card.get('button').trigger('click')
 
