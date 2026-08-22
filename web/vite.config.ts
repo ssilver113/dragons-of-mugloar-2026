@@ -25,6 +25,9 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
+    // Unit specs only. The Playwright suite in e2e/ matches the same *.spec.ts glob and would
+    // otherwise be collected here, where there is no browser to run it in.
+    include: ['src/**/*.spec.ts'],
     setupFiles: ['./src/test/setup.ts'],
     coverage: {
       provider: 'v8',
