@@ -11,6 +11,7 @@ import com.mugloar.dragons.mugloar.exception.GameOverException;
 import com.mugloar.dragons.mugloar.exception.InvalidActionException;
 import com.mugloar.dragons.mugloar.exception.MugloarException;
 import com.mugloar.dragons.mugloar.exception.MugloarProtocolException;
+import com.mugloar.dragons.mugloar.exception.MugloarRateLimitedException;
 import com.mugloar.dragons.mugloar.exception.MugloarUnavailableException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -171,6 +172,8 @@ public class RestMugloarClient implements MugloarClient {
             case 400 -> new InvalidActionException("Mugloar rejected the action: " + bodySnippet);
             case 404 -> new GameNotFoundException("Mugloar does not know this game: " + bodySnippet);
             case 410 -> new GameOverException("The game is over");
+            case 429 -> new MugloarRateLimitedException(
+                    "Mugloar is rate limiting us: " + bodySnippet);
             default -> status.is5xxServerError()
                     ? new MugloarUnavailableException(
                             "Mugloar failed with " + status + ": " + bodySnippet, status.value())

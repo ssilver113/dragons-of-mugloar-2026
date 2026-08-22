@@ -15,6 +15,7 @@ import com.mugloar.dragons.mugloar.exception.GameOverException;
 import com.mugloar.dragons.mugloar.exception.InvalidActionException;
 import com.mugloar.dragons.mugloar.exception.MugloarException;
 import com.mugloar.dragons.mugloar.exception.MugloarProtocolException;
+import com.mugloar.dragons.mugloar.exception.MugloarRateLimitedException;
 import com.mugloar.dragons.mugloar.exception.MugloarUnavailableException;
 import java.util.EnumSet;
 import java.util.List;
@@ -218,6 +219,17 @@ class GameControllerTest {
         mockMvc.perform(get("/api/games/{gameId}/ads", GAME_ID))
                 .andExpect(status().isBadGateway())
                 .andExpect(jsonPath("$.code").value("UPSTREAM_PROTOCOL"));
+    }
+
+    /** Passed through as a 429 rather than a 502: the pace is the problem, not the gateway. */
+    @Test
+    void mapsUpstreamRateLimitingToTooManyRequests() throws Exception {
+        when(games.listAds(GAME_ID)).thenThrow(
+                new MugloarRateLimitedException("Error 1015: You are being rate limited"));
+
+        mockMvc.perform(get("/api/games/{gameId}/ads", GAME_ID))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.code").value("UPSTREAM_RATE_LIMITED"));
     }
 
     @Test

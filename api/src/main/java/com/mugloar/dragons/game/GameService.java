@@ -60,4 +60,22 @@ public class GameService {
 
         return new SolveOutcome(updated, adId, solved.success(), solved.message());
     }
+
+    /**
+     * Spends a turn without risking anything, by investigating reputation — the only action that
+     * costs a turn and cannot cost a life. Worth having when no ad on the board is worth attempting
+     * and there is nothing affordable to buy: a fresh board beats a mission we expect to lose.
+     *
+     * <p>The reputation figures themselves are discarded. Nothing has been shown to depend on them,
+     * so the call is here for its turn, not its answer.
+     */
+    public GameState passTurn(String gameId) {
+        GameSession session = sessions.require(gameId);
+        GameState state = session.requireRunning();
+
+        client.investigateReputation(gameId);
+        GameState updated = state.afterTurnSpent();
+        session.setState(updated);
+        return updated;
+    }
 }

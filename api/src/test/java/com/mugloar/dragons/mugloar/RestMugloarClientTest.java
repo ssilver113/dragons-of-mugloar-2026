@@ -27,6 +27,7 @@ import com.mugloar.dragons.mugloar.exception.GameOverException;
 import com.mugloar.dragons.mugloar.exception.InvalidActionException;
 import com.mugloar.dragons.mugloar.exception.MugloarException;
 import com.mugloar.dragons.mugloar.exception.MugloarProtocolException;
+import com.mugloar.dragons.mugloar.exception.MugloarRateLimitedException;
 import com.mugloar.dragons.mugloar.exception.MugloarUnavailableException;
 import java.time.Duration;
 import java.util.List;
@@ -225,6 +226,21 @@ class RestMugloarClientTest {
 
             assertThatExceptionOfType(GameOverException.class)
                     .isThrownBy(() -> client.solve(GAME_ID, "LTyNBlYB"));
+        }
+
+        @Test
+        @DisplayName("a Cloudflare 429 is its own type, and is never retried into")
+        void mapsA429ToRateLimited() {
+            stubFor(get(urlPathEqualTo("/" + GAME_ID + "/messages")).willReturn(aResponse()
+                    .withStatus(429)
+                    .withHeader("Content-Type", "application/json")
+                    .withBody("{\"title\":\"Error 1015: You are being rate limited\"}")));
+
+            assertThatExceptionOfType(MugloarRateLimitedException.class)
+                    .isThrownBy(() -> client.listAds(GAME_ID))
+                    .satisfies(e -> assertThat(e.status()).isEqualTo(429));
+
+            verify(1, getRequestedFor(urlPathEqualTo("/" + GAME_ID + "/messages")));
         }
 
         @Test

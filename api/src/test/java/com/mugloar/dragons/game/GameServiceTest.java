@@ -7,6 +7,7 @@ import com.mugloar.dragons.ads.SuccessModel;
 import com.mugloar.dragons.mugloar.MugloarClient;
 import com.mugloar.dragons.mugloar.dto.AdResponse;
 import com.mugloar.dragons.mugloar.dto.GameStartedResponse;
+import com.mugloar.dragons.mugloar.dto.ReputationResponse;
 import com.mugloar.dragons.mugloar.dto.SolveResponse;
 import com.mugloar.dragons.mugloar.exception.MugloarUnavailableException;
 import java.time.Clock;
@@ -183,5 +184,22 @@ class GameServiceTest {
         assertThatThrownBy(() -> service.listAds(GAME_ID)).isInstanceOf(GameNotRunningException.class);
         assertThatThrownBy(() -> service.solve(GAME_ID, "LTyNBlYB"))
                 .isInstanceOf(GameNotRunningException.class);
+        assertThatThrownBy(() -> service.passTurn(GAME_ID))
+                .isInstanceOf(GameNotRunningException.class);
+    }
+
+    /**
+     * The reputation response carries no state, so the turn is applied locally. Verified against
+     * the live API: every ad aged by one and lives, gold, level and score were untouched.
+     */
+    @Test
+    void passingSpendsATurnAndMovesNothingElse() {
+        startGame();
+        sessions.require(GAME_ID).setState(new GameState(GAME_ID, 2, 140, 3, 400, 9));
+        when(client.investigateReputation(GAME_ID)).thenReturn(new ReputationResponse(0, 0, 0));
+
+        assertThat(service.passTurn(GAME_ID)).isEqualTo(new GameState(GAME_ID, 2, 140, 3, 400, 10));
+        assertThat(sessions.require(GAME_ID).state().turn()).isEqualTo(10);
+        verify(client, never()).solve(anyString(), anyString());
     }
 }

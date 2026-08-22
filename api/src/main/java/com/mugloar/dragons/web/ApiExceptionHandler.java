@@ -8,6 +8,7 @@ import com.mugloar.dragons.mugloar.exception.GameOverException;
 import com.mugloar.dragons.mugloar.exception.InvalidActionException;
 import com.mugloar.dragons.mugloar.exception.MugloarException;
 import com.mugloar.dragons.mugloar.exception.MugloarProtocolException;
+import com.mugloar.dragons.mugloar.exception.MugloarRateLimitedException;
 import com.mugloar.dragons.mugloar.exception.MugloarUnavailableException;
 import com.mugloar.dragons.shop.InsufficientGoldException;
 import com.mugloar.dragons.shop.ItemNotAvailableException;
@@ -90,6 +91,14 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         log.warn("Upstream rejected the action: {}", e.getMessage());
         return problem(HttpStatus.CONFLICT, ErrorCode.INVALID_ACTION,
                 "The game service rejected that action. Refresh and try again.");
+    }
+
+    /** Logged at warn, not error: going too fast is a pace problem, not a failure. */
+    @ExceptionHandler(MugloarRateLimitedException.class)
+    ProblemDetail handleRateLimited(MugloarRateLimitedException e) {
+        log.warn("Mugloar is rate limiting us: {}", e.getMessage());
+        return problem(HttpStatus.TOO_MANY_REQUESTS, ErrorCode.UPSTREAM_RATE_LIMITED,
+                "The game API is rate limiting us. Wait a moment, then carry on.");
     }
 
     @ExceptionHandler(MugloarUnavailableException.class)

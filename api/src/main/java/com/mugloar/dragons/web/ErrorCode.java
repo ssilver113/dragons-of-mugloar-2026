@@ -30,6 +30,9 @@ public enum ErrorCode {
     /** The upstream refused the action as invalid. */
     INVALID_ACTION,
 
+    /** The upstream is rate limiting us. Not a fault — wait, then carry on. */
+    UPSTREAM_RATE_LIMITED,
+
     /** The upstream is down or unreachable. Retrying later may work. */
     UPSTREAM_UNAVAILABLE,
 

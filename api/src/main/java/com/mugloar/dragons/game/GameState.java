@@ -34,6 +34,15 @@ public record GameState(String gameId, int lives, int gold, int level, int score
     }
 
     /**
+     * A turn spent on something that moves nothing else. Reputation is the only such action, and
+     * its response carries no state at all, so the turn is applied here instead of read back —
+     * confirmed live: every ad aged by one and lives, gold and score were untouched.
+     */
+    public GameState afterTurnSpent() {
+        return new GameState(gameId, lives, gold, level, score, turn + 1);
+    }
+
+    /**
      * Merges a purchase, which is the one response that does report {@code level}. {@code score}
      * is carried forward: it counts gold earned, so spending never moves it.
      */

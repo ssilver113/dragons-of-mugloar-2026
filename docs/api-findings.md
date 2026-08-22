@@ -133,6 +133,7 @@ Every 100-gold item behaves identically (+1 level) and every 300-gold item behav
 - `expiresIn` starts at 7 and decrements by 1 **every turn**, whichever action consumed it.
 - **A purchase consumes a turn — including a failed one.** Buying with insufficient gold still advanced the turn and still aged every ad by 1. Confirmed: all 10 ads went 7 → 6 across a purchase that returned `shoppingSuccess:false`.
 - An ad is gone from the board once it expires; it is not returned with `expiresIn:0`.
+- **A failed ad also leaves the board**, immediately — it is not offered again for a second try. Confirmed on four failures across four games (`Rather detrimental`, `Risky`, `Hmmm....`, `Suicide mission`); in every case the ad was absent from the very next `/messages`. So a client never has to de-duplicate against its own attempts to avoid picking one twice.
 - Solving an ad twice returns `400 Bad Request`.
 
 The turn cost of shopping is a real strategic cost, not bookkeeping: every potion bought is an ad not solved and 1 expiry tick against every ad on the board.
@@ -152,9 +153,9 @@ Error handling cannot assume JSON. **Most failures return an HTML error page**, 
 
 Two traps: a failed purchase is a `200` that must be detected by reading `shoppingSuccess`, and game-over is the one error path that *is* JSON. A client that parses every non-2xx as JSON will throw on the HTML pages; one that trusts `200` will silently miss failed purchases.
 
-## Cloudflare user-agent filtering
+## Cloudflare user-agent filtering and rate limiting
 
-The API sits behind Cloudflare and rejects some clients with **`403`, body `error code: 1010`** — a browser-signature ban, not rate limiting.
+The API sits behind Cloudflare, which turns callers away for two separate reasons: a browser-signature ban (**`403`, body `error code: 1010`**) and rate limiting (**`429`, error 1015**).
 
 | User-Agent | Result |
 |---|---|
@@ -167,7 +168,11 @@ The API sits behind Cloudflare and rejects some clients with **`403`, body `erro
 
 Only the `Python-urllib` signature was blocked, so the JDK client works untouched. The backend should still send an explicit descriptive `User-Agent` so this cannot become a silent failure if the rules change.
 
-No rate limiting was observed across roughly 3000 requests in an hour, and no authentication is required.
+**Rate limiting is real, and the original exploration missed it.** Roughly 3000 requests spread over an hour drew no `429` at all, which is why this document first recorded that there was none. An automated player is a different traffic shape: three calls per turn with no pause between them trips `429` with a Cloudflare **error 1015** body after a few hundred turns. The limit is on the burst, not the hourly total.
+
+Two consequences. A client must classify `429` separately from other failures — it is neither a server fault nor a game error, and the only correct response is to wait. And it must never retry into it, which would turn a pause into a ban.
+
+No authentication is required.
 
 ## Solve result messages
 
@@ -179,4 +184,8 @@ Exactly three strings, suitable for direct display:
 
 ## Reputation
 
-`POST /{gameId}/investigate/reputation` returns `{people, state, underworld}`, starting at `0/0/0`. It consumes a turn like any other action. Whether reputation influences ad availability or success rates was **not tested** — deferred until the benchmark can measure whether it moves the score distribution.
+`POST /{gameId}/investigate/reputation` returns `{people, state, underworld}`, starting at `0/0/0`. Whether reputation influences ad availability or success rates was **not tested** — deferred until the benchmark can measure whether it moves the score distribution.
+
+Its turn cost was measured exactly, because it is the one action whose response carries **no game state at all**: every ad aged `7 → 6` and the next solve reported turn 2, with lives, gold, level and score untouched. So it costs precisely one turn and moves nothing else, and a client that wants to keep tracking state must apply that turn itself.
+
+That makes it the only move that spends a turn without risking a life — useful as a deliberate pass when no ad is worth attempting.
