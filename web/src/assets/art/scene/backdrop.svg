@@ -1,90 +1,39 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" fill="none" aria-hidden="true" focusable="false">
   <defs>
     <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#090d17"/>
-      <stop offset="0.55" stop-color="#1d2437"/>
-      <stop offset="1" stop-color="#090d17"/>
+      <stop offset="0" stop-color="#f2ecdd"/>
+      <stop offset="0.42" stop-color="#dfe2df"/>
+      <stop offset="1" stop-color="#c3cbc6"/>
     </linearGradient>
-    <radialGradient id="moon" cx="0.5" cy="0.5" r="0.5">
-      <stop offset="0" stop-color="#dfb956" stop-opacity="0.55"/>
-      <stop offset="0.35" stop-color="#dfb956" stop-opacity="0.18"/>
-      <stop offset="1" stop-color="#dfb956" stop-opacity="0"/>
-    </radialGradient>
+    <linearGradient id="far" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a9b6b6"/>
+      <stop offset="1" stop-color="#cdd5d1"/>
+    </linearGradient>
+    <linearGradient id="mid" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8b9c99"/>
+      <stop offset="1" stop-color="#b6c1bb"/>
+    </linearGradient>
+    <linearGradient id="near" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5f7169"/>
+      <stop offset="1" stop-color="#93a297"/>
+    </linearGradient>
+    <linearGradient id="haze" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f2ecdd" stop-opacity="0"/>
+      <stop offset="1" stop-color="#eae7d6" stop-opacity="0.85"/>
+    </linearGradient>
   </defs>
+
   <rect width="1600" height="900" fill="url(#sky)"/>
-  <circle cx="724" cy="235" r="1.9" fill="#efe7d8" opacity="0.31"/>
-  <circle cx="813" cy="247" r="1.0" fill="#efe7d8" opacity="0.33"/>
-  <circle cx="1008" cy="333" r="0.9" fill="#efe7d8" opacity="0.26"/>
-  <circle cx="145" cy="340" r="1.6" fill="#efe7d8" opacity="0.16"/>
-  <circle cx="1572" cy="405" r="1.6" fill="#efe7d8" opacity="0.37"/>
-  <circle cx="252" cy="6" r="1.4" fill="#efe7d8" opacity="0.17"/>
-  <circle cx="304" cy="102" r="0.8" fill="#efe7d8" opacity="0.31"/>
-  <circle cx="705" cy="354" r="1.4" fill="#efe7d8" opacity="0.37"/>
-  <circle cx="800" cy="278" r="1.3" fill="#efe7d8" opacity="0.25"/>
-  <circle cx="1596" cy="418" r="1.8" fill="#efe7d8" opacity="0.40"/>
-  <circle cx="504" cy="96" r="1.1" fill="#efe7d8" opacity="0.17"/>
-  <circle cx="1226" cy="168" r="1.8" fill="#efe7d8" opacity="0.29"/>
-  <circle cx="1533" cy="356" r="0.8" fill="#efe7d8" opacity="0.22"/>
-  <circle cx="1456" cy="197" r="2.0" fill="#efe7d8" opacity="0.29"/>
-  <circle cx="117" cy="264" r="1.7" fill="#efe7d8" opacity="0.24"/>
-  <circle cx="139" cy="140" r="2.0" fill="#efe7d8" opacity="0.42"/>
-  <circle cx="189" cy="103" r="0.9" fill="#efe7d8" opacity="0.17"/>
-  <circle cx="1275" cy="75" r="1.5" fill="#efe7d8" opacity="0.31"/>
-  <circle cx="305" cy="307" r="1.0" fill="#efe7d8" opacity="0.38"/>
-  <circle cx="186" cy="177" r="1.1" fill="#efe7d8" opacity="0.24"/>
-  <circle cx="1553" cy="337" r="1.2" fill="#efe7d8" opacity="0.46"/>
-  <circle cx="337" cy="166" r="1.8" fill="#efe7d8" opacity="0.37"/>
-  <circle cx="161" cy="416" r="1.1" fill="#efe7d8" opacity="0.24"/>
-  <circle cx="1236" cy="138" r="1.2" fill="#efe7d8" opacity="0.18"/>
-  <circle cx="144" cy="245" r="1.1" fill="#efe7d8" opacity="0.36"/>
-  <circle cx="595" cy="190" r="2.0" fill="#efe7d8" opacity="0.32"/>
-  <circle cx="919" cy="364" r="1.0" fill="#efe7d8" opacity="0.20"/>
-  <circle cx="1453" cy="343" r="1.1" fill="#efe7d8" opacity="0.22"/>
-  <circle cx="1183" cy="395" r="1.0" fill="#efe7d8" opacity="0.48"/>
-  <circle cx="1412" cy="253" r="1.3" fill="#efe7d8" opacity="0.19"/>
-  <circle cx="62" cy="404" r="1.1" fill="#efe7d8" opacity="0.40"/>
-  <circle cx="411" cy="346" r="1.5" fill="#efe7d8" opacity="0.25"/>
-  <circle cx="281" cy="303" r="0.9" fill="#efe7d8" opacity="0.23"/>
-  <circle cx="895" cy="358" r="1.5" fill="#efe7d8" opacity="0.25"/>
-  <circle cx="1468" cy="86" r="0.8" fill="#efe7d8" opacity="0.24"/>
-  <circle cx="713" cy="25" r="1.0" fill="#efe7d8" opacity="0.28"/>
-  <circle cx="915" cy="55" r="1.2" fill="#efe7d8" opacity="0.46"/>
-  <circle cx="1569" cy="276" r="1.6" fill="#efe7d8" opacity="0.35"/>
-  <circle cx="225" cy="15" r="0.8" fill="#efe7d8" opacity="0.47"/>
-  <circle cx="1122" cy="404" r="0.8" fill="#efe7d8" opacity="0.37"/>
-  <circle cx="772" cy="307" r="1.2" fill="#efe7d8" opacity="0.50"/>
-  <circle cx="120" cy="229" r="1.7" fill="#efe7d8" opacity="0.47"/>
-  <circle cx="1179" cy="296" r="1.8" fill="#efe7d8" opacity="0.47"/>
-  <circle cx="563" cy="288" r="1.9" fill="#efe7d8" opacity="0.45"/>
-  <circle cx="667" cy="332" r="1.8" fill="#efe7d8" opacity="0.35"/>
-  <circle cx="1000" cy="161" r="1.5" fill="#efe7d8" opacity="0.36"/>
-  <circle cx="128" cy="269" r="2.0" fill="#efe7d8" opacity="0.46"/>
-  <circle cx="1165" cy="163" r="1.7" fill="#efe7d8" opacity="0.35"/>
-  <circle cx="705" cy="352" r="0.9" fill="#efe7d8" opacity="0.41"/>
-  <circle cx="48" cy="253" r="1.4" fill="#efe7d8" opacity="0.23"/>
-  <circle cx="1117" cy="209" r="1.5" fill="#efe7d8" opacity="0.47"/>
-  <circle cx="409" cy="5" r="1.2" fill="#efe7d8" opacity="0.39"/>
-  <circle cx="324" cy="71" r="1.9" fill="#efe7d8" opacity="0.38"/>
-  <circle cx="707" cy="375" r="1.2" fill="#efe7d8" opacity="0.38"/>
-  <circle cx="318" cy="181" r="1.8" fill="#efe7d8" opacity="0.47"/>
-  <circle cx="1408" cy="161" r="1.5" fill="#efe7d8" opacity="0.26"/>
-  <circle cx="218" cy="209" r="1.8" fill="#efe7d8" opacity="0.45"/>
-  <circle cx="1138" cy="399" r="1.1" fill="#efe7d8" opacity="0.21"/>
-  <circle cx="721" cy="116" r="1.1" fill="#efe7d8" opacity="0.29"/>
-  <circle cx="1001" cy="207" r="1.2" fill="#efe7d8" opacity="0.44"/>
-  <circle cx="1571" cy="190" r="0.9" fill="#efe7d8" opacity="0.16"/>
-  <circle cx="1397" cy="17" r="1.7" fill="#efe7d8" opacity="0.35"/>
-  <circle cx="494" cy="332" r="0.8" fill="#efe7d8" opacity="0.20"/>
-  <circle cx="728" cy="10" r="1.8" fill="#efe7d8" opacity="0.23"/>
-  <circle cx="225" cy="20" r="1.6" fill="#efe7d8" opacity="0.31"/>
-  <circle cx="1008" cy="275" r="1.8" fill="#efe7d8" opacity="0.49"/>
-  <circle cx="1095" cy="84" r="1.4" fill="#efe7d8" opacity="0.21"/>
-  <circle cx="17" cy="198" r="1.7" fill="#efe7d8" opacity="0.21"/>
-  <circle cx="436" cy="145" r="1.6" fill="#efe7d8" opacity="0.33"/>
-  <circle cx="983" cy="318" r="1.3" fill="#efe7d8" opacity="0.43"/>
-  <circle cx="1180" cy="210" r="300" fill="url(#moon)"/>
-  <circle cx="1180" cy="210" r="52" fill="#dfb956" opacity="0.35"/>
-  <path d="M-50 531L94 546L245 574L341 506L515 534L629 615L766 597L903 575L1008 575L1185 563L1349 579L1446 588L1595 538L1650 900L-50 900Z" fill="#12182a"/>
-  <path d="M-50 634L55 664L152 653L279 610L420 608L553 611L652 643L825 616L937 661L1122 657L1252 693L1346 682L1465 618L1567 633L1650 900L-50 900Z" fill="#0d1220"/>
-  <path d="M-50 746L109 771L283 741L397 739L509 774L612 762L723 748L857 780L1007 731L1125 739L1302 779L1473 780L1637 787L1650 900L-50 900Z" fill="#090d17"/>
+
+  <!-- Three ridges, each paler and softer than the one in front of it. Atmospheric perspective is
+       the whole illusion: distance here is a matter of contrast, not of scale. -->
+  <path d="M0 470 L180 396 L322 442 L470 358 L640 430 L806 372 L972 438 L1140 380 L1310 444 L1462 392 L1600 448 V900 H0Z" fill="url(#far)" opacity="0.55"/>
+  <path d="M0 560 L152 496 L300 548 L448 470 L604 542 L764 486 L920 552 L1082 494 L1244 556 L1408 500 L1600 560 V900 H0Z" fill="url(#mid)" opacity="0.5"/>
+
+  <!-- The near treeline. Kept low and to the edges: the middle of the frame is where the board
+       sits, and a silhouette behind it would fight the parchment for attention. -->
+  <path d="M0 704 L44 660 L82 700 L128 648 L170 698 L214 664 L262 706 L308 672 L356 712 L404 684 L452 718 L500 700 L548 726 L1600 742 V900 H0Z" fill="url(#near)" opacity="0.42"/>
+  <path d="M1600 690 L1556 646 L1518 688 L1472 636 L1430 686 L1386 652 L1338 694 L1292 660 L1244 700 L1196 674 L1148 710 L1100 694 L1052 722 L0 748 V900 H0Z" fill="url(#near)" opacity="0.36"/>
+
+  <rect y="380" width="1600" height="520" fill="url(#haze)"/>
 </svg>

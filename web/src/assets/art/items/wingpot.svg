@@ -1,10 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true" focusable="false">
   <defs><clipPath id="wingpot-body"><path d="M20 9h8v9.2a11.5 11.5 0 1 1-8 0Z"/></clipPath></defs>
-  <path d="M20 9h8v9.2a11.5 11.5 0 1 1-8 0Z" fill="#151a27"/>
-  <rect x="12" y="27" width="24" height="19" fill="#a9713c" clip-path="url(#wingpot-body)"/>
-  <path d="M20 9h8v9.2a11.5 11.5 0 1 1-8 0Z" stroke="#dfb956" stroke-width="2.4" stroke-linejoin="round"/>
-  <rect x="17.5" y="4" width="13" height="6" rx="2" fill="#dfb956"/>
+  <path d="M20 9h8v9.2a11.5 11.5 0 1 1-8 0Z" fill="#e4d4b4"/>
+  <rect x="12" y="27" width="24" height="19" fill="#a05f1c" clip-path="url(#wingpot-body)"/>
+  <path d="M20 9h8v9.2a11.5 11.5 0 1 1-8 0Z" stroke="#5c3d28" stroke-width="2.4" stroke-linejoin="round"/>
+  <rect x="17.5" y="4" width="13" height="6" rx="2" fill="#5c3d28"/>
   <path d="M24 41c-5.5 0-10-3.2-11-8.6 4.5 1 8 3.2 11 6.4 3-3.2 6.5-5.4 11-6.4-1 5.4-5.5 8.6-11 8.6Z"
-        fill="#efe7d8"/>
-  <path d="M41 8l1.4 3.6L46 13l-3.6 1.4L41 18l-1.4-3.6L36 13l3.6-1.4Z" fill="#dfb956"/>
+        fill="#f4ecdb"/>
+  <path d="M41 8l1.4 3.6L46 13l-3.6 1.4L41 18l-1.4-3.6L36 13l3.6-1.4Z" fill="#5c3d28"/>
 </svg>

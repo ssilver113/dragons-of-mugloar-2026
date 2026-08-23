@@ -133,11 +133,3 @@ whole game to its end. Running it on all three engines is where the cross-browse
 
 Coverage: `./gradlew jacocoTestReport` and `npm run test:coverage`. Reported, never gated. All
 three suites run in CI on every push.
-
-## Credits
-
-Nothing here is borrowed. There is no webfont: the display face is Georgia with a serif fallback,
-which every desktop already has, so the app ships no font file and makes no font request. Artwork
-is hand-authored SVG in `web/src/assets/art/`, resolved by stem so a raster set dropped into the
-same folders replaces it without a code change. The parchment is CSS — layered gradients over an
-`feTurbulence` tile, not a texture download.

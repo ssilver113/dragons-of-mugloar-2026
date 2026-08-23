@@ -1,13 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 400" preserveAspectRatio="none" fill="none" aria-hidden="true" focusable="false">
   <defs>
     <linearGradient id="fade" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#1d2437" stop-opacity="0"/>
-      <stop offset="0.5" stop-color="#1d2437" stop-opacity="0.55"/>
-      <stop offset="1" stop-color="#1d2437" stop-opacity="0"/>
+      <stop offset="0" stop-color="#f4efe1" stop-opacity="0"/>
+      <stop offset="0.5" stop-color="#f4efe1" stop-opacity="0.6"/>
+      <stop offset="1" stop-color="#f4efe1" stop-opacity="0"/>
     </linearGradient>
   </defs>
-  <ellipse cx="180" cy="170" rx="340" ry="70" fill="url(#fade)"/>
-  <ellipse cx="620" cy="230" rx="420" ry="60" fill="url(#fade)"/>
-  <ellipse cx="1080" cy="150" rx="380" ry="80" fill="url(#fade)"/>
-  <ellipse cx="1480" cy="250" rx="360" ry="55" fill="url(#fade)"/>
+  <ellipse cx="380" cy="210" rx="620" ry="120" fill="url(#fade)"/>
+  <ellipse cx="1080" cy="170" rx="700" ry="140" fill="url(#fade)"/>
+  <ellipse cx="1480" cy="250" rx="480" ry="100" fill="url(#fade)"/>
 </svg>
