@@ -44,7 +44,9 @@ describe('CalibrationTable', () => {
   })
 
   it('refuses to read a rate off two attempts', () => {
-    const table = render([aRow({ attempts: 2, successes: 2, observed: 1, delta: 0.13, enough: false })])
+    const table = render([
+      aRow({ attempts: 2, successes: 2, observed: 1, delta: 0.13, enough: false }),
+    ])
 
     expect(table.text()).toContain('too few to read')
     expect(table.text()).not.toContain('too cautious')

@@ -85,7 +85,10 @@ const filteredOut = computed(() => board.value.length > 0 && visible.value.lengt
       three on a phone moved everything under the tabs.
     -->
     <div class="flex flex-wrap items-center justify-between gap-x-2 gap-y-2 sm:gap-x-4">
-      <h2 id="board-heading" class="flex items-center gap-1.5 text-base font-semibold sm:gap-2 sm:text-lg">
+      <h2
+        id="board-heading"
+        class="flex items-center gap-1.5 text-base font-semibold sm:gap-2 sm:text-lg"
+      >
         <AppIcon name="board" :size="20" class="size-4 sm:size-5" />
         Message board
       </h2>
@@ -181,10 +184,7 @@ const filteredOut = computed(() => board.value.length > 0 && visible.value.lengt
       No ads on the board right now. Refresh to see what comes in.
     </p>
 
-    <p
-      v-else-if="filteredOut"
-      class="parchment torn p-6 text-center text-ink-muted"
-    >
+    <p v-else-if="filteredOut" class="parchment torn p-6 text-center text-ink-muted">
       Every job on the board is filtered out. Loosen the filters to see them.
     </p>
 

@@ -25,9 +25,18 @@ const props = defineProps<{
 }>()
 
 const PENDING: Record<PendingKind, { title: string; body: string }> = {
-  solve: { title: 'Taking the job…', body: 'The dragon is out. The board will tell us how it went.' },
-  purchase: { title: 'At the counter…', body: 'Paying up. A purchase costs a turn whether or not the shop agrees to it.' },
-  investigation: { title: 'The scouts are out…', body: 'A turn spent and nothing risked — the only move that cannot cost a life.' },
+  solve: {
+    title: 'Taking the job…',
+    body: 'The dragon is out. The board will tell us how it went.',
+  },
+  purchase: {
+    title: 'At the counter…',
+    body: 'Paying up. A purchase costs a turn whether or not the shop agrees to it.',
+  },
+  investigation: {
+    title: 'The scouts are out…',
+    body: 'A turn spent and nothing risked — the only move that cannot cost a life.',
+  },
 }
 
 const IDLE = {
@@ -59,9 +68,7 @@ const state = computed(() => {
   return { kind: 'idle' as const, ...IDLE }
 })
 
-const tone = computed(() =>
-  state.value.kind === 'outcome' ? TONES[props.outcome!.tone] : '',
-)
+const tone = computed(() => (state.value.kind === 'outcome' ? TONES[props.outcome!.tone] : ''))
 
 /**
  * Only a finished turn is announced. The waiting states are already spoken by the control that
@@ -77,9 +84,7 @@ const live = computed(() => (state.value.kind === 'outcome' ? 'polite' : 'off'))
  */
 const MOODS = { success: 'victorious', failure: 'defeated', info: 'idle' } as const
 
-const mood = computed(() =>
-  state.value.kind === 'outcome' ? MOODS[props.outcome!.tone] : 'idle',
-)
+const mood = computed(() => (state.value.kind === 'outcome' ? MOODS[props.outcome!.tone] : 'idle'))
 </script>
 
 <template>

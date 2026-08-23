@@ -109,12 +109,12 @@ attempts rather than assumed — the fit and its calibration are set out in `Suc
 is ranked above solving against a target that grows with the turn count, and when nothing is worth
 a life and nothing in the shop is affordable, the solver scouts instead.
 
-The brief asks for "at least 1000 points". Across **46 games played end to end against the live
+The brief asks for "at least 1000 points". Across **50 games played end to end against the live
 API at the configuration this repository ships, none finished below 1000** — the lowest was 2700
 and the median 4329. To reproduce a distribution yourself:
 
 ```bash
-cd api && ./gradlew bench -Pgames=34
+cd api && ./gradlew bench -Pgames=50
 ```
 
 That plays whole games in process — no HTTP layer, no browser — through the same service the

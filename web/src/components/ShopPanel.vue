@@ -38,11 +38,19 @@ const failed = computed(() => props.status === 'error' && props.items.length ===
     <p class="-mt-1 text-xs text-ink-muted">Buying costs a turn, and ages every ad by one.</p>
 
     <ul v-if="loading" class="flex flex-col gap-2" aria-hidden="true">
-      <li v-for="n in 4" :key="n" class="h-12 rounded-lg bg-surface-raised motion-safe:animate-pulse" />
+      <li
+        v-for="n in 4"
+        :key="n"
+        class="h-12 rounded-lg bg-surface-raised motion-safe:animate-pulse"
+      />
     </ul>
     <p v-if="loading" class="sr-only" role="status">Loading the shop.</p>
 
-    <div v-else-if="failed" class="rounded-lg border border-danger/50 bg-danger/10 p-4" role="alert">
+    <div
+      v-else-if="failed"
+      class="rounded-lg border border-danger/50 bg-danger/10 p-4"
+      role="alert"
+    >
       <p class="font-semibold">The shop could not be loaded.</p>
       <button
         type="button"

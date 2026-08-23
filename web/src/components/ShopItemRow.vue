@@ -28,9 +28,7 @@ const effect = computed(() => {
   return parts.join(' and ')
 })
 
-const icon = computed(() =>
-  itemArt(props.item.id, props.item.livesGained, props.item.levelsGained),
-)
+const icon = computed(() => itemArt(props.item.id, props.item.livesGained, props.item.levelsGained))
 
 const affordable = computed(() => props.item.cost <= props.gold)
 const shortfall = computed(() => props.item.cost - props.gold)

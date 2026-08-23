@@ -4,13 +4,7 @@ import { ApiError, api } from '../api/client'
 import { endsTheSession, present } from '../api/errorPresentation'
 import { useCalibrationStore } from './calibration'
 import { persisted } from './persistence'
-import type {
-  AdView,
-  AutoPlayStepView,
-  GameView,
-  ReputationView,
-  ShopItemView,
-} from '../api/types'
+import type { AdView, AutoPlayStepView, GameView, ReputationView, ShopItemView } from '../api/types'
 
 export type RequestStatus = 'idle' | 'pending' | 'ready' | 'error'
 

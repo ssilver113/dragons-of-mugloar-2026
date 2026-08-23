@@ -42,7 +42,10 @@ export function persisted<T>(area: StorageArea, key: string): Persisted<T> {
 
     write: (value: T) => {
       try {
-        storage(area)?.setItem(key, JSON.stringify({ version: VERSION, value } satisfies Envelope<T>))
+        storage(area)?.setItem(
+          key,
+          JSON.stringify({ version: VERSION, value } satisfies Envelope<T>),
+        )
       } catch {
         // Quota, or a serialiser that met something it could not describe. Either way the game
         // is unaffected; only the memory of it is.

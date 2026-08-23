@@ -69,8 +69,8 @@ const reading = (faction: Faction): string => {
     </dl>
 
     <p v-else class="text-xs text-ink-muted">
-      Nobody has scouted this dragon's reputation yet. Sending scouts costs a turn and ages every
-      ad by one — but it is the only move that cannot cost a life.
+      Nobody has scouted this dragon's reputation yet. Sending scouts costs a turn and ages every ad
+      by one — but it is the only move that cannot cost a life.
     </p>
   </section>
 </template>

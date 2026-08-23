@@ -92,4 +92,3 @@ export const iconArt = (name: IconName): string => art(`icons/${name}`)
 export const backdropArt = art('scene/backdrop')
 
 export const wordmarkArt = art('title/wordmark')
-

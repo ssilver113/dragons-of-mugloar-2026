@@ -3,7 +3,11 @@ import { mount } from '@vue/test-utils'
 import ReputationPanel from './ReputationPanel.vue'
 import type { ReputationView } from '../api/types'
 
-function render(props: { reputation?: ReputationView | null; disabled?: boolean; scouting?: boolean }) {
+function render(props: {
+  reputation?: ReputationView | null
+  disabled?: boolean
+  scouting?: boolean
+}) {
   return mount(ReputationPanel, {
     props: { reputation: null, disabled: false, scouting: false, ...props },
   })

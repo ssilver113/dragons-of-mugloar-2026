@@ -125,7 +125,10 @@ const ended = computed(() => (store.ending === null ? null : ENDINGS[store.endin
 const endPanel = ref<HTMLElement | null>(null)
 // An open confirmation belongs to the run that was live when it opened. A game that ends under it
 // answers the question, and the next game must not inherit a half-pressed button.
-watch(() => store.playable, () => (abandoning.value = false))
+watch(
+  () => store.playable,
+  () => (abandoning.value = false),
+)
 watch(ended, async (now, before) => {
   if (now && !before) {
     await nextTick()
@@ -247,8 +250,8 @@ const banner = computed(() => {
         tone="info"
         title="The game from before could not be picked up"
       >
-        The server had already let that session go — it aged out, or the API restarted. A session
-        is never picked back up, so this one starts fresh.
+        The server had already let that session go — it aged out, or the API restarted. A session is
+        never picked back up, so this one starts fresh.
       </MessageBanner>
 
       <section class="parchment torn flex flex-col items-start gap-4 p-6">
@@ -346,7 +349,11 @@ const banner = computed(() => {
           :key="panel.id"
           type="button"
           class="flex-1 rounded-md px-3 py-1.5 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-          :class="view === panel.id ? 'relief-pressed bg-accent text-surface' : 'text-ink-muted hover:text-ink'"
+          :class="
+            view === panel.id
+              ? 'relief-pressed bg-accent text-surface'
+              : 'text-ink-muted hover:text-ink'
+          "
           :aria-pressed="view === panel.id"
           @click="view = panel.id"
         >

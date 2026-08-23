@@ -11,7 +11,8 @@ export const REASONS: Record<Reason, string> = {
   LEVELLING_BEHIND_TARGET: 'Behind the level this board expects by now, so it bought the catch-up.',
   BEST_RISK_ADJUSTED_AD: 'Best reward on the board once the risk to a life is priced in.',
   LEVELLING_NO_AD_WORTH_A_LIFE: 'Nothing was worth a life, so the turn bought a level instead.',
-  HEALING_NO_AD_WORTH_A_LIFE: 'Nothing was worth a life and levelling was out of reach, so it bought one.',
+  HEALING_NO_AD_WORTH_A_LIFE:
+    'Nothing was worth a life and levelling was out of reach, so it bought one.',
   PASSING_NOTHING_WORTH_A_TURN: 'Nothing worth a life, nothing affordable. Passing beats gambling.',
 }
 

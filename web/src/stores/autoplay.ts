@@ -33,9 +33,7 @@ export interface LogEntry {
  * loop declining to keep going, and both are resumable by the player.
  */
 export type Halt =
-  | { kind: 'finished' }
-  | { kind: 'stalled'; passes: number }
-  | { kind: 'error'; error: ApiError }
+  { kind: 'finished' } | { kind: 'stalled'; passes: number } | { kind: 'error'; error: ApiError }
 
 /**
  * Passes in a row before the loop stops to ask. At one life with too little gold to buy anything,

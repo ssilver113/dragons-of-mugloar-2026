@@ -6,7 +6,13 @@ import { server } from '../mocks/server'
 import { useGameStore } from './game'
 import { useCalibrationStore } from './calibration'
 import { aDecision, aGame, aStep, anAd, anAdOption, anItem, problem } from '../test/fixtures'
-import type { AdView, AutoPlayStepView, GameView, ShopItemView, SolveResultView } from '../api/types'
+import type {
+  AdView,
+  AutoPlayStepView,
+  GameView,
+  ShopItemView,
+  SolveResultView,
+} from '../api/types'
 
 /** What the fake server currently believes; tests move it to set up the next response. */
 const upstream = {
@@ -346,7 +352,12 @@ describe('buying an item', () => {
     const store = await startedStore()
     server.use(
       http.post('/api/games/:gameId/ads/:adId/solve', () =>
-        HttpResponse.json({ game: aGame({ gold: 120, turn: 1 }), adId: 'ages', success: true, message: 'Done' }),
+        HttpResponse.json({
+          game: aGame({ gold: 120, turn: 1 }),
+          adId: 'ages',
+          success: true,
+          message: 'Done',
+        }),
       ),
     )
 
@@ -397,7 +408,12 @@ describe('calibration', () => {
     const store = await startedStore()
     const calibration = useCalibrationStore()
     upstream.ads = [
-      anAd({ adId: 'job', probability: 'Gamble', probabilityTier: 'EVEN', successProbability: 0.4 }),
+      anAd({
+        adId: 'job',
+        probability: 'Gamble',
+        probabilityTier: 'EVEN',
+        successProbability: 0.4,
+      }),
     ]
     await store.refreshAds()
     stubSolve({ game: aGame({ score: 30 }), success: false })
@@ -417,7 +433,12 @@ describe('calibration', () => {
         decision: aDecision({
           targetId: 'chosen',
           ads: [
-            anAdOption({ adId: 'chosen', probability: 'Risky', probabilityTier: 'EVEN', successProbability: 0.37 }),
+            anAdOption({
+              adId: 'chosen',
+              probability: 'Risky',
+              probabilityTier: 'EVEN',
+              successProbability: 0.37,
+            }),
             anAdOption({ adId: 'other', verdict: 'OUTRANKED' }),
           ],
         }),

@@ -107,7 +107,10 @@ const verdictClass = (ruledOut: boolean) => (ruledOut ? 'text-ink-muted' : 'text
               <td class="py-1 pr-2">{{ item.name }}</td>
               <td class="py-1 pr-2 text-right tabular-nums">{{ item.cost }}g</td>
               <td class="py-1 pr-2">{{ itemEffect(item) }}</td>
-              <td class="py-1" :class="item.verdict === 'CHOSEN' ? 'font-semibold text-accent' : ''">
+              <td
+                class="py-1"
+                :class="item.verdict === 'CHOSEN' ? 'font-semibold text-accent' : ''"
+              >
                 {{ VERDICTS[item.verdict] }}
               </td>
             </tr>

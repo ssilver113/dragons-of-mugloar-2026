@@ -58,8 +58,8 @@ const hidden = computed(() => props.entries.length - shown.value.length)
       tone="info"
       title="The solver has stopped to check in"
     >
-      It passed {{ halt.passes }} turns in a row — nothing on the board was worth a life and
-      nothing in the shop was affordable. Passing is safe, so the game will not end on its own.
+      It passed {{ halt.passes }} turns in a row — nothing on the board was worth a life and nothing
+      in the shop was affordable. Passing is safe, so the game will not end on its own.
       <button
         type="button"
         class="ml-1 rounded font-semibold text-accent underline hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
@@ -81,10 +81,7 @@ const hidden = computed(() => props.entries.length - shown.value.length)
       </button>
     </MessageBanner>
 
-    <p
-      v-if="!entries.length"
-      class="parchment torn p-6 text-center text-ink-muted"
-    >
+    <p v-if="!entries.length" class="parchment torn p-6 text-center text-ink-muted">
       No turns taken yet. Press Run to hand the game over, or Step to watch one turn at a time.
     </p>
 

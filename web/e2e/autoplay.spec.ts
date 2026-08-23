@@ -11,7 +11,9 @@ test('one solver turn is logged with the reasoning behind it', async ({ page }) 
   await expect(stat(page, 'Score')).toHaveText('42')
   const log = page.getByRole('region', { name: 'Decision log' })
   await expect(log.getByText('1 turn, newest first')).toBeVisible()
-  await expect(log.getByText('Escort a merchant caravan to Ravenhold (job 1)').first()).toBeVisible()
+  await expect(
+    log.getByText('Escort a merchant caravan to Ravenhold (job 1)').first(),
+  ).toBeVisible()
 })
 
 test('auto-play runs the game to its end and the log outlives the board', async ({ page }) => {

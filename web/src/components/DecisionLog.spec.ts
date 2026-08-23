@@ -50,7 +50,12 @@ describe('DecisionLog', () => {
           decision: aDecision({
             ads: [
               { ...aDecision().ads[0]!, verdict: 'CHOSEN' },
-              { ...aDecision().ads[0]!, adId: 'other', message: 'Slay a dragon', verdict: 'NEVER_ATTEMPT' },
+              {
+                ...aDecision().ads[0]!,
+                adId: 'other',
+                message: 'Slay a dragon',
+                verdict: 'NEVER_ATTEMPT',
+              },
             ],
           }),
         }),

@@ -45,7 +45,9 @@ describe('MissionResult', () => {
   /** A turn in flight outranks the turn before it; the solver outranks a stale player result. */
   it('reports the newest thing that is true', () => {
     expect(render({ pending: 'solve', outcome: WON }).text()).toContain('Taking the job')
-    expect(render({ solverRunning: true, outcome: WON }).text()).toContain('The solver has the game')
+    expect(render({ solverRunning: true, outcome: WON }).text()).toContain(
+      'The solver has the game',
+    )
     expect(render({ outcome: WON }).text()).toContain('Mission accomplished')
     expect(render().text()).toContain('No job taken yet')
   })

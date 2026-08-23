@@ -30,8 +30,20 @@ const messages = (list: ReturnType<typeof render>) =>
   list.findAll('[aria-label^="Solve:"]').map((button) => button.attributes('aria-label'))
 
 /** Three ads that rank differently under every sort the toolbar offers. */
-const RICH = anAd({ adId: 'rich', message: 'Rich', reward: 400, successProbability: 0.15, expiresIn: 2 })
-const SAFE = anAd({ adId: 'safe', message: 'Safe', reward: 50, successProbability: 0.86, expiresIn: 5 })
+const RICH = anAd({
+  adId: 'rich',
+  message: 'Rich',
+  reward: 400,
+  successProbability: 0.15,
+  expiresIn: 2,
+})
+const SAFE = anAd({
+  adId: 'safe',
+  message: 'Safe',
+  reward: 50,
+  successProbability: 0.86,
+  expiresIn: 5,
+})
 const MID = anAd({ adId: 'mid', message: 'Mid', reward: 30, successProbability: 0.8, expiresIn: 9 })
 
 describe('AdList', () => {
@@ -132,9 +144,16 @@ describe('AdList', () => {
   })
 
   it('keeps the toolbar behind the advisor toggle, like the rest of the advice', () => {
-    expect(render({ status: 'ready', ads: [anAd()] }).find('#ad-sort').exists()).toBe(false)
-    expect(render({ status: 'ready', ads: [anAd()], advisor: true }).find('#ad-sort').exists())
-      .toBe(true)
+    expect(
+      render({ status: 'ready', ads: [anAd()] })
+        .find('#ad-sort')
+        .exists(),
+    ).toBe(false)
+    expect(
+      render({ status: 'ready', ads: [anAd()], advisor: true })
+        .find('#ad-sort')
+        .exists(),
+    ).toBe(true)
   })
 })
 

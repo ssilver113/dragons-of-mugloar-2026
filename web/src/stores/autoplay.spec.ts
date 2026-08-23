@@ -71,7 +71,10 @@ describe('a single step', () => {
 
   it('is refused while a run is already under way', async () => {
     const { autoPlay } = await playing()
-    const counter = stubSteps([aStep({ game: aGame({ turn: 1 }) }), aStep({ game: aGame({ turn: 2, finished: true }) })])
+    const counter = stubSteps([
+      aStep({ game: aGame({ turn: 1 }) }),
+      aStep({ game: aGame({ turn: 2, finished: true }) }),
+    ])
 
     const running = autoPlay.run()
     await autoPlay.step()

@@ -53,7 +53,9 @@ const lifeCostGold = computed(() => Math.round(props.lifeCost))
             :class="[
               index === 0 ? 'rounded-l-md' : '',
               index === POSTURES.length - 1 ? 'rounded-r-md' : 'border-r border-ink-muted/40',
-              posture === option.id ? 'relief-pressed bg-accent font-semibold text-surface' : 'text-ink-muted',
+              posture === option.id
+                ? 'relief-pressed bg-accent font-semibold text-surface'
+                : 'text-ink-muted',
             ]"
           >
             <input

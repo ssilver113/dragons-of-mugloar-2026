@@ -236,7 +236,9 @@ export class FakeApi {
       game: this.game,
       adId,
       success,
-      message: success ? 'You successfully solved the mission!' : 'You failed to solve the mission!',
+      message: success
+        ? 'You successfully solved the mission!'
+        : 'You failed to solve the mission!',
     })
   }
 
@@ -304,7 +306,9 @@ export class FakeApi {
         })),
       },
       succeeded: success,
-      message: success ? 'You successfully solved the mission!' : 'You failed to solve the mission!',
+      message: success
+        ? 'You successfully solved the mission!'
+        : 'You failed to solve the mission!',
       reputation: null,
     }
   }

@@ -30,14 +30,26 @@ const PRESENTATION: Record<ErrorCode, ErrorPresentation> = {
   GAME_OVER: { severity: 'terminal', title: 'The game is over', offerRefresh: false },
 
   AD_NOT_AVAILABLE: { severity: 'note', title: 'That job was already taken', offerRefresh: false },
-  ITEM_NOT_AVAILABLE: { severity: 'note', title: 'The shop no longer stocks that', offerRefresh: true },
+  ITEM_NOT_AVAILABLE: {
+    severity: 'note',
+    title: 'The shop no longer stocks that',
+    offerRefresh: true,
+  },
   INSUFFICIENT_GOLD: { severity: 'note', title: 'Not enough gold', offerRefresh: false },
   INVALID_ACTION: { severity: 'note', title: 'The board had moved on', offerRefresh: false },
 
   // Waiting is the fix, and the auto-play loop already waits. A refresh would only add traffic.
   UPSTREAM_RATE_LIMITED: { severity: 'fault', title: 'Going too fast', offerRefresh: false },
-  UPSTREAM_UNAVAILABLE: { severity: 'fault', title: 'The game service is down', offerRefresh: true },
-  UPSTREAM_PROTOCOL: { severity: 'fault', title: 'The game service answered strangely', offerRefresh: true },
+  UPSTREAM_UNAVAILABLE: {
+    severity: 'fault',
+    title: 'The game service is down',
+    offerRefresh: true,
+  },
+  UPSTREAM_PROTOCOL: {
+    severity: 'fault',
+    title: 'The game service answered strangely',
+    offerRefresh: true,
+  },
   UPSTREAM_ERROR: { severity: 'fault', title: 'The game service failed', offerRefresh: true },
   NETWORK_ERROR: { severity: 'fault', title: 'No connection to the server', offerRefresh: true },
   INTERNAL_ERROR: { severity: 'fault', title: 'Something went wrong', offerRefresh: true },

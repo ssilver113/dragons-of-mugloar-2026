@@ -191,9 +191,7 @@ describe('App', () => {
   it('stops announcing the status strip while the solver holds the game', async () => {
     server.use(
       http.post('/api/games', () => HttpResponse.json(aGame())),
-      http.get('/api/games/:gameId/ads', () =>
-        HttpResponse.json({ game: aGame(), ads: [anAd()] }),
-      ),
+      http.get('/api/games/:gameId/ads', () => HttpResponse.json({ game: aGame(), ads: [anAd()] })),
       http.get('/api/games/:gameId/shop', () =>
         HttpResponse.json({ game: aGame(), items: [anItem()] }),
       ),
@@ -231,7 +229,9 @@ describe('App', () => {
 
     await app.get('button').trigger('click')
     await flushPromises()
-    await app.get('[aria-label="Solve: Help Robin Webster to steal a shipment of gold"]').trigger('click')
+    await app
+      .get('[aria-label="Solve: Help Robin Webster to steal a shipment of gold"]')
+      .trigger('click')
     await flushPromises()
 
     expect(app.text()).toContain('This game was lost')
@@ -257,7 +257,9 @@ describe('App', () => {
 
     await app.get('button').trigger('click')
     await flushPromises()
-    await app.get('[aria-label="Solve: Help Robin Webster to steal a shipment of gold"]').trigger('click')
+    await app
+      .get('[aria-label="Solve: Help Robin Webster to steal a shipment of gold"]')
+      .trigger('click')
     await flushPromises()
 
     expect(app.text()).toContain('That job was already taken')
@@ -281,7 +283,9 @@ describe('App', () => {
 
     await app.get('button').trigger('click')
     await flushPromises()
-    await app.get('[aria-label="Solve: Help Robin Webster to steal a shipment of gold"]').trigger('click')
+    await app
+      .get('[aria-label="Solve: Help Robin Webster to steal a shipment of gold"]')
+      .trigger('click')
     await flushPromises()
 
     const refresh = buttonLabelled(app, 'Refresh the board')
@@ -313,7 +317,9 @@ describe('App', () => {
 
     await app.get('button').trigger('click')
     await flushPromises()
-    await app.get('[aria-label="Solve: Help Robin Webster to steal a shipment of gold"]').trigger('click')
+    await app
+      .get('[aria-label="Solve: Help Robin Webster to steal a shipment of gold"]')
+      .trigger('click')
     await flushPromises()
 
     expect(document.activeElement).toBe(app.get('[role="status"][tabindex="-1"]').element)

@@ -51,7 +51,10 @@ test('the shop column is still a spaced stack once the layout goes wide', async 
   const column = page.locator('div.min-w-0 > div.flex.flex-col.gap-4').last()
   const gap = await column.evaluate((el) => {
     const [shop, standing] = [...el.children].map((child) => child.getBoundingClientRect())
-    return { display: getComputedStyle(el).display, between: Math.round(standing.top - shop.bottom) }
+    return {
+      display: getComputedStyle(el).display,
+      between: Math.round(standing.top - shop.bottom),
+    }
   })
 
   expect(gap.display).toBe('flex')

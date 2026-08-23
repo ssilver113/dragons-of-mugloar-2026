@@ -108,7 +108,10 @@ export function scoreBoard(ads: AdView[], posture: Posture, lives: number): Scor
   const balanced =
     posture === 'balanced' ? scores : ads.map((ad) => riskAdjustedScore(ad, 'balanced', lives))
   const cutoffs: Cutoffs = {
-    richReward: thirdFrom(ads.map((ad) => ad.reward), (a, b) => b - a),
+    richReward: thirdFrom(
+      ads.map((ad) => ad.reward),
+      (a, b) => b - a,
+    ),
     poorScore: thirdFrom(balanced, (a, b) => a - b),
   }
   const best = Math.max(0, ...scores)
@@ -120,7 +123,11 @@ export function scoreBoard(ads: AdView[], posture: Posture, lives: number): Scor
   }))
 }
 
-export function filterBoard(scored: ScoredAd[], filters: Set<FilterId>, average: number): ScoredAd[] {
+export function filterBoard(
+  scored: ScoredAd[],
+  filters: Set<FilterId>,
+  average: number,
+): ScoredAd[] {
   if (filters.size === 0) {
     return scored
   }
@@ -150,8 +157,6 @@ export function sortBoard(scored: ScoredAd[], key: SortKey): ScoredAd[] {
   const rank = primary[key]
   return [...scored].sort(
     (a, b) =>
-      rank(a) - rank(b) ||
-      a.ad.expiresIn - b.ad.expiresIn ||
-      a.ad.adId.localeCompare(b.ad.adId),
+      rank(a) - rank(b) || a.ad.expiresIn - b.ad.expiresIn || a.ad.adId.localeCompare(b.ad.adId),
   )
 }
