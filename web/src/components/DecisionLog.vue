@@ -82,7 +82,8 @@ const hidden = computed(() => props.entries.length - shown.value.length)
     </MessageBanner>
 
     <p v-if="!entries.length" class="parchment torn p-6 text-center text-ink-muted">
-      No automatic turns taken yet. Open Auto-Play and press Run to hand the game over, or Step to watch one turn at a time.
+      No automatic turns taken yet. Open Auto-Play and press Run to hand the game over, or Step to
+      watch one turn at a time.
     </p>
 
     <ul v-else class="flex flex-col gap-2">
