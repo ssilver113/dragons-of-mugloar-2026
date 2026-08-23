@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import AppIcon from './AppIcon.vue'
 import ShopItemRow from './ShopItemRow.vue'
 import type { ShopItemView } from '../api/types'
 import type { RequestStatus } from '../stores/game'
@@ -22,8 +23,15 @@ const failed = computed(() => props.status === 'error' && props.items.length ===
 <template>
   <section aria-labelledby="shop-heading" class="flex flex-col gap-3">
     <div class="flex items-baseline justify-between gap-4">
-      <h2 id="shop-heading" class="text-lg font-semibold">Shop</h2>
-      <p class="text-sm text-ink-muted">
+      <h2
+        id="shop-heading"
+        class="flex items-center gap-1.5 text-base font-semibold sm:gap-2 sm:text-lg"
+      >
+        <AppIcon name="shop" :size="20" class="size-4 sm:size-5" />
+        Shop
+      </h2>
+      <p class="flex items-center gap-1.5 text-sm text-ink-muted">
+        <AppIcon name="gold" :size="14" />
         <span class="tabular-nums">{{ gold }}</span> gold
       </p>
     </div>

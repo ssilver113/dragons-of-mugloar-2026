@@ -37,14 +37,14 @@ describe('AdList', () => {
     const list = render({ status: 'pending' })
 
     expect(list.find('[role="status"]').text()).toBe('Loading the message board.')
-    expect(list.find('[aria-hidden="true"]').exists()).toBe(true)
+    expect(list.find('ul[aria-hidden="true"]').exists()).toBe(true)
   })
 
   it('keeps the board on screen while a refetch is in flight', () => {
     const list = render({ status: 'pending', ads: [anAd({ message: 'Rescue the cat' })] })
 
     expect(list.text()).toContain('Rescue the cat')
-    expect(list.find('[aria-hidden="true"]').exists()).toBe(false)
+    expect(list.find('ul[aria-hidden="true"]').exists()).toBe(false)
   })
 
   it('offers a way out when the board could not be loaded', async () => {
@@ -72,22 +72,33 @@ describe('AdList', () => {
     expect(list.emitted('solve')).toEqual([['a1']])
   })
 
-  it('locks every control while a turn is being spent', () => {
+  it('locks every control that spends a turn, and leaves the advisor alone', () => {
     const list = render({ status: 'ready', ads: [anAd()], disabled: true })
 
-    expect(list.findAll('button').every((button) => button.attributes('disabled') !== undefined))
-      .toBe(true)
+    const spending = list.findAll('button').filter((b) => b.attributes('role') !== 'switch')
+    expect(spending.length).toBeGreaterThan(0)
+    expect(spending.every((button) => button.attributes('disabled') !== undefined)).toBe(true)
+
+    // The advisor costs nothing upstream. Turning it on to reconsider the board is exactly what a
+    // player wants to do while the dragon is out, so it is the one control that stays live.
+    expect(list.get('[role="switch"]').attributes('disabled')).toBeUndefined()
   })
 
   it('offers the advisor as an opt-in and says what the current order means', async () => {
     const list = render({ status: 'ready', ads: [anAd()] })
 
-    const toggle = list.get('input[type="checkbox"]')
-    expect(toggle.attributes('checked')).toBeUndefined()
+    const toggle = list.get('[role="switch"]')
+    expect(toggle.attributes('aria-checked')).toBe('false')
     expect(list.text()).toContain('as the board posted them')
 
-    await toggle.setValue(true)
+    await toggle.trigger('click')
     expect(list.emitted('toggle-advisor')).toHaveLength(1)
+
+    expect(
+      render({ status: 'ready', ads: [anAd()], advisor: true })
+        .get('[role="switch"]')
+        .attributes('aria-checked'),
+    ).toBe('true')
   })
 
   it('says the ranking is the advisor’s once it is on', () => {

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import TurnSpinner from './TurnSpinner.vue'
 import { itemArt } from '../assets/artwork'
 import type { ShopItemView } from '../api/types'
 
@@ -33,12 +34,16 @@ const icon = computed(() =>
 
 const affordable = computed(() => props.item.cost <= props.gold)
 const shortfall = computed(() => props.item.cost - props.gold)
+
+// Only a row the player could act on warms under the cursor. One they cannot afford is already
+// dimmed, and inviting a click on it would be a promise the Buy button then refuses.
+const hoverable = computed(() => affordable.value && !props.disabled)
 </script>
 
 <template>
   <li
     class="flex items-center justify-between gap-3 rounded-lg border border-ink-muted/20 bg-surface-raised px-3 py-2"
-    :class="{ 'opacity-60': !affordable }"
+    :class="[{ 'opacity-60': !affordable }, hoverable ? 'hover:border-ink-muted/60' : '']"
   >
     <!-- Decorative: the item's name and effect are spelled out immediately to its right. -->
     <img
@@ -70,9 +75,12 @@ const shortfall = computed(() => props.item.cost - props.gold)
       "
       @click="$emit('buy', item.id)"
     >
-      <template v-if="buying">Buying…</template>
-      <template v-else-if="affordable">Buy</template>
-      <template v-else>{{ shortfall }}g short</template>
+      <span class="flex items-center gap-1.5">
+        <TurnSpinner v-if="buying" />
+        <template v-if="buying">Buying…</template>
+        <template v-else-if="affordable">Buy</template>
+        <template v-else>{{ shortfall }}g short</template>
+      </span>
     </button>
   </li>
 </template>

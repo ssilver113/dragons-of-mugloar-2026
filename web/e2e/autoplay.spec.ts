@@ -1,8 +1,9 @@
 import { expect, test } from '@playwright/test'
-import { startGame, stat } from './app'
+import { openAutoPlay, startGame, stat } from './app'
 
 test('one solver turn is logged with the reasoning behind it', async ({ page }) => {
   await startGame(page)
+  await openAutoPlay(page)
 
   await page.getByRole('button', { name: 'Step' }).click()
 
@@ -16,6 +17,7 @@ test('one solver turn is logged with the reasoning behind it', async ({ page }) 
 test('auto-play runs the game to its end and the log outlives the board', async ({ page }) => {
   // Two lives and a scripted run: two jobs land, then two go wrong, which is exactly a dead dragon.
   await startGame(page, { lives: 2, autoPlay: [true, true, false, false] })
+  await openAutoPlay(page)
 
   await page.getByLabel('Speed').selectOption('max')
   await page.getByRole('button', { name: 'Run' }).click()
@@ -32,6 +34,7 @@ test('auto-play runs the game to its end and the log outlives the board', async 
 
 test('a run can be stopped between turns', async ({ page }) => {
   await startGame(page)
+  await openAutoPlay(page)
 
   // Slow, so the pause lands mid-run rather than after a game that has already finished.
   await page.getByLabel('Speed').selectOption('slow')

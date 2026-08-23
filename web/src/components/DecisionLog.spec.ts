@@ -112,4 +112,30 @@ describe('DecisionLog', () => {
     expect(log.get('[role="alert"]').text()).toContain('no longer being tracked')
     expect(log.find('[role="alert"] button').exists()).toBe(false)
   })
+
+  /**
+   * The cap is on what is drawn, never on what is kept. Fifty turns of solver reasoning is what
+   * makes the page unmanageable and also the only reason to keep a log at all, so the older half
+   * stays one click away rather than being thrown out.
+   */
+  it('draws the newest ten turns and offers the rest', async () => {
+    const many = Array.from({ length: 24 }, () => entry(aStep()))
+    const log = render(many)
+
+    expect(log.findAll('li')).toHaveLength(10)
+
+    const more = log.findAll('button').find((b) => b.text().startsWith('Show all'))!
+    expect(more.text()).toBe('Show all 24 turns')
+
+    await more.trigger('click')
+    expect(log.findAll('li')).toHaveLength(24)
+    expect(log.get('button').text()).not.toBe('Show all 24 turns')
+  })
+
+  it('says nothing about a cap on a run that has not reached it', () => {
+    const log = render(Array.from({ length: 4 }, () => entry(aStep())))
+
+    expect(log.findAll('li')).toHaveLength(4)
+    expect(log.findAll('button').some((b) => b.text().startsWith('Show all'))).toBe(false)
+  })
 })

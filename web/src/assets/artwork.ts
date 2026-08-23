@@ -43,6 +43,23 @@ export type DragonMood = 'idle' | 'victorious' | 'defeated'
 export type Faction = 'people' | 'state' | 'underworld'
 
 /**
+ * The chrome marks: a figure's icon, a section's icon. Drawn in the same hand as the crests and
+ * kept to three or four shapes each, because these render at eighteen pixels rather than forty.
+ */
+export type IconName =
+  | 'score'
+  | 'gold'
+  | 'life'
+  | 'level'
+  | 'turn'
+  | 'board'
+  | 'shop'
+  | 'log'
+  | 'standing'
+  | 'advisor'
+  | 'autoplay'
+
+/**
  * The icon for a shop item.
  *
  * Every id recon saw has its own drawing. An id it did not see falls back on what the item
@@ -69,6 +86,8 @@ export function itemArt(itemId: string, livesGained: number, levelsGained: numbe
 export const dragonArt = (mood: DragonMood): string => art(`dragon/${mood}`)
 
 export const crestArt = (faction: Faction): string => art(`crests/${faction}`)
+
+export const iconArt = (name: IconName): string => art(`icons/${name}`)
 
 export const backdropArt = art('scene/backdrop')
 

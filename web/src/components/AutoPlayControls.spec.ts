@@ -11,6 +11,8 @@ function render(props: Partial<InstanceType<typeof AutoPlayControls>['$props']> 
       speed: 'normal',
       canPlay: true,
       busy: false,
+      halt: null,
+      turns: 0,
       ...props,
     },
   })
@@ -71,5 +73,33 @@ describe('AutoPlayControls', () => {
     await controls.setProps({ running: true })
 
     expect(buttonLabelled(controls, 'Pause')?.element).toBe(before)
+  })
+
+  /** A player opening the game is here to play it, not to hand it straight over to the solver. */
+  it('starts folded away', () => {
+    expect(render().get('details').attributes('open')).toBeUndefined()
+  })
+
+  it('says enough while folded to tell working from waiting from stopped', () => {
+    const summary = (props: Parameters<typeof render>[0]) => render(props).get('summary').text()
+
+    expect(summary({})).toContain('idle')
+    expect(summary({ running: true, turns: 12 })).toContain('running, 12 turns')
+    expect(summary({ running: true, waiting: true })).toContain('rate limited, waiting')
+    expect(summary({ halt: { kind: 'stalled', passes: 10 } })).toContain('stopped to check in')
+  })
+
+  /**
+   * The buttons that answer a halt — keep going, try again — are in here, so a run that stops on
+   * its own opens the panel rather than leaving the way out behind a twisty.
+   */
+  it('opens itself when the run stops, and never closes itself', async () => {
+    const controls = render()
+
+    await controls.setProps({ halt: { kind: 'stalled', passes: 10 } })
+    expect(controls.get('details').attributes('open')).toBeDefined()
+
+    await controls.setProps({ halt: null })
+    expect(controls.get('details').attributes('open')).toBeDefined()
   })
 })

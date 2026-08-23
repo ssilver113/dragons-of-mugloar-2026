@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import AdCard from './AdCard.vue'
 import AdToolbar from './AdToolbar.vue'
+import AppIcon from './AppIcon.vue'
 import { filterBoard, lifeCost, meanReward, scoreBoard, sortBoard } from '../advisor/ranking'
 import type { AdRead, FilterId, Posture, SortKey } from '../advisor/ranking'
 import type { AdView } from '../api/types'
@@ -55,22 +56,55 @@ const filteredOut = computed(() => props.ads.length > 0 && visible.value.length 
     class="flex flex-col gap-3"
     :aria-busy="solvingAdId !== null || status === 'pending'"
   >
-    <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-      <h2 id="board-heading" class="text-lg font-semibold">Message board</h2>
-      <div class="flex items-center gap-4">
-        <!-- A native checkbox: it carries its own state to a screen reader and to the eye. -->
-        <label class="flex items-center gap-2 text-sm text-ink-muted">
-          <input
-            type="checkbox"
-            class="size-4 accent-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-            :checked="advisor"
-            @change="$emit('toggle-advisor')"
-          />
-          Advisor
-        </label>
+    <!--
+      One row at 375px, deliberately. It used to wrap to two, so the board's first card sat forty
+      pixels lower than the shop's first row and the log's first entry — and switching between the
+      three on a phone moved everything under the tabs.
+    -->
+    <div class="flex flex-wrap items-center justify-between gap-x-2 gap-y-2 sm:gap-x-4">
+      <h2 id="board-heading" class="flex items-center gap-1.5 text-base font-semibold sm:gap-2 sm:text-lg">
+        <AppIcon name="board" :size="20" class="size-4 sm:size-5" />
+        Message board
+      </h2>
+      <div class="flex items-center gap-2 sm:gap-3">
+        <!--
+          A switch rather than a checkbox. It is not a field being filled in on the way to a
+          submit — it turns a whole layer of the board on and off there and then — and `role`
+          plus `aria-checked` carry exactly the state the checkbox used to carry for itself.
+        -->
         <button
           type="button"
-          class="rounded-md border border-ink-muted/40 px-3 py-1.5 text-sm hover:border-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-40"
+          role="switch"
+          :aria-checked="advisor"
+          class="flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent sm:gap-2 sm:px-3"
+          :class="
+            advisor
+              ? 'border-accent bg-accent/15 text-accent'
+              : 'border-ink-muted/40 text-ink-muted hover:border-ink hover:text-ink'
+          "
+          @click="$emit('toggle-advisor')"
+        >
+          <AppIcon name="advisor" :size="16" :class="advisor ? '' : 'opacity-60'" />
+          Advisor
+          <!--
+            The track is decoration; `aria-checked` is what is actually read out, and the pill's
+            own gold fill is what is seen. It is dropped below `sm` to keep this row on one line,
+            where the fill is carrying the state on its own anyway.
+          -->
+          <span
+            aria-hidden="true"
+            class="relative hidden h-4 w-7 shrink-0 rounded-full sm:block"
+            :class="advisor ? 'bg-accent/40' : 'bg-ink-muted/30'"
+          >
+            <span
+              class="absolute top-0.5 size-3 rounded-full"
+              :class="advisor ? 'left-3.5 bg-accent' : 'left-0.5 bg-ink-muted'"
+            />
+          </span>
+        </button>
+        <button
+          type="button"
+          class="rounded-md border border-ink-muted/40 px-2 py-1.5 text-xs hover:border-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-40 sm:px-3 sm:text-sm"
           :disabled="disabled"
           @click="$emit('refresh')"
         >
@@ -82,7 +116,7 @@ const filteredOut = computed(() => props.ads.length > 0 && visible.value.length 
       {{
         advisor
           ? 'Jobs are ranked by what the advisor thinks they are worth.'
-          : 'Jobs are listed as the board posted them. Turn on the advisor for an estimate.'
+          : 'Listed as the board posted them — the advisor will rank them.'
       }}
     </p>
 

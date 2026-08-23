@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import TurnSpinner from './TurnSpinner.vue'
 import type { AdFlag, AdView } from '../api/types'
 import type { AdRead, ValueBand } from '../advisor/ranking'
 
@@ -63,12 +64,23 @@ const value = computed(() => {
 // An ad we could not decode carries an ad id the game service would reject, so it is the one
 // thing the player is not offered. Bad odds are still the player's call to make.
 const unsendable = computed(() => props.ad.flags.includes('UNREADABLE'))
+
+/**
+ * A card is not itself a click target — the Solve button is — so the hover cue is a border that
+ * warms rather than a surface that lifts. It says the row is live without promising that landing
+ * anywhere on it does something. A job that cannot be sent gets none of it.
+ */
+const hoverable = computed(() => !unsendable.value && !props.disabled)
 </script>
 
 <template>
   <li
     class="flex flex-col gap-3 rounded-lg border bg-surface-raised p-4"
-    :class="[read?.trap ? 'border-danger/50' : 'border-ink-muted/20', { 'opacity-60': unsendable }]"
+    :class="[
+      read?.trap ? 'border-danger/50' : 'border-ink-muted/20',
+      { 'opacity-60': unsendable },
+      hoverable ? (read?.trap ? 'hover:border-danger' : 'hover:border-ink-muted/60') : '',
+    ]"
   >
     <div class="flex flex-col gap-2">
       <p class="text-sm sm:text-base">{{ ad.message }}</p>
@@ -151,7 +163,10 @@ const unsendable = computed(() => props.ad.flags.includes('UNREADABLE'))
         :aria-label="solving ? `Solving: ${ad.message}` : `Solve: ${ad.message}`"
         @click="$emit('solve', ad.adId)"
       >
-        {{ solving ? 'Solving…' : 'Solve' }}
+        <span class="flex items-center gap-1.5">
+          <TurnSpinner v-if="solving" />
+          {{ solving ? 'Solving…' : 'Solve' }}
+        </span>
       </button>
     </div>
   </li>

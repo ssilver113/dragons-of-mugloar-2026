@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { board, jobs, startGame, stat } from './app'
+import { board, jobs, openAutoPlay, startGame, stat } from './app'
 
 test('starting a game deals a board and the status strip reads zero', async ({ page }) => {
   await startGame(page)
@@ -62,8 +62,36 @@ test('the advisor is opt-in, and turning it on annotates every job', async ({ pa
   await startGame(page)
 
   await expect(page.getByText("Advisor's read")).toHaveCount(0)
-  await page.getByRole('checkbox', { name: 'Advisor' }).check()
+  await page.getByRole('switch', { name: 'Advisor' }).click()
 
   await expect(page.getByText("Advisor's read")).toHaveCount(6)
   await expect(board(page).getByText('Trap').first()).toBeVisible()
+})
+
+/**
+ * Tailwind v4's preflight sets `cursor: default` on buttons, which v3 did not, so every control in
+ * the app silently stopped claiming to be one. The fix is a base-layer rule and this is what keeps
+ * it: a computed style is the only thing that would have caught the regression in the first place.
+ */
+test('every control points at itself, and a disabled one does not', async ({ page }) => {
+  await startGame(page)
+  await openAutoPlay(page)
+
+  const cursor = (selector: string) =>
+    page
+      .locator(selector)
+      .first()
+      .evaluate((el) => getComputedStyle(el).cursor)
+
+  expect(await cursor('button:not(:disabled)')).toBe('pointer')
+  expect(await cursor('select')).toBe('pointer')
+  expect(await cursor('summary')).toBe('pointer')
+  expect(await cursor('[role="switch"]')).toBe('pointer')
+  expect(await cursor('button:disabled')).toBe('not-allowed')
+
+  // The filter checkboxes and the posture radios only exist once the advisor is on.
+  await page.getByRole('switch', { name: 'Advisor' }).click()
+  expect(await cursor('input[type="checkbox"]')).toBe('pointer')
+  expect(await cursor('label:has(input[type="checkbox"])')).toBe('pointer')
+  expect(await cursor('label:has(input[type="radio"])')).toBe('pointer')
 })

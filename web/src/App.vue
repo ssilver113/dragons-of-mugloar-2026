@@ -1,16 +1,19 @@
 <script setup lang="ts">
-import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import AdList from './components/AdList.vue'
 import AppBackdrop from './components/AppBackdrop.vue'
+import AppIcon from './components/AppIcon.vue'
 import AutoPlayControls from './components/AutoPlayControls.vue'
 import CalibrationTable from './components/CalibrationTable.vue'
 import DecisionLog from './components/DecisionLog.vue'
 import DragonSigil from './components/DragonSigil.vue'
 import GameStats from './components/GameStats.vue'
 import MessageBanner from './components/MessageBanner.vue'
+import MissionResult from './components/MissionResult.vue'
 import ReputationPanel from './components/ReputationPanel.vue'
 import ShopPanel from './components/ShopPanel.vue'
-import type { DragonMood } from './assets/artwork'
+import type { IconName } from './assets/artwork'
+import type { PendingKind } from './components/MissionResult.vue'
 import { present } from './api/errorPresentation'
 import { useGameStore } from './stores/game'
 import { useAutoPlayStore } from './stores/autoplay'
@@ -30,10 +33,10 @@ const outcome = computed(() => store.lastOutcome)
  * screen reader.
  */
 type Panel = 'board' | 'shop' | 'log'
-const PANELS: { id: Panel; label: string }[] = [
-  { id: 'board', label: 'Board' },
-  { id: 'shop', label: 'Shop' },
-  { id: 'log', label: 'Log' },
+const PANELS: { id: Panel; label: string; icon: IconName }[] = [
+  { id: 'board', label: 'Board', icon: 'board' },
+  { id: 'shop', label: 'Shop', icon: 'shop' },
+  { id: 'log', label: 'Log', icon: 'log' },
 ]
 const view = ref<Panel>('board')
 const onlyOnMobile = (panel: Panel) => (view.value === panel ? '' : 'hidden lg:block')
@@ -79,36 +82,18 @@ watch(ended, async (now, before) => {
 })
 
 /**
- * What the seal shows. A win is a moment rather than a state, so it is held for a beat and then
- * released; everything else is read straight off the game.
- *
- * A lost session is deliberately not a defeat. The dragon was fine — the server stopped tracking
- * it — and stamping the fallen seal on that would be a lie about the player's own game, the same
- * one the ending copy takes care not to tell.
+ * Which of the player's own moves is in flight. The solver's turns are deliberately not here:
+ * they arrive several a second at max speed, and a placeholder strobing between two states is
+ * worse than one that says plainly who is holding the game.
  */
-const triumphant = ref(false)
-let fading: ReturnType<typeof setTimeout> | undefined
-
-watch(outcome, (last) => {
-  const won =
-    last !== null &&
-    ((last.kind === 'solve' && last.success) ||
-      (last.kind === 'purchase' && last.success && last.item.levelsGained > 0))
-  if (!won) {
-    return
+const pending = computed<PendingKind | null>(() => {
+  if (store.solvingAdId !== null) {
+    return 'solve'
   }
-  triumphant.value = true
-  clearTimeout(fading)
-  fading = setTimeout(() => (triumphant.value = false), 2000)
-})
-
-onUnmounted(() => clearTimeout(fading))
-
-const mood = computed<DragonMood>(() => {
-  if (store.ending === 'finished') {
-    return 'defeated'
+  if (store.buyingItemId !== null) {
+    return 'purchase'
   }
-  return triumphant.value ? 'victorious' : 'idle'
+  return store.investigating ? 'investigation' : null
 })
 
 const banner = computed(() => {
@@ -148,15 +133,11 @@ const banner = computed(() => {
   <AppBackdrop />
 
   <main class="mx-auto flex min-h-dvh max-w-6xl flex-col gap-6 px-4 py-8">
-    <header class="flex items-center justify-between gap-4">
-      <div class="flex flex-col gap-1">
-        <!-- Cinzel is a wide face: at 24px the title wraps beside the seal on a 375px screen. -->
-        <h1 class="text-xl font-semibold text-accent sm:text-3xl">Dragons of Mugloar</h1>
-        <p class="text-sm text-ink-muted">
-          Take the jobs your dragon can survive. Every action costs a turn.
-        </p>
-      </div>
-      <DragonSigil :mood="mood" :size="80" class="size-14 sm:size-20" />
+    <header class="flex flex-col gap-1">
+      <h1 class="text-xl font-semibold text-accent sm:text-3xl">Dragons of Mugloar</h1>
+      <p class="text-sm text-ink-muted">
+        Take the jobs your dragon can survive. Every action costs a turn.
+      </p>
     </header>
 
     <GameStats v-if="store.game" :game="store.game" :announce="!autoPlay.active" />
@@ -263,15 +244,15 @@ const banner = computed(() => {
         :speed="autoPlay.speed"
         :can-play="autoPlay.canPlay"
         :busy="store.busy"
+        :halt="autoPlay.halt"
+        :turns="autoPlay.log.length"
         @run="autoPlay.run()"
         @pause="autoPlay.pause()"
         @step="autoPlay.step()"
         @update:speed="autoPlay.speed = $event"
       />
 
-      <MessageBanner v-if="banner" :tone="banner.tone" :title="banner.title">
-        {{ banner.body }}
-      </MessageBanner>
+      <MissionResult :pending="pending" :solver-running="autoPlay.running" :outcome="banner" />
 
       <div
         class="flex gap-1 rounded-lg bg-surface-raised p-1 lg:hidden"
@@ -287,11 +268,22 @@ const banner = computed(() => {
           :aria-pressed="view === panel.id"
           @click="view = panel.id"
         >
-          {{ panel.label }}
+          <span class="flex items-center justify-center gap-1.5">
+            <AppIcon :name="panel.icon" :size="16" />
+            {{ panel.label }}
+          </span>
         </button>
       </div>
 
-      <div class="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+      <!--
+        Hidden as a whole rather than one column at a time. Hiding only the children leaves an
+        empty grid box in the flow, and the page column still spends a `gap-6` on it — which is
+        why the log used to start twenty-four pixels lower than the board and the shop did.
+      -->
+      <div
+        class="items-start gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_20rem]"
+        :class="view === 'log' ? 'hidden lg:grid' : 'grid'"
+      >
         <div :class="onlyOnMobile('board')" class="min-w-0">
           <div class="flex flex-col gap-4">
             <AdList

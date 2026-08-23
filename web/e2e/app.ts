@@ -24,6 +24,19 @@ export function jobs(page: Page): Locator {
   return board(page).getByRole('button', { name: /^Solve: / })
 }
 
+/**
+ * The solver's controls, which the app keeps folded away. A player arriving at the game is there
+ * to play it, so the panel that hands it over starts shut and every spec that drives the solver
+ * has to open it first — exactly as a player would.
+ */
+export async function openAutoPlay(page: Page): Promise<void> {
+  const step = page.getByRole('button', { name: 'Step' })
+  if (!(await step.isVisible())) {
+    await page.locator('summary', { hasText: 'Auto-play' }).click()
+  }
+  await expect(step).toBeVisible()
+}
+
 /** Serve the API from inside the page, open the app and start a game. */
 export async function startGame(page: Page, options: FakeApiOptions = {}): Promise<FakeApi> {
   const api = new FakeApi(options)
