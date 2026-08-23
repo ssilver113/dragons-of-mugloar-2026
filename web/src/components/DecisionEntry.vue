@@ -19,7 +19,7 @@ const verdictClass = (ruledOut: boolean) => (ruledOut ? 'text-ink-muted' : 'text
 </script>
 
 <template>
-  <li class="rounded-lg border border-ink-muted/20 bg-surface-raised/40">
+  <li class="rounded-lg border border-ink-muted/35 bg-surface-raised/70">
     <div class="flex flex-col gap-1 p-3">
       <div class="flex items-baseline justify-between gap-3">
         <p class="font-semibold" :class="failed ? 'text-danger' : 'text-ink'">

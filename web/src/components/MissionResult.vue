@@ -41,9 +41,9 @@ const SOLVING = {
 }
 
 const TONES: Record<ResultTone, string> = {
-  success: 'border-success/50 bg-success/10',
-  failure: 'border-danger/50 bg-danger/10',
-  info: 'border-ink-muted/40 bg-surface-raised',
+  success: 'paper-success paper-tinted',
+  failure: 'paper-danger paper-tinted',
+  info: '',
 }
 
 const state = computed(() => {
@@ -60,7 +60,7 @@ const state = computed(() => {
 })
 
 const tone = computed(() =>
-  state.value.kind === 'outcome' ? TONES[props.outcome!.tone] : 'border-ink-muted/25 bg-surface-raised/50',
+  state.value.kind === 'outcome' ? TONES[props.outcome!.tone] : '',
 )
 
 /**
@@ -82,7 +82,7 @@ const mood = computed(() =>
 
 <template>
   <div
-    class="flex h-24 items-center gap-3 rounded-lg border px-4 py-3"
+    class="parchment torn flex h-24 items-center gap-3 px-4 py-3"
     :class="tone"
     role="status"
     :aria-live="live"

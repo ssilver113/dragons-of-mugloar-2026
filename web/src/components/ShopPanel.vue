@@ -46,7 +46,7 @@ const failed = computed(() => props.status === 'error' && props.items.length ===
       <p class="font-semibold">The shop could not be loaded.</p>
       <button
         type="button"
-        class="mt-2 rounded-md border border-ink-muted/40 px-3 py-1.5 text-sm hover:border-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        class="relief mt-2 rounded-md border border-ink-muted/40 bg-surface-raised/60 px-3 py-1.5 text-sm hover:border-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         @click="$emit('refresh')"
       >
         Try again

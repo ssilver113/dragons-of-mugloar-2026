@@ -75,11 +75,11 @@ const hoverable = computed(() => !unsendable.value && !props.disabled)
 
 <template>
   <li
-    class="flex flex-col gap-3 rounded-lg border bg-surface-raised p-4"
+    class="parchment torn flex flex-col gap-3 p-4"
     :class="[
-      read?.trap ? 'border-danger/50' : 'border-ink-muted/20',
+      read?.trap ? 'paper-danger' : '',
       { 'opacity-60': unsendable },
-      hoverable ? (read?.trap ? 'hover:border-danger' : 'hover:border-ink-muted/60') : '',
+      hoverable ? 'hover:paper-lifted' : '',
     ]"
   >
     <div class="flex flex-col gap-2">
@@ -120,7 +120,7 @@ const hoverable = computed(() => !unsendable.value && !props.disabled)
     </dl>
 
     <!-- Everything below is our reading of the board, not the game's. It says so. -->
-    <div v-if="read && band" class="rounded-md border border-accent/30 bg-surface/60 p-3">
+    <div v-if="read && band" class="rounded-md border border-accent/40 bg-surface/70 p-3">
       <p class="text-xs font-semibold uppercase tracking-wide text-accent">Advisor's read</p>
       <dl class="mt-1.5 grid grid-cols-2 gap-x-4 gap-y-1 text-sm sm:grid-cols-3">
         <div>
@@ -157,7 +157,7 @@ const hoverable = computed(() => !unsendable.value && !props.disabled)
       -->
       <button
         type="button"
-        class="rounded-md bg-accent px-3 py-1.5 text-sm font-semibold text-surface hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-40"
+        class="relief rounded-md bg-accent px-3 py-1.5 text-sm font-semibold text-surface hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
         :disabled="disabled || unsendable"
         :aria-label="solving ? `Solving: ${ad.message}` : `Solve: ${ad.message}`"
         @click="$emit('solve', ad.adId)"

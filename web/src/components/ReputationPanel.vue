@@ -28,7 +28,7 @@ const reading = (faction: Faction): string => {
 </script>
 
 <template>
-  <section class="flex flex-col gap-3 rounded-lg border border-ink-muted/20 bg-surface-raised p-4">
+  <section class="parchment torn flex flex-col gap-3 p-4">
     <div class="flex items-baseline justify-between gap-3">
       <h2 class="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-accent">
         <AppIcon name="standing" :size="16" />

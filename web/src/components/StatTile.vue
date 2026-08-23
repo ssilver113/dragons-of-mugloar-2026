@@ -11,7 +11,7 @@ defineProps<{
 </script>
 
 <template>
-  <div class="rounded-lg bg-surface-raised px-3 py-2" :class="{ flourish: emphasis }">
+  <div class="parchment px-3 py-2" :class="{ flourish: emphasis }">
     <dt class="truncate font-display text-xs uppercase tracking-wide text-ink-muted">
       {{ label }}
     </dt>
@@ -34,7 +34,7 @@ defineProps<{
 
 <style scoped>
 @media (prefers-reduced-motion: no-preference) {
-  .flourish {
+  .flourish::before {
     animation: flourish 1.2s ease-out;
   }
 }

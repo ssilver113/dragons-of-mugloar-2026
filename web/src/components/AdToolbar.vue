@@ -23,13 +23,13 @@ const lifeCostGold = computed(() => Math.round(props.lifeCost))
 </script>
 
 <template>
-  <div class="flex flex-col gap-3 rounded-lg border border-accent/30 bg-surface-raised/60 p-3">
+  <div class="flex flex-col gap-3 rounded-lg border border-accent/40 bg-surface-raised/75 p-3">
     <div class="flex flex-wrap items-end gap-x-6 gap-y-3">
       <div class="flex flex-col gap-1">
         <label for="ad-sort" class="text-xs font-medium text-ink-muted">Sort by</label>
         <select
           id="ad-sort"
-          class="rounded-md border border-ink-muted/40 bg-surface px-2 py-1.5 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          class="relief rounded-md border border-ink-muted/40 bg-surface px-2 py-1.5 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           :value="sort"
           @change="$emit('update:sort', ($event.target as HTMLSelectElement).value as SortKey)"
         >
@@ -53,7 +53,7 @@ const lifeCostGold = computed(() => Math.round(props.lifeCost))
             :class="[
               index === 0 ? 'rounded-l-md' : '',
               index === POSTURES.length - 1 ? 'rounded-r-md' : 'border-r border-ink-muted/40',
-              posture === option.id ? 'bg-accent font-semibold text-surface' : 'text-ink-muted',
+              posture === option.id ? 'relief-pressed bg-accent font-semibold text-surface' : 'text-ink-muted',
             ]"
           >
             <input
@@ -100,7 +100,7 @@ const lifeCostGold = computed(() => Math.round(props.lifeCost))
       <span>Showing {{ shown }} of {{ total }} jobs, {{ hidden }} filtered out.</span>
       <button
         type="button"
-        class="rounded border border-ink-muted/40 px-2 py-0.5 hover:border-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        class="relief rounded border border-ink-muted/40 bg-surface-raised/60 px-2 py-0.5 hover:border-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         @click="$emit('clear-filters')"
       >
         Clear filters

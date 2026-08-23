@@ -94,7 +94,7 @@ function onSpeed(event: Event): void {
 <template>
   <section aria-labelledby="autoplay-heading">
     <details
-      class="rounded-lg border border-ink-muted/20 bg-surface-raised/40"
+      class="rounded-lg border border-ink-muted/35 bg-surface-raised/70"
       :open="open"
       @toggle="open = ($event.target as HTMLDetailsElement).open"
     >
@@ -130,8 +130,8 @@ function onSpeed(event: Event): void {
             class="rounded-md px-3 py-1.5 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-40"
             :class="
               running
-                ? 'border border-ink-muted/40 font-medium hover:border-ink'
-                : 'bg-accent font-semibold text-surface hover:brightness-110'
+                ? 'relief border border-ink-muted/40 bg-surface-raised/60 font-medium hover:border-ink'
+                : 'relief bg-accent font-semibold text-surface hover:brightness-110'
             "
             :disabled="!running && blocked"
             @click="toggle()"
@@ -141,7 +141,7 @@ function onSpeed(event: Event): void {
 
           <button
             type="button"
-            class="rounded-md border border-ink-muted/40 px-3 py-1.5 text-sm hover:border-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-40"
+            class="relief rounded-md border border-ink-muted/40 bg-surface-raised/60 px-3 py-1.5 text-sm hover:border-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
             :disabled="blocked"
             @click="emit('step')"
           >
@@ -151,7 +151,7 @@ function onSpeed(event: Event): void {
           <label class="flex items-center gap-2 text-sm text-ink-muted">
             Speed
             <select
-              class="rounded-md border border-ink-muted/40 bg-surface-raised px-2 py-1.5 text-sm text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+              class="relief rounded-md border border-ink-muted/40 bg-surface-raised px-2 py-1.5 text-sm text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
               :value="speed"
               @change="onSpeed"
             >

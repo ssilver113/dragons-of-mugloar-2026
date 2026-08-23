@@ -2,6 +2,7 @@
 import { computed, nextTick, ref, watch } from 'vue'
 import AdList from './components/AdList.vue'
 import AppBackdrop from './components/AppBackdrop.vue'
+import PaperFilters from './components/PaperFilters.vue'
 import AppIcon from './components/AppIcon.vue'
 import AutoPlayControls from './components/AutoPlayControls.vue'
 import CalibrationTable from './components/CalibrationTable.vue'
@@ -182,10 +183,13 @@ const banner = computed(() => {
 
 <template>
   <AppBackdrop />
+  <PaperFilters />
 
   <main class="mx-auto flex min-h-dvh max-w-6xl flex-col gap-6 px-4 py-8">
     <header class="flex flex-col gap-1">
-      <h1 class="text-xl font-semibold text-accent sm:text-3xl">Dragons of Mugloar</h1>
+      <h1 class="text-2xl font-bold tracking-wide text-accent drop-shadow-sm sm:text-4xl">
+        Dragons of Mugloar
+      </h1>
       <p class="text-sm text-ink-muted">
         Take the jobs your dragon can survive. Every action costs a turn.
       </p>
@@ -233,13 +237,13 @@ const banner = computed(() => {
         is never picked back up, so this one starts fresh.
       </MessageBanner>
 
-      <section class="flex flex-col items-start gap-4 rounded-lg border border-ink-muted/20 p-6">
+      <section class="parchment torn flex flex-col items-start gap-4 p-6">
         <p class="text-ink-muted">
           Start a game to draw a board of ten jobs, each scored for your dragon's level.
         </p>
         <button
           type="button"
-          class="rounded-md bg-accent px-4 py-2 font-semibold text-surface hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-40"
+          class="relief rounded-md bg-accent px-4 py-2 font-semibold text-surface hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
           :disabled="starting"
           @click="store.startGame()"
         >
@@ -252,7 +256,7 @@ const banner = computed(() => {
       <section
         ref="endPanel"
         tabindex="-1"
-        class="flex flex-col items-start gap-4 rounded-lg border border-ink-muted/20 p-6 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        class="parchment torn flex flex-col items-start gap-4 p-6 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         role="status"
       >
         <DragonSigil
@@ -274,7 +278,7 @@ const banner = computed(() => {
         </div>
         <button
           type="button"
-          class="rounded-md bg-accent px-4 py-2 font-semibold text-surface hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-40"
+          class="relief rounded-md bg-accent px-4 py-2 font-semibold text-surface hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
           :disabled="starting"
           @click="store.startGame()"
         >
@@ -319,7 +323,7 @@ const banner = computed(() => {
       <MissionResult :pending="pending" :solver-running="autoPlay.running" :outcome="banner" />
 
       <div
-        class="flex gap-1 rounded-lg bg-surface-raised p-1 lg:hidden"
+        class="flex gap-1 rounded-lg border border-ink-muted/30 bg-surface-raised/80 p-1 lg:hidden"
         role="group"
         aria-label="Choose what to show"
       >
@@ -328,7 +332,7 @@ const banner = computed(() => {
           :key="panel.id"
           type="button"
           class="flex-1 rounded-md px-3 py-1.5 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-          :class="view === panel.id ? 'bg-accent text-surface' : 'text-ink-muted hover:text-ink'"
+          :class="view === panel.id ? 'relief-pressed bg-accent text-surface' : 'text-ink-muted hover:text-ink'"
           :aria-pressed="view === panel.id"
           @click="view = panel.id"
         >
@@ -418,7 +422,7 @@ const banner = computed(() => {
           <button
             ref="startNew"
             type="button"
-            class="rounded-md border border-ink-muted/40 px-3 py-1.5 text-sm font-semibold text-ink-muted hover:border-ink hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-40"
+            class="relief rounded-md border border-ink-muted/40 bg-surface-raised/60 px-3 py-1.5 text-sm font-semibold text-ink-muted hover:border-ink hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
             :disabled="!canAbandon"
             @click="askToAbandon()"
           >
@@ -442,7 +446,7 @@ const banner = computed(() => {
             <button
               ref="confirmAbandon"
               type="button"
-              class="rounded-md bg-accent px-3 py-1.5 text-sm font-semibold text-surface hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-40"
+              class="relief rounded-md bg-accent px-3 py-1.5 text-sm font-semibold text-surface hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
               aria-describedby="abandon-question"
               :disabled="!canAbandon || starting"
               @click="abandon()"
@@ -451,7 +455,7 @@ const banner = computed(() => {
             </button>
             <button
               type="button"
-              class="rounded-md border border-ink-muted/40 px-3 py-1.5 text-sm font-semibold text-ink-muted hover:border-ink hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+              class="relief rounded-md border border-ink-muted/40 bg-surface-raised/60 px-3 py-1.5 text-sm font-semibold text-ink-muted hover:border-ink hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
               @click="keepPlaying()"
             >
               Keep playing

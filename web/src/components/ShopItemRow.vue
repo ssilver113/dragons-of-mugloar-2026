@@ -42,8 +42,8 @@ const hoverable = computed(() => affordable.value && !props.disabled)
 
 <template>
   <li
-    class="flex items-center justify-between gap-3 rounded-lg border border-ink-muted/20 bg-surface-raised px-3 py-2"
-    :class="[{ 'opacity-60': !affordable }, hoverable ? 'hover:border-ink-muted/60' : '']"
+    class="parchment torn flex items-center justify-between gap-3 px-3 py-2"
+    :class="[{ 'opacity-60': !affordable }, hoverable ? 'hover:paper-lifted' : '']"
   >
     <!-- Decorative: the item's name and effect are spelled out immediately to its right. -->
     <img
@@ -66,7 +66,7 @@ const hoverable = computed(() => affordable.value && !props.disabled)
     </div>
     <button
       type="button"
-      class="shrink-0 rounded-md bg-accent px-3 py-1.5 text-sm font-semibold text-surface hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:bg-transparent disabled:text-ink-muted disabled:opacity-60"
+      class="relief shrink-0 rounded-md bg-accent px-3 py-1.5 text-sm font-semibold text-surface hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:bg-transparent disabled:bg-none disabled:text-ink-muted disabled:opacity-60 disabled:shadow-none"
       :disabled="disabled || !affordable"
       :aria-label="
         affordable

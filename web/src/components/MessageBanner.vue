@@ -8,10 +8,10 @@ defineEmits<{ dismiss: [] }>()
 
 // Full class strings rather than composed fragments, so Tailwind's scanner can see them.
 const TONES: Record<Tone, string> = {
-  error: 'border-danger/50 bg-danger/10',
-  failure: 'border-danger/50 bg-danger/10',
-  success: 'border-success/50 bg-success/10',
-  info: 'border-ink-muted/40 bg-surface-raised',
+  error: 'paper-danger paper-tinted',
+  failure: 'paper-danger paper-tinted',
+  success: 'paper-success paper-tinted',
+  info: '',
 }
 
 const tone = computed(() => TONES[props.tone])
@@ -20,7 +20,7 @@ const role = computed(() => (props.tone === 'error' ? 'alert' : 'status'))
 </script>
 
 <template>
-  <div :class="tone" :role="role" class="flex items-start gap-3 rounded-lg border px-4 py-3">
+  <div :class="tone" :role="role" class="parchment torn flex items-start gap-3 px-4 py-3">
     <div class="min-w-0 flex-1">
       <p class="font-semibold">{{ title }}</p>
       <p class="mt-0.5 text-sm text-ink-muted"><slot /></p>

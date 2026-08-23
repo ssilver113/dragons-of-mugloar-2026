@@ -83,7 +83,7 @@ const hidden = computed(() => props.entries.length - shown.value.length)
 
     <p
       v-if="!entries.length"
-      class="rounded-lg border border-ink-muted/20 p-6 text-center text-ink-muted"
+      class="parchment torn p-6 text-center text-ink-muted"
     >
       No turns taken yet. Press Run to hand the game over, or Step to watch one turn at a time.
     </p>
@@ -99,7 +99,7 @@ const hidden = computed(() => props.entries.length - shown.value.length)
     <div v-if="hidden > 0 || expanded" class="flex justify-center">
       <button
         type="button"
-        class="rounded-md border border-ink-muted/40 px-3 py-1.5 text-sm text-ink-muted hover:border-ink hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        class="relief rounded-md border border-ink-muted/40 bg-surface-raised/60 px-3 py-1.5 text-sm text-ink-muted hover:border-ink hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         @click="expanded = !expanded"
       >
         {{ expanded ? `Show the newest ${VISIBLE}` : `Show all ${entries.length} turns` }}

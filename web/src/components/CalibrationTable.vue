@@ -30,7 +30,7 @@ const summary = computed(() =>
 </script>
 
 <template>
-  <details class="rounded-lg border border-ink-muted/20 bg-surface-raised/40">
+  <details class="rounded-lg border border-ink-muted/35 bg-surface-raised/70">
     <summary
       class="cursor-pointer rounded-lg px-4 py-3 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
     >
@@ -107,7 +107,7 @@ const summary = computed(() =>
       <div v-if="rows.length" class="flex justify-end">
         <button
           type="button"
-          class="rounded-md border border-ink-muted/40 px-3 py-1.5 text-xs hover:border-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          class="relief rounded-md border border-ink-muted/40 bg-surface-raised/60 px-3 py-1.5 text-xs hover:border-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           @click="$emit('reset')"
         >
           Clear the tally

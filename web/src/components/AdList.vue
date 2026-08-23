@@ -102,8 +102,8 @@ const filteredOut = computed(() => board.value.length > 0 && visible.value.lengt
           class="flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent sm:gap-2 sm:px-3"
           :class="
             advisor
-              ? 'border-accent bg-accent/15 text-accent'
-              : 'border-ink-muted/40 text-ink-muted hover:border-ink hover:text-ink'
+              ? 'relief-pressed border-accent bg-accent/15 text-accent'
+              : 'relief border-ink-muted/40 bg-surface-raised/60 text-ink-muted hover:border-ink hover:text-ink'
           "
           @click="$emit('toggle-advisor')"
         >
@@ -127,7 +127,7 @@ const filteredOut = computed(() => board.value.length > 0 && visible.value.lengt
         </button>
         <button
           type="button"
-          class="rounded-md border border-ink-muted/40 px-2 py-1.5 text-xs hover:border-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-40 sm:px-3 sm:text-sm"
+          class="relief rounded-md border border-ink-muted/40 bg-surface-raised/60 px-2 py-1.5 text-xs hover:border-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none sm:px-3 sm:text-sm"
           :disabled="disabled"
           @click="$emit('refresh')"
         >
@@ -166,24 +166,24 @@ const filteredOut = computed(() => board.value.length > 0 && visible.value.lengt
     </ul>
     <p v-if="loading" class="sr-only" role="status">Loading the message board.</p>
 
-    <div v-else-if="failed" class="rounded-lg border border-danger/50 bg-danger/10 p-4" role="alert">
+    <div v-else-if="failed" class="parchment torn paper-danger paper-tinted p-4" role="alert">
       <p class="font-semibold">The message board could not be loaded.</p>
       <button
         type="button"
-        class="mt-2 rounded-md border border-ink-muted/40 px-3 py-1.5 text-sm hover:border-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        class="relief mt-2 rounded-md border border-ink-muted/40 bg-surface-raised/60 px-3 py-1.5 text-sm hover:border-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         @click="$emit('refresh')"
       >
         Try again
       </button>
     </div>
 
-    <p v-else-if="empty" class="rounded-lg border border-ink-muted/20 p-6 text-center text-ink-muted">
+    <p v-else-if="empty" class="parchment torn p-6 text-center text-ink-muted">
       No ads on the board right now. Refresh to see what comes in.
     </p>
 
     <p
       v-else-if="filteredOut"
-      class="rounded-lg border border-ink-muted/20 p-6 text-center text-ink-muted"
+      class="parchment torn p-6 text-center text-ink-muted"
     >
       Every job on the board is filtered out. Loosen the filters to see them.
     </p>

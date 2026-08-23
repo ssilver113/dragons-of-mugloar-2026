@@ -6,12 +6,13 @@ import { backdropArt, fogArt } from '../assets/artwork'
   <!--
     Decorative and inert: it sits behind everything, is never read out, and never intercepts a
     click. The scrim above it is what guarantees the text keeps its measured contrast — the plate
-    itself is dark, but "dark enough" is not something to leave to an image.
+    is already pale, but "pale enough" is not something to leave to an image, and the panels above
+    it are parchment on parchment.
   -->
   <div class="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden="true">
-    <img :src="backdropArt" alt="" class="h-full w-full object-cover opacity-70" />
-    <img :src="fogArt" alt="" class="drift absolute inset-x-0 bottom-1/4 h-1/3 w-full opacity-50" />
-    <div class="absolute inset-0 bg-surface/70"></div>
+    <img :src="backdropArt" alt="" class="h-full w-full object-cover" />
+    <img :src="fogArt" alt="" class="drift absolute inset-x-0 bottom-1/4 h-1/3 w-full opacity-60" />
+    <div class="absolute inset-0 bg-surface/45"></div>
   </div>
 </template>
 
