@@ -27,6 +27,54 @@ const starting = computed(() => store.startStatus === 'pending')
 const outcome = computed(() => store.lastOutcome)
 
 /**
+ * A reload is not a new game. The id of the one in progress outlives the page, and neither
+ * listing the board nor listing the shop costs a turn, so the whole thing can be picked back up
+ * for the price of two GETs. The log follows the game rather than leading it: it is restored only
+ * once the game it belongs to is known to be on screen.
+ */
+void resumeInterrupted()
+
+async function resumeInterrupted(): Promise<void> {
+  const resumed = await store.resume()
+  const current = store.game
+  if (resumed && current) {
+    autoPlay.restore(current.gameId)
+  }
+}
+
+/**
+ * Abandoning takes two clicks. Starting a game costs nothing upstream, but the run it replaces is
+ * gone for good, and a stray click at turn forty is an expensive way to learn that.
+ */
+const abandoning = ref(false)
+const confirmAbandon = ref<HTMLButtonElement | null>(null)
+const startNew = ref<HTMLButtonElement | null>(null)
+
+/**
+ * Not while the solver is mid-run: a turn already sent would land after the new game had started
+ * and write the old game's state over it. Pausing first is the player's call, not something to do
+ * silently on their behalf.
+ */
+const canAbandon = computed(() => !store.acting && !autoPlay.active)
+
+async function askToAbandon(): Promise<void> {
+  abandoning.value = true
+  await nextTick()
+  confirmAbandon.value?.focus()
+}
+
+async function keepPlaying(): Promise<void> {
+  abandoning.value = false
+  await nextTick()
+  startNew.value?.focus()
+}
+
+function abandon(): void {
+  abandoning.value = false
+  void store.startGame()
+}
+
+/**
  * Which part of the game is on screen — but only where they do not all fit. From `lg` up the
  * board, the shop and the log are all visible and this is inert, which is why the switch is
  * buttons rather than a tablist: a tab that controls nothing on a wide screen would be a lie to a
@@ -74,6 +122,9 @@ const ended = computed(() => (store.ending === null ? null : ENDINGS[store.endin
  * explanation and the way out under the cursor that is already there.
  */
 const endPanel = ref<HTMLElement | null>(null)
+// An open confirmation belongs to the run that was live when it opened. A game that ends under it
+// answers the question, and the next game must not inherit a half-pressed button.
+watch(() => store.playable, () => (abandoning.value = false))
 watch(ended, async (now, before) => {
   if (now && !before) {
     await nextTick()
@@ -169,6 +220,19 @@ const banner = computed(() => {
     </MessageBanner>
 
     <template v-if="!store.started">
+      <!--
+        Said once, on the way in: the game from before the reload is gone, but nothing the player
+        did lost it. A defeat panel would be claiming something about their dragon that is untrue.
+      -->
+      <MessageBanner
+        v-if="store.resumeFailed"
+        tone="info"
+        title="The game from before could not be picked up"
+      >
+        The server had already let that session go — it aged out, or the API restarted. A session
+        is never picked back up, so this one starts fresh.
+      </MessageBanner>
+
       <section class="flex flex-col items-start gap-4 rounded-lg border border-ink-muted/20 p-6">
         <p class="text-ink-muted">
           Start a game to draw a board of ten jobs, each scored for your dragon's level.
@@ -340,6 +404,60 @@ const banner = computed(() => {
           @retry="autoPlay.run()"
         />
       </div>
+
+      <!--
+        Last on the page and quiet with it. This is the only way out of a run that is going badly
+        but is not over, and it is deliberately nowhere near the buttons that spend turns.
+      -->
+      <footer
+        class="mt-auto flex flex-col items-start gap-2 border-t border-ink-muted/15 pt-4"
+        @keydown.esc="keepPlaying()"
+      >
+        <template v-if="!abandoning">
+          <button
+            ref="startNew"
+            type="button"
+            class="rounded-md border border-ink-muted/40 px-3 py-1.5 text-sm font-semibold text-ink-muted hover:border-ink hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-40"
+            :disabled="!canAbandon"
+            @click="askToAbandon()"
+          >
+            Start a new game
+          </button>
+          <p class="text-xs text-ink-muted">
+            {{
+              autoPlay.active
+                ? 'Pause the solver first — a turn already in flight would land on the new game.'
+                : 'Ends this run and deals a fresh board. The game itself costs nothing to start.'
+            }}
+          </p>
+        </template>
+
+        <template v-else>
+          <p id="abandon-question" class="text-sm">
+            Abandon this run? It is worth {{ store.game?.score }} points after
+            {{ store.game?.turn }} turns, and cannot be picked back up.
+          </p>
+          <div class="flex flex-wrap gap-2">
+            <button
+              ref="confirmAbandon"
+              type="button"
+              class="rounded-md bg-accent px-3 py-1.5 text-sm font-semibold text-surface hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-40"
+              aria-describedby="abandon-question"
+              :disabled="!canAbandon || starting"
+              @click="abandon()"
+            >
+              {{ starting ? 'Starting…' : 'Yes, start a new game' }}
+            </button>
+            <button
+              type="button"
+              class="rounded-md border border-ink-muted/40 px-3 py-1.5 text-sm font-semibold text-ink-muted hover:border-ink hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+              @click="keepPlaying()"
+            >
+              Keep playing
+            </button>
+          </div>
+        </template>
+      </footer>
     </template>
   </main>
 </template>

@@ -320,3 +320,112 @@ describe('App', () => {
     app.unmount()
   })
 })
+
+describe('a reload', () => {
+  /** The whole game in three handlers, so a second mount can pick it back up from them. */
+  function stubGame(game = aGame({ turn: 9, score: 250 })): void {
+    server.use(
+      http.post('/api/games', () => HttpResponse.json(game)),
+      http.get('/api/games/:gameId/ads', () =>
+        HttpResponse.json({ game, ads: [anAd({ message: 'Steal a shipment of gold' })] }),
+      ),
+      http.get('/api/games/:gameId/shop', () => HttpResponse.json({ game, items: [anItem()] })),
+    )
+  }
+
+  it('opens on the game that was in progress rather than on the start screen', async () => {
+    stubGame()
+    const first = render()
+    await first.get('button').trigger('click')
+    await flushPromises()
+    first.unmount()
+
+    const app = render()
+    await flushPromises()
+
+    expect(app.text()).toContain('Steal a shipment of gold')
+    expect(app.get('[aria-label="Dragon status"]').text()).toContain('250')
+    expect(buttonLabelled(app, 'Start a game')).toBeUndefined()
+  })
+
+  it('offers a new game, and says why, when the session is already gone', async () => {
+    stubGame()
+    const first = render()
+    await first.get('button').trigger('click')
+    await flushPromises()
+    first.unmount()
+
+    server.use(
+      http.get('/api/games/:gameId/ads', () =>
+        problem(404, 'SESSION_EXPIRED', 'That game is no longer being tracked.'),
+      ),
+      http.get('/api/games/:gameId/shop', () =>
+        problem(404, 'SESSION_EXPIRED', 'That game is no longer being tracked.'),
+      ),
+    )
+    const app = render()
+    await flushPromises()
+
+    expect(app.text()).toContain('The game from before could not be picked up')
+    expect(app.text()).not.toContain('The dragon has fallen')
+    expect(buttonLabelled(app, 'Start a game')).toBeDefined()
+  })
+})
+
+describe('abandoning a run', () => {
+  async function playing() {
+    server.use(
+      http.post('/api/games', () => HttpResponse.json(aGame({ turn: 40, score: 615 }))),
+      http.get('/api/games/:gameId/ads', () =>
+        HttpResponse.json({ game: aGame({ turn: 40, score: 615 }), ads: [anAd()] }),
+      ),
+      http.get('/api/games/:gameId/shop', () =>
+        HttpResponse.json({ game: aGame({ turn: 40, score: 615 }), items: [anItem()] }),
+      ),
+    )
+    const app = render()
+    await app.get('button').trigger('click')
+    await flushPromises()
+    return app
+  }
+
+  it('asks before throwing the run away', async () => {
+    const app = await playing()
+
+    await buttonLabelled(app, 'Start a new game')?.trigger('click')
+
+    expect(app.text()).toContain('Abandon this run?')
+    expect(app.text()).toContain('615 points after 40 turns')
+    expect(buttonLabelled(app, 'Yes, start a new game')).toBeDefined()
+  })
+
+  it('leaves the game exactly where it was when the answer is no', async () => {
+    const app = await playing()
+
+    await buttonLabelled(app, 'Start a new game')?.trigger('click')
+    await buttonLabelled(app, 'Keep playing')?.trigger('click')
+
+    expect(app.text()).not.toContain('Abandon this run?')
+    expect(app.get('[aria-label="Dragon status"]').text()).toContain('615')
+  })
+
+  it('deals a fresh board once the answer is yes', async () => {
+    const app = await playing()
+    const fresh = aGame({ gameId: 'newGameId', turn: 0, score: 0 })
+    server.use(
+      http.post('/api/games', () => HttpResponse.json(fresh)),
+      http.get('/api/games/:gameId/ads', () =>
+        HttpResponse.json({ game: fresh, ads: [anAd({ message: 'A brand new job' })] }),
+      ),
+      http.get('/api/games/:gameId/shop', () => HttpResponse.json({ game: fresh, items: [] })),
+    )
+
+    await buttonLabelled(app, 'Start a new game')?.trigger('click')
+    await buttonLabelled(app, 'Yes, start a new game')?.trigger('click')
+    await flushPromises()
+
+    expect(app.text()).toContain('A brand new job')
+    expect(app.text()).not.toContain('Abandon this run?')
+    expect(app.get('[aria-label="Dragon status"]').text()).toContain('0')
+  })
+})

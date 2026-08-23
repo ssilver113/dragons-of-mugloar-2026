@@ -2,6 +2,7 @@ import { computed, ref, watch } from 'vue'
 import { defineStore } from 'pinia'
 import { ApiError } from '../api/client'
 import { useGameStore } from './game'
+import { persisted } from './persistence'
 import type { AutoPlayStepView, DecisionView, GameView } from '../api/types'
 
 export type SpeedId = 'slow' | 'normal' | 'fast' | 'max'
@@ -48,11 +49,33 @@ const RATE_LIMIT_WAITS_MS = [5000, 10000, 15000]
 
 type TurnResult = 'continue' | 'halt' | 'rate-limited'
 
+/**
+ * The log of the game a reload interrupted, stamped with the game it belongs to so a restored
+ * log can never be shown against a different one. Per tab, like the game it describes.
+ */
+interface StoredLog {
+  gameId: string
+  entries: LogEntry[]
+  nextId: number
+}
+
+const savedLog = persisted<StoredLog>('session', 'mugloar.log')
+
+/** A preference, and one worth keeping: a run at Max is a different thing to watch than at Slow. */
+const savedSpeed = persisted<SpeedId>('local', 'mugloar.speed')
+
 export const useAutoPlayStore = defineStore('autoplay', () => {
   const games = useGameStore()
 
+  /**
+   * Snapshotted here, before the watcher below is registered. Restoring a game assigns a game id,
+   * which resets this store and so empties the stored log — so the only safe time to read it is
+   * before that can happen.
+   */
+  const remembered = savedLog.read()
+
   const log = ref<LogEntry[]>([])
-  const speed = ref<SpeedId>('normal')
+  const speed = ref<SpeedId>(rememberedSpeed())
   const running = ref(false)
   const stepping = ref(false)
   const waiting = ref(false)
@@ -152,12 +175,39 @@ export const useAutoPlayStore = defineStore('autoplay', () => {
     halt.value = null
     passStreak = 0
     nextId = 0
+    savedLog.clear()
+  }
+
+  /**
+   * Put the interrupted run's log back, if the game now on screen is the one it was written for.
+   * Called after the game itself is restored, never before: a log beside the wrong board would
+   * be worse than no log.
+   *
+   * The halt is deliberately not restored. Whatever stopped the loop was answered by the reload —
+   * Run is available again, and a stale "the solver has stopped to check in" would be describing
+   * a moment that is now over.
+   */
+  function restore(gameId: string): void {
+    if (remembered?.gameId !== gameId) {
+      return
+    }
+    log.value = remembered.entries
+    nextId = remembered.nextId
   }
 
   // A new game is a new log. Watching the id rather than exposing a reset the view must remember
   // to call keeps the two from drifting apart. Synchronous, so a reset can never land after a turn
   // recorded in the same tick and swallow it.
   watch(() => games.game?.gameId, reset, { flush: 'sync' })
+
+  watch(log, (entries) => {
+    const current = games.game
+    if (current && entries.length) {
+      savedLog.write({ gameId: current.gameId, entries, nextId })
+    }
+  })
+
+  watch(speed, (chosen) => savedSpeed.write(chosen))
 
   async function takeTurn(refreshBoard: boolean): Promise<TurnResult> {
     try {
@@ -237,8 +287,15 @@ export const useAutoPlayStore = defineStore('autoplay', () => {
     pause,
     keepGoing,
     reset,
+    restore,
   }
 })
+
+/** A speed written by a build that named them differently is not one this build can select. */
+function rememberedSpeed(): SpeedId {
+  const saved = savedSpeed.read()
+  return SPEEDS.some((option) => option.id === saved) ? (saved as SpeedId) : 'normal'
+}
 
 function rateLimitGaveUp(): ApiError {
   return new ApiError(

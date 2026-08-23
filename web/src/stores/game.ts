@@ -1,8 +1,9 @@
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { defineStore } from 'pinia'
 import { ApiError, api } from '../api/client'
 import { endsTheSession, present } from '../api/errorPresentation'
 import { useCalibrationStore } from './calibration'
+import { persisted } from './persistence'
 import type {
   AdView,
   AutoPlayStepView,
@@ -12,6 +13,30 @@ import type {
 } from '../api/types'
 
 export type RequestStatus = 'idle' | 'pending' | 'ready' | 'error'
+
+/**
+ * What a reload needs to pick a game back up. Only the parts the server cannot tell us again:
+ * the id it is keyed by, the state we last saw so the figures are on screen before the board
+ * comes back, and the standing, which is client-side because nothing but an `investigate`
+ * response carries it and that response costs a turn.
+ *
+ * The board and the shop are deliberately absent. Listing either costs no turn upstream, so
+ * refetching them is cheaper than trusting a copy that may be a turn out of date.
+ */
+interface StoredGame {
+  gameId: string
+  game: GameView
+  reputation: ReputationView | null
+}
+
+/**
+ * Per tab, not per browser: a reload keeps the game, a second tab starts its own. Two tabs on one
+ * `gameId` would have both read-modify-writing the same session.
+ */
+const savedGame = persisted<StoredGame>('session', 'mugloar.game')
+
+/** A preference rather than game state, so it outlives the tab. */
+const savedAdvisor = persisted<boolean>('local', 'mugloar.advisor')
 
 /**
  * What the last turn did, in the shape the banner needs. One slot rather than one per action:
@@ -38,7 +63,14 @@ export const useGameStore = defineStore('game', () => {
   const sessionLost = ref(false)
   const error = ref<ApiError | null>(null)
   const lastOutcome = ref<TurnOutcome | null>(null)
-  const advisorEnabled = ref(false)
+  const advisorEnabled = ref(savedAdvisor.read() ?? false)
+  const resuming = ref(false)
+  /**
+   * A game was remembered and could not be picked up. Not an `ApiError`: the player did nothing
+   * but reload, so it is a note about what is missing rather than a failed action, and the panel
+   * that says "this game was lost" would be answering a question nobody asked.
+   */
+  const resumeFailed = ref(false)
   /**
    * The last standing the scouts reported, or null if this game has never paid for one. It is
    * never inferred: nothing else on the wire carries it, so an unscouted game says so rather
@@ -75,11 +107,69 @@ export const useGameStore = defineStore('game', () => {
     () => startStatus.value === 'pending' || boardStatus.value === 'pending' || acting.value,
   )
 
+  /**
+   * Pick a remembered game back up after a reload. Nothing here spends a turn: the id is ours
+   * already, and listing the board and the shop is free, so the only cost of trying is two GETs.
+   *
+   * The stored state is applied before the fetches so the figures are on screen immediately and
+   * the board shows its skeleton rather than the app flashing the start screen. A game that had
+   * already ended is restored from the record alone — the server refuses to list ads for one, and
+   * the ending panel is the whole of what is left to show.
+   *
+   * Returns whether a game is now on screen, which is what tells the caller whether the rest of
+   * the run — the decision log — is worth restoring alongside it.
+   */
+  async function resume(): Promise<boolean> {
+    const saved = savedGame.read()
+    if (!saved || typeof saved.gameId !== 'string' || saved.game?.gameId !== saved.gameId) {
+      savedGame.clear()
+      return false
+    }
+
+    game.value = saved.game
+    reputation.value = saved.reputation
+    if (saved.game.finished) {
+      return true
+    }
+
+    resuming.value = true
+    boardStatus.value = 'pending'
+    try {
+      await Promise.all([refreshAds(), refreshShop()])
+    } finally {
+      resuming.value = false
+    }
+
+    // The server let the session go while the tab was closed. That is the one outcome the ending
+    // panel must not claim, so the record is dropped and the player is offered a new game.
+    if (sessionLost.value) {
+      forget()
+      resumeFailed.value = true
+      return false
+    }
+    return true
+  }
+
+  /** Back to before a game, without touching what is remembered across games. */
+  function forget(): void {
+    game.value = null
+    ads.value = []
+    shopItems.value = []
+    reputation.value = null
+    sessionLost.value = false
+    error.value = null
+    lastOutcome.value = null
+    startStatus.value = 'idle'
+    boardStatus.value = 'idle'
+    shopStatus.value = 'idle'
+  }
+
   async function startGame(): Promise<void> {
     startStatus.value = 'pending'
     boardStatus.value = 'idle'
     shopStatus.value = 'idle'
     sessionLost.value = false
+    resumeFailed.value = false
     error.value = null
     lastOutcome.value = null
     ads.value = []
@@ -326,6 +416,18 @@ export const useGameStore = defineStore('game', () => {
     advisorEnabled.value = !advisorEnabled.value
   }
 
+  // Remembered as it changes rather than on unload: `beforeunload` is unreliable on mobile, where
+  // a tab is suspended and killed without one, and every write here is a few hundred bytes.
+  watch([game, reputation], ([current, standing]) => {
+    if (current === null) {
+      savedGame.clear()
+    } else {
+      savedGame.write({ gameId: current.gameId, game: current, reputation: standing })
+    }
+  })
+
+  watch(advisorEnabled, (on) => savedAdvisor.write(on))
+
   function dismissError(): void {
     error.value = null
   }
@@ -375,12 +477,15 @@ export const useGameStore = defineStore('game', () => {
     error,
     lastOutcome,
     advisorEnabled,
+    resuming,
+    resumeFailed,
     started,
     finished,
     ending,
     playable,
     acting,
     busy,
+    resume,
     startGame,
     refreshAds,
     refreshShop,

@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
+import { nextTick } from 'vue'
 import { createPinia, setActivePinia } from 'pinia'
 import { http, HttpResponse } from 'msw'
 import { server } from '../mocks/server'
@@ -648,5 +649,117 @@ describe('investigating reputation', () => {
     await store.startGame()
 
     expect(store.reputation).toBeNull()
+  })
+})
+
+describe('resuming after a reload', () => {
+  /** What a refresh actually produces: a new app, against the same tab's storage. */
+  async function reloaded() {
+    await nextTick()
+    setActivePinia(createPinia())
+    return useGameStore()
+  }
+
+  it('has nothing to resume when no game was in progress', async () => {
+    const store = useGameStore()
+
+    expect(await store.resume()).toBe(false)
+    expect(store.started).toBe(false)
+    expect(store.resumeFailed).toBe(false)
+  })
+
+  // Nothing that spends a turn is stubbed in this suite, so a resume that cost one would fail
+  // the request rather than quietly charge the player for reloading.
+  it('picks the game back up from the board and the shop, which cost no turn', async () => {
+    upstream.game = aGame({ turn: 12, score: 400, gold: 60 })
+    upstream.ads = [anAd({ adId: 'a1' }), anAd({ adId: 'a2' })]
+    await startedStore()
+
+    const store = await reloaded()
+    stubGame()
+
+    expect(await store.resume()).toBe(true)
+    expect(store.game).toMatchObject({ gameId: 'kZUyeMSK', turn: 12, score: 400 })
+    expect(store.ads).toHaveLength(2)
+    expect(store.shopItems).toHaveLength(1)
+    expect(store.boardStatus).toBe('ready')
+  })
+
+  it('keeps the standing the scouts were already paid for', async () => {
+    const standing = { people: 12.5, state: -3.25, underworld: 40 }
+    const store = await startedStore()
+    server.use(
+      http.post('/api/games/:gameId/investigate', () =>
+        HttpResponse.json({ game: upstream.game, reputation: standing }),
+      ),
+    )
+    await store.investigate()
+
+    const resumed = await reloaded()
+    stubGame()
+    await resumed.resume()
+
+    expect(resumed.reputation).toEqual(standing)
+  })
+
+  it('restores a game that had already ended from the record alone', async () => {
+    const store = await startedStore()
+    stubSolve({ game: aGame({ finished: true, score: 810, turn: 44 }), success: false })
+    await store.solve('LTyNBlYB')
+
+    const resumed = await reloaded()
+
+    expect(await resumed.resume()).toBe(true)
+    expect(resumed.ending).toBe('finished')
+    expect(resumed.game).toMatchObject({ score: 810, turn: 44 })
+    // Untouched, which is the proof that no board was asked for: the server refuses to list one.
+    expect(resumed.boardStatus).toBe('idle')
+  })
+
+  it('offers a new game, not a defeat, when the server has already let the session go', async () => {
+    await startedStore()
+
+    const store = await reloaded()
+    server.use(
+      http.get('/api/games/:gameId/ads', () =>
+        problem(404, 'SESSION_EXPIRED', 'That game is no longer being tracked.'),
+      ),
+      http.get('/api/games/:gameId/shop', () =>
+        problem(404, 'SESSION_EXPIRED', 'That game is no longer being tracked.'),
+      ),
+    )
+
+    expect(await store.resume()).toBe(false)
+    expect(store.started).toBe(false)
+    expect(store.ending).toBeNull()
+    expect(store.sessionLost).toBe(false)
+    expect(store.error).toBeNull()
+    expect(store.resumeFailed).toBe(true)
+  })
+
+  it('forgets a game it could not resume, so the next reload starts clean', async () => {
+    await startedStore()
+
+    const store = await reloaded()
+    server.use(
+      http.get('/api/games/:gameId/ads', () =>
+        problem(404, 'SESSION_EXPIRED', 'That game is no longer being tracked.'),
+      ),
+      http.get('/api/games/:gameId/shop', () =>
+        problem(404, 'SESSION_EXPIRED', 'That game is no longer being tracked.'),
+      ),
+    )
+    await store.resume()
+
+    const next = await reloaded()
+
+    expect(await next.resume()).toBe(false)
+    expect(next.resumeFailed).toBe(false)
+  })
+
+  it('remembers the advisor toggle, which is a preference rather than a game', async () => {
+    useGameStore().toggleAdvisor()
+
+    expect((await reloaded()).advisorEnabled).toBe(true)
   })
 })

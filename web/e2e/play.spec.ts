@@ -95,3 +95,39 @@ test('every control points at itself, and a disabled one does not', async ({ pag
   expect(await cursor('label:has(input[type="checkbox"])')).toBe('pointer')
   expect(await cursor('label:has(input[type="radio"])')).toBe('pointer')
 })
+
+test('a reload picks the game back up rather than losing it', async ({ page }) => {
+  await startGame(page)
+  await page
+    .getByRole('button', { name: 'Solve: Escort a merchant caravan to Ravenhold (job 1)' })
+    .click()
+  await expect(stat(page, 'Turn')).toHaveText('1')
+
+  await page.reload()
+
+  // No click on Start a game: the id outlived the page, and the board and shop are free to fetch.
+  await expect(stat(page, 'Turn')).toHaveText('1')
+  await expect(stat(page, 'Score')).toHaveText('42')
+  await expect(jobs(page)).toHaveCount(6)
+  await expect(page.getByRole('button', { name: 'Start a game' })).toHaveCount(0)
+})
+
+test('a run is abandoned from the bottom of the page, and never by one click', async ({ page }) => {
+  await startGame(page)
+  await page
+    .getByRole('button', { name: 'Solve: Escort a merchant caravan to Ravenhold (job 1)' })
+    .click()
+  await expect(stat(page, 'Turn')).toHaveText('1')
+
+  await page.getByRole('button', { name: 'Start a new game' }).click()
+  await page.getByRole('button', { name: 'Keep playing' }).click()
+
+  await expect(stat(page, 'Turn')).toHaveText('1')
+
+  await page.getByRole('button', { name: 'Start a new game' }).click()
+  await page.getByRole('button', { name: 'Yes, start a new game' }).click()
+
+  await expect(stat(page, 'Turn')).toHaveText('0')
+  await expect(stat(page, 'Score')).toHaveText('0')
+  await expect(jobs(page)).toHaveCount(6)
+})

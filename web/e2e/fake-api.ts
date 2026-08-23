@@ -108,6 +108,7 @@ const SUCCEEDS_ABOVE = 0.6
 export class FakeApi {
   readonly gameId = 'e2eGAME1'
 
+  private readonly initial: GameView
   private game: GameView
   private board: AdView[] = []
   private serial = 0
@@ -117,7 +118,7 @@ export class FakeApi {
   private readonly injected: { match: RegExp; problem: Problem; times: number }[] = []
 
   constructor(options: FakeApiOptions = {}) {
-    this.game = {
+    this.initial = {
       gameId: this.gameId,
       lives: options.lives ?? 3,
       gold: options.gold ?? 0,
@@ -127,7 +128,22 @@ export class FakeApi {
       finished: false,
     }
     this.autoPlay = options.autoPlay ?? []
+    this.game = this.initial
+    this.start()
+  }
+
+  /**
+   * A new game is a new game: state and board both go back to where they started, which is what
+   * lets a spec abandon a run and assert on what replaced it. The deal is reset with them, so
+   * every game deals the same six jobs and a spec can name one.
+   */
+  private start(): GameView {
+    this.game = { ...this.initial }
+    this.board = []
+    this.serial = 0
+    this.autoPlayTurn = 0
     this.deal()
+    return this.game
   }
 
   /** Serve every `/api` request this page makes. Nothing else is intercepted. */
@@ -160,7 +176,7 @@ export class FakeApi {
     }
 
     if (method === 'POST' && path === '/api/games') {
-      return this.json(route, this.game)
+      return this.json(route, this.start())
     }
 
     const scoped = path.match(/^\/api\/games\/([^/]+)(.*)$/)

@@ -1,5 +1,6 @@
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { defineStore } from 'pinia'
+import { persisted } from './persistence'
 import type { ProbabilityTier } from '../api/types'
 
 /**
@@ -53,9 +54,23 @@ interface Tally {
  * attempts spread over eleven labels, which is too thin to show anything converging; several
  * games are what make the estimate visibly settle.
  */
+/**
+ * The ledger is the one thing here that is meant to accumulate over many games, so it is kept
+ * where a closed tab does not end it — and emptied only by the button that says it will.
+ */
+const saved = persisted<{ tallies: Record<string, Tally>; games: number }>(
+  'local',
+  'mugloar.calibration',
+)
+
 export const useCalibrationStore = defineStore('calibration', () => {
-  const tallies = ref<Record<string, Tally>>({})
-  const games = ref(0)
+  const restored = saved.read()
+  const tallies = ref<Record<string, Tally>>(restored?.tallies ?? {})
+  const games = ref(restored?.games ?? 0)
+
+  watch([tallies, games], ([currentTallies, played]) =>
+    saved.write({ tallies: currentTallies, games: played }),
+  )
 
   function record(observation: Observation): void {
     const existing = tallies.value[observation.label]

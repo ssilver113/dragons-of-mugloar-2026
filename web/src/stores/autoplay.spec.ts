@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { nextTick } from 'vue'
 import { createPinia, setActivePinia } from 'pinia'
 import { http, HttpResponse } from 'msw'
 import { server } from '../mocks/server'
@@ -253,5 +254,67 @@ describe('a new game', () => {
 
     expect(autoPlay.log).toHaveLength(0)
     expect(autoPlay.halt).toBeNull()
+  })
+})
+
+describe('a reload mid-run', () => {
+  /**
+   * A refresh, in the order the app does it: the store exists before the game is restored,
+   * because restoring a game id is what resets the log.
+   */
+  async function reloaded() {
+    await nextTick()
+    setActivePinia(createPinia())
+    const autoPlay = useAutoPlayStore()
+    const games = useGameStore()
+    stubGame(latest)
+    return { games, autoPlay }
+  }
+
+  it('puts the interrupted run back beside the game it belongs to', async () => {
+    const first = await playing()
+    stubSteps([aStep(), aStep()])
+    await first.autoPlay.step()
+    await first.autoPlay.step()
+
+    const { games, autoPlay } = await reloaded()
+    await games.resume()
+    autoPlay.restore(games.game?.gameId ?? '')
+
+    expect(autoPlay.log).toHaveLength(2)
+    expect(autoPlay.halt).toBeNull()
+  })
+
+  it('numbers the turns that follow on from the ones it restored', async () => {
+    const first = await playing()
+    stubSteps([aStep()])
+    await first.autoPlay.step()
+
+    const { games, autoPlay } = await reloaded()
+    await games.resume()
+    autoPlay.restore(games.game?.gameId ?? '')
+    stubSteps([aStep()])
+    await autoPlay.step()
+
+    expect(autoPlay.log.map((entry) => entry.id)).toEqual([1, 2])
+  })
+
+  it('refuses a log written for a different game', async () => {
+    const first = await playing()
+    stubSteps([aStep()])
+    await first.autoPlay.step()
+
+    const { games, autoPlay } = await reloaded()
+    await games.resume()
+    autoPlay.restore('someone-elses-game')
+
+    expect(autoPlay.log).toEqual([])
+  })
+
+  it('remembers the speed, which is a preference rather than part of a game', async () => {
+    const { autoPlay } = await playing()
+    autoPlay.speed = 'slow'
+
+    expect((await reloaded()).autoPlay.speed).toBe('slow')
   })
 })
