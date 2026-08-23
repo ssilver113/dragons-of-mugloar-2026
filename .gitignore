@@ -3,3 +3,9 @@ Thumbs.db
 *.log
 __pycache__/
 *.pyc
+
+# IDE and editor state. api/ and web/ each ignore these for their own subtree; the root needs
+# its own rule or the folder an IDE opens the whole repo in is the one thing left untracked.
+.idea/
+.vscode/
+*.iml
