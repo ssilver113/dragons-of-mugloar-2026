@@ -1,23 +1,24 @@
 import { describe, expect, it } from 'vitest'
 import { endsTheSession, present } from './errorPresentation'
-import type { ErrorCode } from './types'
+import { ERROR_CODES, isErrorCode } from './types'
 
-const ALL_CODES: ErrorCode[] = [
-  'VALIDATION_FAILED',
-  'SESSION_EXPIRED',
-  'GAME_OVER',
-  'AD_NOT_AVAILABLE',
-  'ITEM_NOT_AVAILABLE',
-  'INSUFFICIENT_GOLD',
-  'GAME_NOT_FOUND',
-  'INVALID_ACTION',
-  'UPSTREAM_RATE_LIMITED',
-  'UPSTREAM_UNAVAILABLE',
-  'UPSTREAM_PROTOCOL',
-  'UPSTREAM_ERROR',
-  'INTERNAL_ERROR',
-  'NETWORK_ERROR',
-]
+// The vocabulary itself, not a copy of it: a code added to the app without a presentation would
+// otherwise pass a test that had been written against the shorter list.
+const ALL_CODES = ERROR_CODES
+
+describe('the code vocabulary', () => {
+  it('recognises every code the app can produce', () => {
+    for (const code of ALL_CODES) {
+      expect(isErrorCode(code), code).toBe(true)
+    }
+  })
+
+  it('rejects anything that is not one of them', () => {
+    for (const value of ['', 'TEAPOT', 'session_expired', 42, null, undefined, {}]) {
+      expect(isErrorCode(value), String(value)).toBe(false)
+    }
+  })
+})
 
 describe('presenting a failure', () => {
   it('has an answer for every code the client can produce', () => {

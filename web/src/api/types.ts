@@ -89,21 +89,34 @@ export interface SolveResultView {
  * `NETWORK_ERROR` is the one member the server never sends: it is what a failed `fetch` becomes,
  * so callers have a single vocabulary for every way a request can fail.
  */
-export type ErrorCode =
-  | 'VALIDATION_FAILED'
-  | 'SESSION_EXPIRED'
-  | 'GAME_OVER'
-  | 'AD_NOT_AVAILABLE'
-  | 'ITEM_NOT_AVAILABLE'
-  | 'INSUFFICIENT_GOLD'
-  | 'GAME_NOT_FOUND'
-  | 'INVALID_ACTION'
-  | 'UPSTREAM_RATE_LIMITED'
-  | 'UPSTREAM_UNAVAILABLE'
-  | 'UPSTREAM_PROTOCOL'
-  | 'UPSTREAM_ERROR'
-  | 'INTERNAL_ERROR'
-  | 'NETWORK_ERROR'
+export const ERROR_CODES = [
+  'VALIDATION_FAILED',
+  'SESSION_EXPIRED',
+  'GAME_OVER',
+  'AD_NOT_AVAILABLE',
+  'ITEM_NOT_AVAILABLE',
+  'INSUFFICIENT_GOLD',
+  'GAME_NOT_FOUND',
+  'INVALID_ACTION',
+  'UPSTREAM_RATE_LIMITED',
+  'UPSTREAM_UNAVAILABLE',
+  'UPSTREAM_PROTOCOL',
+  'UPSTREAM_ERROR',
+  'INTERNAL_ERROR',
+  'NETWORK_ERROR',
+] as const
+
+export type ErrorCode = (typeof ERROR_CODES)[number]
+
+/**
+ * Whether a value off the wire is one of the codes above. A response body is parsed, never
+ * validated — `as ProblemDetail` is a claim about JSON we did not write — so this is what turns
+ * that claim into something the rest of the app may rely on. Without it an unlisted code would
+ * flow into `ApiError` and the presentation lookup would return nothing at all.
+ */
+export function isErrorCode(value: unknown): value is ErrorCode {
+  return typeof value === 'string' && (ERROR_CODES as readonly string[]).includes(value)
+}
 
 /** RFC 9457 problem body as the backend renders it. */
 export interface ProblemDetail {

@@ -28,6 +28,22 @@ describe('api client', () => {
     })
   })
 
+  // A code the app has no vocabulary for used to travel as far as the presentation lookup, which
+  // answers with nothing and turns a handled failure into a TypeError inside the caller's catch.
+  it('does not adopt a problem code it does not recognise', async () => {
+    server.use(
+      http.get('/api/games/:id/ads', () =>
+        problem(503, 'CDN_EDGE_UNREACHABLE', 'Our edge could not reach the origin.'),
+      ),
+    )
+
+    const error = await api.listAds('kZUyeMSK').catch((e: unknown) => e)
+
+    // Attributed by status instead, which is where a body we cannot read already lands.
+    expect(error).toBeInstanceOf(ApiError)
+    expect(error).toMatchObject({ code: 'UPSTREAM_UNAVAILABLE', status: 503 })
+  })
+
   it('attributes a gateway failure with no problem body to the upstream being down', async () => {
     server.use(
       http.post('/api/games', () => new HttpResponse('<html>Bad Gateway</html>', { status: 502 })),
@@ -50,8 +66,13 @@ describe('api client', () => {
 
   it('reports an unreadable success body as a protocol failure', async () => {
     server.use(
-      http.post('/api/games', () =>
-        new HttpResponse('not json', { status: 200, headers: { 'Content-Type': 'application/json' } }),
+      http.post(
+        '/api/games',
+        () =>
+          new HttpResponse('not json', {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          }),
       ),
     )
 

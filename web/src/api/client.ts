@@ -1,3 +1,4 @@
+import { isErrorCode } from './types'
 import type {
   AdBoardView,
   AutoPlayStepView,
@@ -52,16 +53,22 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
  * Anything that is not a readable problem body is attributed by status: a gateway failure is the
  * dev proxy or the container reporting that the backend itself is down, which is a different story
  * for the player than a bug on our side.
+ *
+ * The code is checked for membership rather than merely for presence. Parsing a body does not
+ * make it ours — an intermediary can answer with a problem document of its own — and a code the
+ * app has no vocabulary for would travel as far as the presentation lookup before turning into a
+ * `TypeError` inside a caller's `catch`. Attributing it by status instead loses nothing: an
+ * unrecognised code carries no more meaning here than no code at all.
  */
 async function problemFrom(response: Response): Promise<ApiError> {
   let problem: ProblemDetail | null = null
   try {
     problem = (await response.json()) as ProblemDetail
   } catch {
-    problem = null
+    // Not JSON at all: an HTML error page from a proxy, or an empty body. Attributed by status.
   }
 
-  if (problem?.code && problem.detail) {
+  if (isErrorCode(problem?.code) && problem.detail) {
     return new ApiError(problem.code, problem.detail, response.status)
   }
   if (response.status >= 502 && response.status <= 504) {
