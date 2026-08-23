@@ -104,10 +104,10 @@ whole board as the solver ranked it.
 
 It scores an ad as `reward × p − lifeCost × (1 − p)`, in gold, where `p` is
 `P(success | label, reward, level)` and `lifeCost` is a life's value divided by the lives in hand,
-so the last life is the dearest. `p` is fitted by maximum likelihood over recorded games rather
-than assumed — see `tools/fit-success-model.py`. Levelling is ranked above solving against a
-target that grows with the turn count, and when nothing is worth a life and nothing in the shop is
-affordable, the solver scouts instead.
+so the last life is the dearest. `p` is fitted by maximum likelihood over 2,486 recorded solve
+attempts rather than assumed — the fit and its calibration are set out in `SuccessModel`. Levelling
+is ranked above solving against a target that grows with the turn count, and when nothing is worth
+a life and nothing in the shop is affordable, the solver scouts instead.
 
 The brief asks for "at least 1000 points". Across **46 games played end to end against the live
 API at the configuration this repository ships, none finished below 1000** — the lowest was 2700

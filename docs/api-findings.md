@@ -119,12 +119,13 @@ The headless benchmark plays whole games through the solver and logs every attem
 
 **The curve is also far sharper than assumed.** The logistic's width fell from 0.18 of the ceiling to 0.066, so the estimate falls from most of the label's prior to nearly nothing across a band about a tenth of the ceiling wide. The game behaves much more like a threshold than like a slope. Concretely, ads more than 1.2× the old ceiling were given 0.29 by the first fit and came in at **0.08 across 265 attempts**.
 
-After the refit, mean prediction tracks observed rate within 0.04 in every level band and every richness band. The fit is reproducible from a corpus the harness writes:
+After the refit, mean prediction tracks observed rate within 0.04 in every level band and every richness band. The corpus behind it is reproducible — the harness writes one attempt per row, with the state each was scored against, to `api/build/bench/attempts-*.csv`:
 
 ```bash
 cd api && ./gradlew bench -Pgames=40
-python tools/fit-success-model.py api/build/bench/attempts-*.csv
 ```
+
+Fitting the curve to those rows is a maximum-likelihood estimate over four parameters; the fitted values and the calibration they produce are recorded on `SuccessModel`, which is where the solver reads them from.
 
 **Caveat that travels with these numbers.** Both corpora are selection-biased: the solver only attempts ads it already scores favourably, and the exploration sampled by hand. The refit is therefore the right basis for making the solver's own estimates truthful, and the wrong basis for claiming a general law about the game. The two are pooled precisely because they are biased in different directions — the solver avoids rich ads at low level, and that corner is the one the exploration measured.
 

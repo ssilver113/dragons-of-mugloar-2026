@@ -1,12 +1,13 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 /* Ink on parchment. A pale, mottled sheet for the panels, warm sepia for the text, and a russet
    brown reserved for what the player can act on — the palette a scribe had, rather than a screen's.
 
-   Contrast is measured, not asserted: `python tools/check-contrast.py` converts every token below
-   to sRGB and reports its WCAG ratio against both surfaces. On a light theme the *darker* surface
-   is the hard case, which is the reverse of the dark palette this replaced, so the script checks
-   both and holds the threshold against the worse one. Lowest is warning at 4.94:1.
+   Contrast was measured rather than asserted: every token below was converted to sRGB and checked
+   for its WCAG ratio against *both* surfaces, holding the threshold to the worse of the two. On a
+   light theme the darker surface is the hard case, which is the reverse of the dark palette this
+   replaced. The lowest of them is warning, at 4.94:1. Any change to a value here wants remeasuring
+   against both, not just against the one it looked wrong on.
 
    The state colours are separated from the accent by chroma rather than by hue. On parchment every
    usable colour is warm, so there is no hue distance left to spend: accent sits at a third of
@@ -17,21 +18,21 @@
   --color-surface: oklch(89% 0.033 80);
   --color-surface-raised: oklch(94.5% 0.024 85);
   --color-ink: oklch(30% 0.028 52);
-  --color-ink-muted: oklch(45% 0.030 55);
+  --color-ink-muted: oklch(45% 0.03 55);
   --color-accent: oklch(43% 0.062 45);
 
   /* State colours, used by banners, ad flags and the advisor's verdict. Always alongside a
      non-colour cue — the verdict is a word before it is a colour. */
-  --color-danger: oklch(46% 0.160 27);
-  --color-warning: oklch(47% 0.110 82);
+  --color-danger: oklch(46% 0.16 27);
+  --color-warning: oklch(47% 0.11 82);
   --color-success: oklch(44% 0.095 150);
 
   /* No webfont. The display face is the one every desktop already has, which is both a smaller
      app and the honest period choice: a browser game of this vintage had Georgia and Verdana and
      nothing else. The game's own name is artwork, so the face never has to carry the flourish.
      Body text stays on the system stack — a serif at 14px costs legibility and buys nothing. */
-  --font-display: Georgia, "Times New Roman", Times, serif;
-  --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: Georgia, 'Times New Roman', Times, serif;
+  --font-sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
 /* Paper fibre, as a filter rather than a file. `feTurbulence` is rasterised once into a 180px
@@ -100,7 +101,8 @@ body {
     /* The rim, and the only thing that draws the edge of the sheet. It is an inset shadow rather
        than a border so the displacement filter bends it into the tear instead of leaving a
        straight rule with bites taken out of it. */
-    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--paper-hue) var(--paper-edge-strength), transparent);
+    box-shadow: inset 0 0 0 1px
+      color-mix(in oklab, var(--paper-hue) var(--paper-edge-strength), transparent);
     filter: var(--paper-filter);
     transition: box-shadow 150ms ease-out;
   }

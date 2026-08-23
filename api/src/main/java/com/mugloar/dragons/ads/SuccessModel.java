@@ -17,7 +17,7 @@ package com.mugloar.dragons.ads;
  * <p>{@link #MEASURED} is fitted by maximum likelihood over 2,486 solve attempts recorded by the
  * benchmark harness, plus the hand-driven exploration's own table at its measured weight — the
  * exploration is the only evidence covering rich ads at a low level, because the solver's own
- * estimate keeps it out of that corner. The tool is {@code tools/fit-success-model.py}.
+ * estimate keeps it out of that corner.
  *
  * <p>Two things changed against the first fit, which had only the exploration to go on and covered
  * levels 0 to 12 over turns under 50. The ceiling now starts <em>higher</em> and climbs
