@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { backdropArt, crestArt, dragonArt, fogArt, itemArt, wordmarkArt } from './artwork'
+import { backdropArt, crestArt, dragonArt, itemArt, wordmarkArt } from './artwork'
 import ch from './art/items/ch.svg?url'
 import cs from './art/items/cs.svg?url'
 import gas from './art/items/gas.svg?url'
@@ -16,7 +16,6 @@ import defeated from './art/dragon/defeated.webp?url'
 import idle from './art/dragon/idle.webp?url'
 import victorious from './art/dragon/victorious.webp?url'
 import backdrop from './art/scene/backdrop.webp?url'
-import fog from './art/scene/fog.svg?url'
 import wordmark from './art/title/wordmark.webp?url'
 
 /**
@@ -78,7 +77,6 @@ describe('the artwork registry', () => {
 
   it('has a scene to sit behind everything', () => {
     expect(backdropArt).toBe(backdrop)
-    expect(fogArt).toBe(fog)
   })
 
   it('has the wordmark the heading is drawn with', () => {

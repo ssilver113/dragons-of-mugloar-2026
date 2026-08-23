@@ -1,4 +1,6 @@
-# Dragons of Mugloar
+<h1 align="center">
+  <img src="docs/images/wordmark.webp" alt="Dragons of Mugloar" width="520">
+</h1>
 
 A playable web app for the [Dragons of Mugloar](https://dragonsofmugloar.com/) adventure, with a
 built-in solver that can take the game over and play it out.
@@ -133,3 +135,15 @@ whole game to its end. Running it on all three engines is where the cross-browse
 
 Coverage: `./gradlew jacocoTestReport` and `npm run test:coverage`. Reported, never gated. All
 three suites run in CI on every push.
+
+## Screenshots
+
+The board mid-game, with the advisor on: every job carries its chance, its average payout and
+whether the reward covers the risk to a life, and the shop and standings sit alongside it.
+
+![The message board with the advisor's read on each job](docs/images/board-and-advisor.jpg)
+
+Underneath, the advisor's calibration — what it predicted against how those jobs actually went —
+and the decision log, each turn expandable into the whole board as the solver ranked it.
+
+![Advisor calibration and the solver's decision log](docs/images/calibration-and-decision-log.jpg)

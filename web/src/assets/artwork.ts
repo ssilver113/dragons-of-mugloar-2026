@@ -93,4 +93,3 @@ export const backdropArt = art('scene/backdrop')
 
 export const wordmarkArt = art('title/wordmark')
 
-export const fogArt = art('scene/fog')
