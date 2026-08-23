@@ -38,13 +38,14 @@ onBeforeUnmount(() => clearTimeout(clear))
 
 /**
  * Lives are drawn rather than counted, up to the point where drawing them stops being readable.
- * Five hearts is where a row still reads at a glance on a 375px screen; past that the count is
- * the clearer statement and the heart goes back to being a label.
+ * Four hearts is the widest row the tile can hold at every viewport it has to survive; a fifth
+ * overruns the tile on the narrowest of them, so from five up the count is the statement and the
+ * heart goes back to being a label.
  *
  * Zero takes the same path as a large number on purpose — a tile that drew nothing at all would
  * look like a tile that had failed to load, on the one turn where it matters most.
  */
-const HEART_LIMIT = 5
+const HEART_LIMIT = 4
 const hearts = computed(() =>
   props.game.lives >= 1 && props.game.lives <= HEART_LIMIT ? props.game.lives : 0,
 )
@@ -115,7 +116,7 @@ onBeforeUnmount(() => observer?.disconnect())
         -->
         <template v-if="hearts" #figure>
           <!--
-            Their own row, with its own spacing: five hearts have to fit a third of a 375px screen,
+            Their own row, with its own spacing: four hearts have to fit a third of a 375px screen,
             which the tile's ordinary mark-to-figure gap does not leave room for.
           -->
           <span class="flex items-center gap-0.5 sm:gap-1">

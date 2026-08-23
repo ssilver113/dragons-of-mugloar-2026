@@ -47,13 +47,21 @@ describe('GameStats', () => {
     expect(tile.get('.sr-only').text()).toBe('3')
   })
 
+  /** Four is the widest row the tile holds; the fifth heart is the one that overran it. */
+  it('draws the widest row it can hold', () => {
+    const tile = livesTile(withLives(4))
+
+    expect(tile.findAll('img')).toHaveLength(4)
+    expect(tile.get('.sr-only').text()).toBe('4')
+  })
+
   it('goes back to a figure once there are more hearts than a tile can hold', () => {
     // The slot is not provided, so the tile falls back to one mark and a figure — which is to
     // say it reads exactly like Score, Gold, Level and Turn.
-    const tile = livesTile(withLives(9))
+    const tile = livesTile(withLives(5))
 
     expect(tile.findAll('img')).toHaveLength(1)
-    expect(tile.text()).toContain('9')
+    expect(tile.text()).toContain('5')
   })
 
   /** A tile that drew nothing would read as one that failed to load, on the turn it matters most. */
