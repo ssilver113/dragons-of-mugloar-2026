@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watchEffect } from 'vue'
 import AdCard from './AdCard.vue'
 import AdToolbar from './AdToolbar.vue'
 import AppIcon from './AppIcon.vue'
@@ -15,6 +15,8 @@ const props = defineProps<{
   advisor: boolean
   lives: number
   disabled: boolean
+  /** A turn is in flight and its board has not come back yet. See `board` below. */
+  holding: boolean
 }>()
 defineEmits<{ solve: [adId: string]; refresh: []; 'toggle-advisor': [] }>()
 
@@ -24,15 +26,36 @@ const sort = ref<SortKey>('value')
 const posture = ref<Posture>('balanced')
 const filters = ref<FilterId[]>([])
 
-const scored = computed(() => scoreBoard(props.ads, posture.value, props.lives))
-const average = computed(() => meanReward(props.ads))
+/**
+ * The board a turn began with, held until that turn's own refetch lands.
+ *
+ * A turn writes the state three times — the optimistic board on the click, the new figures when
+ * the response arrives, then the real board — and the cards moved on each of them, twice
+ * visibly. The middle write is the least obvious and the worst: a life lost reprices every ad on
+ * a board that has not changed, so the ranking reshuffles for a reason the player cannot see.
+ *
+ * Holding the two inputs the ranking reads collapses all three into one change, at the moment
+ * there is genuinely something new to show. Only the data is held: sorting, filtering and the
+ * posture still answer immediately, because they are the player's own controls.
+ */
+const board = ref<AdView[]>(props.ads)
+const boardLives = ref(props.lives)
+watchEffect(() => {
+  if (!props.holding) {
+    board.value = props.ads
+    boardLives.value = props.lives
+  }
+})
+
+const scored = computed(() => scoreBoard(board.value, posture.value, boardLives.value))
+const average = computed(() => meanReward(board.value))
 
 const visible = computed<{ ad: AdView; read: AdRead | null }[]>(() =>
   props.advisor
     ? sortBoard(filterBoard(scored.value, new Set(filters.value), average.value), sort.value).map(
         (entry) => ({ ad: entry.ad, read: entry }),
       )
-    : props.ads.map((ad) => ({ ad, read: null })),
+    : board.value.map((ad) => ({ ad, read: null })),
 )
 
 function toggleFilter(id: FilterId): void {
@@ -41,13 +64,13 @@ function toggleFilter(id: FilterId): void {
     : [...filters.value, id]
 }
 
-// A refetch after a solve leaves the optimistic board on screen; only a board with nothing to
-// show falls back to the skeleton, so the list never flashes empty between turns.
-const loading = computed(() => props.status === 'pending' && props.ads.length === 0)
-const failed = computed(() => props.status === 'error' && props.ads.length === 0)
-const empty = computed(() => props.status === 'ready' && props.ads.length === 0)
+// A refetch leaves the board that is already up on screen; only a board with nothing to show
+// falls back to the skeleton, so the list never flashes empty between turns.
+const loading = computed(() => props.status === 'pending' && board.value.length === 0)
+const failed = computed(() => props.status === 'error' && board.value.length === 0)
+const empty = computed(() => props.status === 'ready' && board.value.length === 0)
 // Filtered to nothing is a different situation from an empty board, and has a different way out.
-const filteredOut = computed(() => props.ads.length > 0 && visible.value.length === 0)
+const filteredOut = computed(() => board.value.length > 0 && visible.value.length === 0)
 </script>
 
 <template>
@@ -126,8 +149,8 @@ const filteredOut = computed(() => props.ads.length > 0 && visible.value.length 
       :posture="posture"
       :filters="filters"
       :shown="visible.length"
-      :total="ads.length"
-      :life-cost="lifeCost(posture, lives)"
+      :total="board.length"
+      :life-cost="lifeCost(posture, boardLives)"
       @update:sort="sort = $event"
       @update:posture="posture = $event"
       @toggle-filter="toggleFilter"
@@ -165,7 +188,12 @@ const filteredOut = computed(() => props.ads.length > 0 && visible.value.length 
       Every job on the board is filtered out. Loosen the filters to see them.
     </p>
 
-    <ul v-else class="grid gap-3 sm:grid-cols-2">
+    <!--
+      One change a turn, and it is a movement rather than a cut: the cards that survive glide to
+      where the new board puts them, and the ones that arrive fade in behind them. A card that
+      leaves goes at once — the job was taken, and its Solve button has been saying so.
+    -->
+    <TransitionGroup v-else tag="ul" name="card" class="grid gap-3 sm:grid-cols-2">
       <AdCard
         v-for="entry in visible"
         :key="entry.ad.adId"
@@ -175,6 +203,31 @@ const filteredOut = computed(() => props.ads.length > 0 && visible.value.length 
         :disabled="disabled"
         @solve="$emit('solve', $event)"
       />
-    </ul>
+    </TransitionGroup>
   </section>
 </template>
+
+<style scoped>
+@media (prefers-reduced-motion: no-preference) {
+  .card-move {
+    transition: transform 260ms cubic-bezier(0.22, 0.61, 0.36, 1);
+  }
+
+  /* Out of the flow before the survivors are measured, or they would glide towards the gap the
+     departing card is still holding open and then snap when it goes. */
+  .card-leave-active {
+    position: absolute;
+    visibility: hidden;
+  }
+
+  /* Delayed by the length of the glide, so a new job does not appear in a slot another card is
+     still on its way out of. */
+  .card-enter-active {
+    transition: opacity 200ms ease-out 200ms;
+  }
+
+  .card-enter-from {
+    opacity: 0;
+  }
+}
+</style>

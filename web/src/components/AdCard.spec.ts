@@ -40,13 +40,14 @@ describe('AdCard', () => {
     expect(card.text()).toContain('~31g')
   })
 
-  it('names the value band as well as colouring it, and signs the number', () => {
-    expect(render({}, { read: aRead({ score: 41, band: 'strong' }) }).text()).toContain('+41g')
-    expect(render({}, { read: aRead({ score: 41, band: 'strong' }) }).text()).toContain('Strong')
+  it('gives the verdict as a word as well as a colour, and signs the number', () => {
+    const worth = render({}, { read: aRead({ score: 41, band: 'strong' }) })
+    expect(worth.get('dd.text-success').text()).toContain('Yes')
+    expect(worth.text()).toContain('+41g')
 
     const losing = render({}, { read: aRead({ score: -18, band: 'poor' }) })
+    expect(losing.get('dd.text-danger').text()).toContain('No')
     expect(losing.text()).toContain('-18g')
-    expect(losing.text()).toContain('Not worth a life')
   })
 
   it('calls out a trap, which is the one ad a human is likelier to take than the bot', () => {

@@ -357,6 +357,7 @@ const banner = computed(() => {
               :advisor="store.advisorEnabled"
               :lives="store.game?.lives ?? 1"
               :disabled="store.busy || autoPlay.active"
+              :holding="store.acting"
               @solve="store.solve($event)"
               @refresh="store.refreshAds()"
               @toggle-advisor="store.toggleAdvisor()"

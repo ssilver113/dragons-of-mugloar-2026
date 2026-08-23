@@ -29,13 +29,13 @@ const ADVISOR_FLAGS: Partial<Record<AdFlag, string>> = {
 }
 
 /**
- * The band is named as well as coloured, and the pips carry it a third way. Colour alone would
- * make the whole ranking invisible to anyone who cannot separate red from green.
+ * A verdict, because the row asks a question. It is a word before it is a colour, so the ranking
+ * survives anyone who cannot separate red from green; the gold behind it says by how much.
  */
-const BANDS: Record<ValueBand, { text: string; pips: string; class: string }> = {
-  strong: { text: 'Strong', pips: '●●●', class: 'text-success' },
-  fair: { text: 'Fair', pips: '●●○', class: 'text-ink' },
-  poor: { text: 'Not worth a life', pips: '●○○', class: 'text-danger' },
+const BANDS: Record<ValueBand, { text: string; class: string }> = {
+  strong: { text: 'Yes', class: 'text-success' },
+  fair: { text: 'Ok', class: 'text-ink' },
+  poor: { text: 'No', class: 'text-danger' },
 }
 
 const badges = computed(() =>
@@ -133,10 +133,9 @@ const hoverable = computed(() => !unsendable.value && !props.disabled)
         </div>
         <div>
           <dt class="text-xs text-ink-muted">Worth the risk</dt>
-          <dd class="flex items-baseline gap-1.5 tabular-nums" :class="band.class">
-            <span aria-hidden="true" class="text-[0.6rem] tracking-tight">{{ band.pips }}</span>
-            <span>{{ value }}</span>
-            <span class="text-xs">{{ band.text }}</span>
+          <dd class="flex items-baseline gap-1.5" :class="band.class">
+            <span class="font-semibold">{{ band.text }}</span>
+            <span class="text-xs tabular-nums">{{ value }}</span>
           </dd>
         </div>
       </dl>

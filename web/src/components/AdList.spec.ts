@@ -11,6 +11,7 @@ function render(props: {
   advisor?: boolean
   lives?: number
   disabled?: boolean
+  holding?: boolean
 }) {
   return mount(AdList, {
     props: {
@@ -19,6 +20,7 @@ function render(props: {
       advisor: false,
       lives: 3,
       disabled: false,
+      holding: false,
       ...props,
     },
   })
@@ -82,6 +84,28 @@ describe('AdList', () => {
     // The advisor costs nothing upstream. Turning it on to reconsider the board is exactly what a
     // player wants to do while the dragon is out, so it is the one control that stays live.
     expect(list.get('[role="switch"]').attributes('disabled')).toBeUndefined()
+  })
+
+  it('holds the board still for the length of a turn, then changes it once', async () => {
+    const list = render({
+      status: 'ready',
+      ads: [anAd({ adId: 'a1', message: 'Steal the gold' })],
+      advisor: true,
+      lives: 3,
+    })
+
+    // A turn starts: the optimistic board and the figures the response brings both land while
+    // this is true, and neither may move a card.
+    await list.setProps({
+      holding: true,
+      ads: [anAd({ adId: 'a2', message: 'Rescue the cat' })],
+      lives: 2,
+    })
+    expect(messages(list)).toEqual(['Solve: Steal the gold'])
+
+    // The turn's own board arrives, and that is the one change the player sees.
+    await list.setProps({ holding: false })
+    expect(messages(list)).toEqual(['Solve: Rescue the cat'])
   })
 
   it('offers the advisor as an opt-in and says what the current order means', async () => {
@@ -156,11 +180,12 @@ describe('AdList ranking', () => {
 
   it('re-ranks under a different risk posture without asking the server anything', async () => {
     const list = render({ ...board, ads: [SAFE, MID], lives: 1 })
-    expect(list.text()).toContain('Not worth a life')
+    // The advisor's red "No": one job here does not cover its own risk while a life costs 300g.
+    expect(list.findAll('dd.text-danger')).toHaveLength(1)
 
     await list.get('input[name="posture"][value="bold"]').setValue()
 
-    expect(list.text()).not.toContain('Not worth a life')
+    expect(list.findAll('dd.text-danger')).toHaveLength(0)
   })
 
   it('filters the board down and offers the way back', async () => {
