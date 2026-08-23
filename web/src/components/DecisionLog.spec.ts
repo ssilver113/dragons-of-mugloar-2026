@@ -15,7 +15,7 @@ function render(entries: LogEntry[], halt: Halt | null = null) {
 
 describe('DecisionLog', () => {
   it('explains what the buttons are for before any turn is taken', () => {
-    expect(render([]).text()).toContain('No turns taken yet')
+    expect(render([]).text()).toContain('No automatic turns taken yet')
   })
 
   it('puts the newest turn first, because a fast run outpaces reading', () => {
