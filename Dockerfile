@@ -12,7 +12,7 @@ FROM node:24-alpine AS web
 WORKDIR /web
 # Manifests first: dependencies only reinstall when they actually change.
 COPY web/package.json web/package-lock.json ./
-RUN npm ci
+RUN --mount=type=cache,target=/root/.npm npm ci
 COPY web/ ./
 RUN npm run build
 
@@ -27,7 +27,12 @@ COPY api/settings.gradle.kts api/build.gradle.kts ./
 COPY api/src ./src
 COPY --from=web /web/dist ./src/main/resources/static
 # Tests run in CI and on a developer machine; a release build should not need a network for them.
-RUN ./gradlew --no-daemon bootJar -x test
+# Editing a source file invalidates the COPY above, so without this the build re-downloads every
+# dependency each time. The mount keeps them between builds; it never enters the image. It covers
+# `caches/` only, so the Gradle distribution stays in the layer above where a prune cannot reach
+# it. Downloads only — Gradle's task-output build cache measured no faster, so it is not enabled.
+RUN --mount=type=cache,target=/root/.gradle/caches \
+    ./gradlew --no-daemon bootJar -x test
 
 # --- what actually ships ------------------------------------------------------------------------
 FROM eclipse-temurin:21-jre-alpine
