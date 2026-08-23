@@ -1,41 +1,49 @@
 @import "tailwindcss";
 
-/* Cinzel, self-hosted from npm rather than a CDN, so the app renders the same offline, behind a
-   proxy and inside the Docker image. Two subsets ship; a browser fetches only the one the text
-   needs, which for this app is latin. SIL Open Font License 1.1 — see README. */
-@import "@fontsource-variable/cinzel";
+/* Ink on parchment. A pale, mottled sheet for the panels, warm sepia for the text, and a russet
+   brown reserved for what the player can act on — the palette a scribe had, rather than a screen's.
 
-/* Ink and parchment. A night-blue ground, warm parchment for text rather than a cold white, and
-   antique gold reserved for what the player can act on.
+   Contrast is measured, not asserted: `python tools/check-contrast.py` converts every token below
+   to sRGB and reports its WCAG ratio against both surfaces. On a light theme the *darker* surface
+   is the hard case, which is the reverse of the dark palette this replaced, so the script checks
+   both and holds the threshold against the worse one. Lowest is warning at 4.94:1.
 
-   Contrast is measured, not asserted: every colour below is set as text on --color-surface-raised
-   somewhere, so lightness is chosen to clear WCAG AA (4.5:1) against the *raised* panel, not only
-   against the darker page behind it. Lowest is danger at 5.96:1.
-
-   Gold and amber sit thirty degrees apart on purpose. The accent means "act on this" and the
-   warning means "be careful with this", and a theme that let them converge would erase the
-   difference — which is why warning is pushed towards orange rather than left at its old hue. */
+   The state colours are separated from the accent by chroma rather than by hue. On parchment every
+   usable colour is warm, so there is no hue distance left to spend: accent sits at a third of
+   danger's chroma and reads as muted ink, while danger, warning and success stay plainly
+   chromatic. Hue alone was what kept gold and amber apart in the dark theme; it cannot do the job
+   here. */
 @theme {
-  --color-surface: oklch(16% 0.022 265);
-  --color-surface-raised: oklch(22% 0.026 265);
-  --color-ink: oklch(93% 0.022 85);
-  --color-ink-muted: oklch(75% 0.028 82);
-  --color-accent: oklch(80% 0.125 88);
+  --color-surface: oklch(89% 0.033 80);
+  --color-surface-raised: oklch(94.5% 0.024 85);
+  --color-ink: oklch(30% 0.028 52);
+  --color-ink-muted: oklch(45% 0.030 55);
+  --color-accent: oklch(43% 0.062 45);
 
-  /* State colours, used by banners and ad flags. Phase 8 builds the EV scale on top of these,
-     always alongside a non-colour cue. */
-  --color-danger: oklch(70% 0.19 25);
-  --color-warning: oklch(76% 0.16 58);
-  --color-success: oklch(74% 0.14 155);
+  /* State colours, used by banners, ad flags and the advisor's verdict. Always alongside a
+     non-colour cue — the verdict is a word before it is a colour. */
+  --color-danger: oklch(46% 0.160 27);
+  --color-warning: oklch(47% 0.110 82);
+  --color-success: oklch(44% 0.095 150);
 
-  /* Headings and figures that are meant to read as inscription. Body text stays on the system
-     stack: a display face at 14px costs legibility and buys nothing. */
-  --font-display: "Cinzel Variable", "Cinzel", Georgia, "Times New Roman", serif;
+  /* No webfont. The display face is the one every desktop already has, which is both a smaller
+     app and the honest period choice: a browser game of this vintage had Georgia and Verdana and
+     nothing else. The game's own name is artwork, so the face never has to carry the flourish.
+     Body text stays on the system stack — a serif at 14px costs legibility and buys nothing. */
+  --font-display: Georgia, "Times New Roman", Times, serif;
   --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
+/* Paper fibre, as a filter rather than a file. `feTurbulence` is rasterised once into a 180px
+   tile and then repeated, so the whole texture costs one small bitmap and no network request.
+   The alpha ramp is what keeps it speckled: without it the filter returns a flat mid-grey and
+   multiplying by it would only dim the sheet. */
+@theme {
+  --parchment-grain: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='g' x='0' y='0' width='100%25' height='100%25'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/><feComponentTransfer><feFuncA type='linear' slope='0.55' intercept='-0.2'/></feComponentTransfer></filter><rect width='180' height='180' filter='url%28%23g%29'/></svg>");
+}
+
 html {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 body {
@@ -44,6 +52,132 @@ body {
   background-color: var(--color-surface);
   color: var(--color-ink);
   font-family: var(--font-sans);
+}
+
+/**
+ * A sheet of parchment, drawn on a pseudo-element rather than on the element itself.
+ *
+ * That indirection is the whole trick. The torn edge is an SVG displacement filter, and a filter
+ * applied to the element would displace its text along with its paper — words would ripple at the
+ * margins. Putting the sheet behind the content on `::before` lets the filter chew the paper while
+ * the type stays flat on top of it.
+ *
+ * Six layers, cheapest last: a state tint, an edge vignette for age, three soft blotches that stop
+ * it reading as card stock, and the fibre tile. Everything but the tint multiplies.
+ *
+ * Every variant below works by setting a custom property that this rule reads, never by
+ * overriding a declaration here. Two utilities on one element would otherwise be settled by
+ * whichever Tailwind happened to emit second, which is not a thing to leave to chance.
+ */
+@utility parchment {
+  position: relative;
+  /* Without this, a negative-z-index child can slide behind an ancestor's background instead of
+     stopping at its own element. */
+  isolation: isolate;
+
+  --paper-hue: var(--color-ink-muted);
+  --paper-edge-strength: 55%;
+  --paper-tint: transparent;
+  --paper-shadow: drop-shadow(0 2px 4px oklch(30% 0.028 52 / 0.3));
+  --paper-filter: var(--paper-shadow);
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: var(--paper-bleed, 0);
+    z-index: -1;
+    border-radius: var(--paper-radius, 0.5rem);
+    background-color: var(--color-surface-raised);
+    background-image:
+      linear-gradient(var(--paper-tint), var(--paper-tint)),
+      radial-gradient(112% 112% at 50% 50%, transparent 44%, oklch(52% 0.06 58 / 0.3) 100%),
+      radial-gradient(55% 45% at 16% 20%, oklch(68% 0.065 68 / 0.24), transparent 72%),
+      radial-gradient(48% 55% at 84% 14%, oklch(72% 0.055 88 / 0.2), transparent 74%),
+      radial-gradient(65% 50% at 74% 86%, oklch(66% 0.07 60 / 0.22), transparent 76%),
+      var(--parchment-grain);
+    background-blend-mode: normal, multiply, multiply, multiply, multiply, multiply;
+    background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, repeat;
+    /* The rim, and the only thing that draws the edge of the sheet. It is an inset shadow rather
+       than a border so the displacement filter bends it into the tear instead of leaving a
+       straight rule with bites taken out of it. */
+    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--paper-hue) var(--paper-edge-strength), transparent);
+    filter: var(--paper-filter);
+    transition: box-shadow 150ms ease-out;
+  }
+}
+
+/**
+ * The torn edge: fractal noise displacing the sheet's own outline, so no two sheets tear alike and
+ * none of it is a file.
+ *
+ * The paper starts two pixels proud of the box and the displacement swings it roughly six pixels
+ * either way, so the tear can bite inwards without ever reaching the text — the padding on these
+ * panels is four times that. Three seeds, cycled by position, because a column of cards torn from
+ * the same template reads as a repeat rather than as paper.
+ */
+@utility torn {
+  --paper-bleed: -3px;
+  --paper-radius: 0;
+  --paper-filter: url(#deckle-a) var(--paper-shadow);
+
+  &:nth-child(3n + 2) {
+    --paper-filter: url(#deckle-b) var(--paper-shadow);
+  }
+
+  &:nth-child(3n) {
+    --paper-filter: url(#deckle-c) var(--paper-shadow);
+  }
+}
+
+/**
+ * What the sheet is saying. The hue drives the rim and, where the panel also takes `paper-tinted`,
+ * a wash across the whole sheet — one property rather than a border colour and a background that
+ * have to be kept in step.
+ */
+@utility paper-danger {
+  --paper-hue: var(--color-danger);
+  --paper-edge-strength: 55%;
+}
+
+@utility paper-success {
+  --paper-hue: var(--color-success);
+  --paper-edge-strength: 55%;
+}
+
+@utility paper-accent {
+  --paper-hue: var(--color-accent);
+  --paper-edge-strength: 50%;
+}
+
+@utility paper-tinted {
+  --paper-tint: color-mix(in oklab, var(--paper-hue) 13%, transparent);
+}
+
+/* The hover cue: the rim inks up. Strength rather than colour, so it reads the same on a plain
+   sheet and on a trap without either needing to know about the other. */
+@utility paper-lifted {
+  --paper-edge-strength: 85%;
+}
+
+/**
+ * The relief a control had before flat design: a light top edge, a dark bottom one, and a shadow
+ * beneath it. Applied to the control's own background rather than replacing it, so a button keeps
+ * whatever token it was given and gains the bevel on top.
+ */
+@utility relief {
+  background-image: linear-gradient(oklch(100% 0 0 / 0.22), oklch(0% 0 0 / 0.1));
+  box-shadow:
+    inset 0 1px 0 oklch(100% 0 0 / 0.4),
+    inset 0 -1px 0 oklch(0% 0 0 / 0.16),
+    0 1px 2px oklch(30% 0.028 52 / 0.3);
+}
+
+/* Pressed, not merely darker: the bevel inverts and the control sinks a pixel. */
+@utility relief-pressed {
+  background-image: linear-gradient(oklch(0% 0 0 / 0.12), oklch(100% 0 0 / 0.1));
+  box-shadow:
+    inset 0 1px 2px oklch(30% 0.028 52 / 0.35),
+    inset 0 -1px 0 oklch(100% 0 0 / 0.25);
 }
 
 @layer base {
