@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { backdropArt, crestArt, dragonArt, fogArt, itemArt } from './artwork'
+import { backdropArt, crestArt, dragonArt, fogArt, itemArt, wordmarkArt } from './artwork'
 import ch from './art/items/ch.svg?url'
 import cs from './art/items/cs.svg?url'
 import gas from './art/items/gas.svg?url'
@@ -12,11 +12,12 @@ import unknown from './art/items/unknown.svg?url'
 import wax from './art/items/wax.svg?url'
 import wingpot from './art/items/wingpot.svg?url'
 import wingpotmax from './art/items/wingpotmax.svg?url'
-import defeated from './art/dragon/defeated.svg?url'
-import idle from './art/dragon/idle.svg?url'
-import victorious from './art/dragon/victorious.svg?url'
-import backdrop from './art/scene/backdrop.svg?url'
+import defeated from './art/dragon/defeated.webp?url'
+import idle from './art/dragon/idle.webp?url'
+import victorious from './art/dragon/victorious.webp?url'
+import backdrop from './art/scene/backdrop.webp?url'
 import fog from './art/scene/fog.svg?url'
+import wordmark from './art/title/wordmark.webp?url'
 
 /**
  * Every id recon measured. The shop offers a subset of these and never anything else, so this
@@ -78,5 +79,9 @@ describe('the artwork registry', () => {
   it('has a scene to sit behind everything', () => {
     expect(backdropArt).toBe(backdrop)
     expect(fogArt).toBe(fog)
+  })
+
+  it('has the wordmark the heading is drawn with', () => {
+    expect(wordmarkArt).toBe(wordmark)
   })
 })

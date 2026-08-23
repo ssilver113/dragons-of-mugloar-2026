@@ -60,13 +60,24 @@ describe('MissionResult', () => {
     expect(render().get('[role="status"]').attributes('aria-live')).toBe('off')
   })
 
-  /** The defeated seal belongs to the end of a run. A lost life is not the end of one. */
-  it('does not stamp the fallen dragon on a job that merely went wrong', () => {
+  /**
+   * The sigil follows the outcome the game judged. A tone it did not judge — a purchase, a
+   * scouting report — leaves the dragon standing, because nothing about it went either way.
+   */
+  it('puts the dragon in the mood the turn earned', () => {
     const lost = render({
       outcome: { tone: 'failure', title: 'Mission failed', body: 'It did not go well.' },
     })
 
     expect(lost.get('[role="status"]').classes()).toContain('paper-danger')
-    expect(lost.html()).not.toContain('defeated')
+    expect(lost.get('img').classes()).toContain('defeated')
+
+    const won = render({ outcome: WON })
+    expect(won.get('img').classes()).toContain('victorious')
+
+    const bought = render({
+      outcome: { tone: 'info', title: 'Bought a potion', body: 'The shop obliged.' },
+    })
+    expect(bought.get('img').classes()).toContain('idle')
   })
 })

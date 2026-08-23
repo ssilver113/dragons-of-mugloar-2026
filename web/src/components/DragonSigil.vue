@@ -15,6 +15,10 @@ const src = computed(() => dragonArt(props.mood))
 
     Keyed on the mood so a change remounts the image and replays the entrance, rather than
     swapping the source underneath a static element.
+
+    Each pose is cropped to its own outline, so the three differ in shape. `size` reserves the
+    square they are laid into and `object-contain` fits the drawing inside it — a pose that is
+    wider than it is tall simply leaves the box short, rather than stretching to fill it.
   -->
   <img
     :key="mood"
@@ -24,7 +28,7 @@ const src = computed(() => dragonArt(props.mood))
     :width="size"
     :height="size"
     decoding="async"
-    class="sigil shrink-0"
+    class="sigil shrink-0 object-contain"
     :class="mood"
   />
 </template>

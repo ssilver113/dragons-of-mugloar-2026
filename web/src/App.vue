@@ -13,7 +13,7 @@ import MessageBanner from './components/MessageBanner.vue'
 import MissionResult from './components/MissionResult.vue'
 import ReputationPanel from './components/ReputationPanel.vue'
 import ShopPanel from './components/ShopPanel.vue'
-import type { IconName } from './assets/artwork'
+import { wordmarkArt, type IconName } from './assets/artwork'
 import type { PendingKind } from './components/MissionResult.vue'
 import { present } from './api/errorPresentation'
 import { useGameStore } from './stores/game'
@@ -186,11 +186,25 @@ const banner = computed(() => {
   <PaperFilters />
 
   <main class="mx-auto flex min-h-dvh max-w-6xl flex-col gap-6 px-4 py-8">
-    <header class="flex flex-col gap-1">
-      <h1 class="text-2xl font-bold tracking-wide text-accent drop-shadow-sm sm:text-4xl">
-        Dragons of Mugloar
+    <header class="flex flex-col items-center gap-1 text-center">
+      <!--
+        The wordmark carries the title, and the heading still carries the words: the name is a
+        drawing, not a font we could set, so the text stays for the accessibility tree and for
+        anything that reads the page rather than looks at it.
+      -->
+      <h1>
+        <img
+          :src="wordmarkArt"
+          alt=""
+          aria-hidden="true"
+          width="1344"
+          height="394"
+          class="h-auto w-full max-w-2xl drop-shadow-sm"
+        />
+        <span class="sr-only">Dragons of Mugloar</span>
       </h1>
-      <p class="text-sm text-ink-muted">
+      <!-- Balanced because a centred line that wraps looks accidental when the second line is short. -->
+      <p class="text-sm text-balance text-ink-muted">
         Take the jobs your dragon can survive. Every action costs a turn.
       </p>
     </header>
@@ -262,8 +276,8 @@ const banner = computed(() => {
         <DragonSigil
           v-if="store.ending === 'finished'"
           mood="defeated"
-          :size="112"
-          class="size-24 self-center sm:size-28"
+          :size="256"
+          class="size-40 self-center sm:size-64"
         />
         <div class="flex flex-col gap-1">
           <h2 class="text-lg font-semibold">{{ ended.heading }}</h2>

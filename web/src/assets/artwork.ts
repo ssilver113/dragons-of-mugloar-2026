@@ -1,9 +1,9 @@
 /**
  * The artwork registry: the one place that decides which file a piece of art resolves to.
  *
- * Hand-authored SVG ships as the default. A generated raster set can be dropped into the same
- * folders later without touching a component or this list — a file with the same stem and a
- * raster extension wins, best format first — which is why nothing here is imported by name.
+ * The chrome is hand-authored SVG; the dragon, the backdrop and the wordmark are painted rasters.
+ * Either can replace the other in place — a file with the same stem wins on format, best first —
+ * without touching a component or this list, which is why nothing here is imported by name.
  */
 const FILES = import.meta.glob('./art/**/*.{svg,png,webp,avif}', {
   eager: true,
@@ -90,5 +90,7 @@ export const crestArt = (faction: Faction): string => art(`crests/${faction}`)
 export const iconArt = (name: IconName): string => art(`icons/${name}`)
 
 export const backdropArt = art('scene/backdrop')
+
+export const wordmarkArt = art('title/wordmark')
 
 export const fogArt = art('scene/fog')

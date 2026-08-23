@@ -71,12 +71,14 @@ const tone = computed(() =>
 const live = computed(() => (state.value.kind === 'outcome' ? 'polite' : 'off'))
 
 /**
- * A job the dragon failed is not a dragon that fell. The defeated sigil belongs to the end of a
- * run and nowhere else — the red border already says the job went badly, and stamping the seal on
- * a lost life would tell the player their game was over when it is not.
+ * The sigil answers the outcome: the dragon stands up to a job it survived and hunches over one it
+ * did not. Only a tone the game actually judged moves it — a purchase or a scouting report is
+ * `info`, and neither went well nor badly.
  */
+const MOODS = { success: 'victorious', failure: 'defeated', info: 'idle' } as const
+
 const mood = computed(() =>
-  state.value.kind === 'outcome' && props.outcome!.tone === 'success' ? 'victorious' : 'idle',
+  state.value.kind === 'outcome' ? MOODS[props.outcome!.tone] : 'idle',
 )
 </script>
 
@@ -98,7 +100,7 @@ const mood = computed(() =>
       class="flex shrink-0"
       :class="{ waiting: state.kind === 'pending' }"
     >
-      <DragonSigil :mood="mood" :size="56" class="size-12 sm:size-14" />
+      <DragonSigil :mood="mood" :size="72" class="size-14 sm:size-18" />
     </span>
     <AppIcon v-else name="autoplay" :size="48" class="size-11 sm:size-12" />
 
