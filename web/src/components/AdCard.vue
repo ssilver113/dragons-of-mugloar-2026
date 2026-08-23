@@ -76,26 +76,16 @@ const hoverable = computed(() => !unsendable.value && !props.disabled)
 <template>
   <li
     class="parchment torn flex flex-col gap-3 p-4"
-    :class="[
-      read?.trap ? 'paper-danger' : '',
-      { 'opacity-60': unsendable },
-      hoverable ? 'hover:paper-lifted' : '',
-    ]"
+    :class="[{ 'opacity-60': unsendable }, hoverable ? 'hover:paper-lifted' : '']"
   >
     <div class="flex flex-col gap-2">
       <p class="text-sm sm:text-base">{{ ad.message }}</p>
-      <ul v-if="badges.length || ad.encrypted || read?.trap" class="flex flex-wrap gap-1.5">
+      <ul v-if="badges.length || ad.encrypted" class="flex flex-wrap gap-1.5">
         <li
           v-if="ad.encrypted"
           class="rounded border border-accent/50 px-1.5 py-0.5 text-xs text-accent"
         >
           Decoded
-        </li>
-        <li
-          v-if="read?.trap"
-          class="rounded border border-danger/60 px-1.5 py-0.5 text-xs font-semibold text-danger"
-        >
-          Trap
         </li>
         <li
           v-for="badge in badges"
@@ -139,7 +129,17 @@ const hoverable = computed(() => !unsendable.value && !props.disabled)
           </dd>
         </div>
       </dl>
-      <ul v-if="warnings.length || read.trap" class="mt-2 flex flex-col gap-1">
+      <p v-if="read.trap" class="mt-2">
+        <span
+          class="rounded border border-danger/60 px-1.5 py-0.5 text-xs font-semibold text-danger"
+          >Trap</span
+        >
+      </p>
+      <ul
+        v-if="warnings.length || read.trap"
+        class="flex flex-col gap-1"
+        :class="read.trap ? 'mt-1.5' : 'mt-2'"
+      >
         <li v-if="read.trap" class="text-xs text-danger">
           Pays well and the odds do not back it. This is the job that ends a run.
         </li>
