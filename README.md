@@ -49,6 +49,29 @@ The API listens on **8081** (`PORT` overrides it) and the dev server proxies `/a
 (`API_URL` overrides the target), so the app is same-origin in development — and in the container,
 where Spring serves the built bundle. There is no CORS configuration anywhere in the project.
 
+### Playing offline
+
+Plays a simulated game inside the process, with no network at all. It runs through the same
+application — same board, scoring, shop, solver and UI — so only the badge on the page tells you.
+
+```bash
+cd api && ./gradlew bootRun --args="--mugloar.mode=offline"
+```
+
+The board is sampled from **45,750 ads recorded across 40 live games**
+(`src/main/resources/offline/board-corpus.json`); everything else follows the behaviour measured in
+`docs/api-findings.md`. Rebuild the corpus from a fresh run with:
+
+```bash
+cd api && ./gradlew bench -Pgames=40 -Pargs="--bench.label=boards"
+python api/tools/build-board-corpus.py
+```
+
+**An offline score is not evidence about the real game.** Solves are drawn against the same
+estimator the solver scores with, so it is right by construction — the distribution behind the
+1000-point claim comes from live play. Medians do track (4,332 offline against 4,830 live), but
+offline games starve at low level far more often. `mugloar.offline.seed` makes a game reproducible.
+
 ## Architecture
 
 ```
