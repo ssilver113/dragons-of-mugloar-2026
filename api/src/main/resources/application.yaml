@@ -19,6 +19,8 @@ springdoc:
     path: /swagger-ui
 
 mugloar:
+  # live plays the real game; offline plays a simulated one with no network at all.
+  mode: ${MUGLOAR_MODE:live}
   base-url: https://dragonsofmugloar.com/api/v2
   user-agent: dragons-of-mugloar-client/1.0
   connect-timeout: 3s
@@ -28,6 +30,22 @@ mugloar:
   retry-max-delay: 2s
   retry-jitter: 100ms
   retry-multiplier: 2.0
+
+  offline:
+    ad-lifetime: 7
+    starting-lives: 3
+    max-games: 200
+    # Set to fix every game the process deals, which makes a reported offline game reproducible.
+    seed:
+    # The fallback generator, used only where the recorded corpus has nothing — the corners of the
+    # level/turn space the solver's own play never reached. Unmeasured, all of it.
+    board:
+      board-size: 10
+      reward-ceiling-fraction: 0.75
+      reward-growth-per-turn: 0.02
+      reward-spread: 0.6
+      base64-rate: 0.067
+      rot13-rate: 0.0055
 
 game:
   # Long enough to survive a coffee break mid-game; nothing here needs to outlive the process.

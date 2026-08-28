@@ -2,6 +2,7 @@ package com.mugloar.dragons.mugloar;
 
 import com.mugloar.dragons.mugloar.exception.MugloarUnavailableException;
 import java.net.http.HttpClient;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,7 +14,15 @@ import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
 
+/**
+ * The live client, and everything it needs to reach the network.
+ *
+ * <p>Conditional so that {@code mugloar.mode=offline} replaces the whole stack — request factory,
+ * retry policy and all — rather than leaving an unused HTTP client configured beside a simulated
+ * one. Absent the property this is what runs, so the real game stays the default.
+ */
 @Configuration(proxyBeanMethods = false)
+@ConditionalOnProperty(name = "mugloar.mode", havingValue = "live", matchIfMissing = true)
 @EnableConfigurationProperties(MugloarProperties.class)
 public class MugloarClientConfiguration {
 
@@ -68,5 +77,10 @@ public class MugloarClientConfiguration {
     @Bean
     MugloarClient mugloarClient(RestClient mugloarRestClient, RetryTemplate mugloarRetryTemplate) {
         return new RestMugloarClient(mugloarRestClient, mugloarRetryTemplate);
+    }
+
+    @Bean
+    MugloarMode mugloarMode() {
+        return MugloarMode.LIVE;
     }
 }
