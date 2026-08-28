@@ -42,11 +42,13 @@ class BenchmarkGameTest {
 
     private FakeUpstream upstream;
     private AttemptLog attempts;
+    private BoardLog boards;
 
     @BeforeEach
     void setUp() throws IOException {
         upstream = new FakeUpstream();
         attempts = AttemptLog.open(directory.resolve("attempts.csv"));
+        boards = BoardLog.open(directory.resolve("boards.csv"));
     }
 
     @Test
@@ -129,6 +131,22 @@ class BenchmarkGameTest {
         assertThat(result.counted()).isTrue();
     }
 
+    @Test
+    void recordsTheWholeBoardAndNotOnlyTheAdItChose() throws IOException {
+        play(properties(400, 40));
+        boards.close();
+        List<String> rows = Files.readAllLines(directory.resolve("boards.csv"));
+
+        // Two ads are posted every turn and at most one is attempted, so the board file has to
+        // outgrow the attempt file — that gap is the whole reason it exists.
+        assertThat(rows).hasSizeGreaterThan((int) attempts.rows() + 1);
+        assertThat(rows.getFirst()).isEqualTo("game,turn,level,expires_in,reward,label,message");
+        // Rows are in the strategy's ranked order, not the board's, so both ads are looked for
+        // rather than either being expected first.
+        assertThat(rows).anyMatch(row -> row.endsWith(",60,\"Piece of cake\",\"Escort a merchant\""))
+                .anyMatch(row -> row.endsWith(",60,\"Piece of cake\",\"Chase off a rat\""));
+    }
+
     private GameResult play(BenchmarkProperties properties) {
         GameSessionRegistry sessions = new GameSessionRegistry(
                 new GameProperties(Duration.ofMinutes(30)), Clock.systemUTC());
@@ -138,7 +156,7 @@ class BenchmarkGameTest {
         AutoPlayService autoPlay = new AutoPlayService(
                 games, shop, new RiskAdjustedStrategy(StrategyParameters.DEFAULT));
 
-        return new BenchmarkGame(games, shop, autoPlay, properties).play(attempts);
+        return new BenchmarkGame(games, shop, autoPlay, properties).play(attempts, boards);
     }
 
     private BenchmarkProperties properties(int maxTurns, int maxConsecutivePasses) {

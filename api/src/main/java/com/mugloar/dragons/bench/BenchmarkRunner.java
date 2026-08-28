@@ -63,26 +63,31 @@ class BenchmarkRunner implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
-        Path file = Path.of(properties.outputDir()).resolve(
-                "attempts-%s-%s.csv".formatted(
-                        properties.label(), LocalDateTime.now().format(STAMP)));
+        String stamp = LocalDateTime.now().format(STAMP);
+        Path attemptFile = Path.of(properties.outputDir())
+                .resolve("attempts-%s-%s.csv".formatted(properties.label(), stamp));
+        Path boardFile = Path.of(properties.outputDir())
+                .resolve("boards-%s-%s.csv".formatted(properties.label(), stamp));
 
         log.info("Playing {} games as '{}', {} at a time, {} between upstream calls",
                 properties.games(), properties.label(),
                 properties.concurrency(), pacer.interval());
 
         Instant started = Instant.now();
-        try (AttemptLog attempts = AttemptLog.open(file)) {
-            List<GameResult> results = playAll(attempts);
-            log.info("\n{}", report(results, attempts, Duration.between(started, Instant.now())));
+        try (AttemptLog attempts = AttemptLog.open(attemptFile);
+                BoardLog boards = BoardLog.open(boardFile)) {
+            List<GameResult> results = playAll(attempts, boards);
+            log.info("\n{}",
+                    report(results, attempts, boards, Duration.between(started, Instant.now())));
         }
     }
 
-    private List<GameResult> playAll(AttemptLog attempts) throws InterruptedException {
+    private List<GameResult> playAll(AttemptLog attempts, BoardLog boards)
+            throws InterruptedException {
         List<GameResult> results = new ArrayList<>(properties.games());
         ExecutorService pool = Executors.newFixedThreadPool(properties.concurrency());
         try {
-            for (Future<GameResult> future : pool.invokeAll(tasks(attempts))) {
+            for (Future<GameResult> future : pool.invokeAll(tasks(attempts, boards))) {
                 try {
                     results.add(future.get());
                 } catch (ExecutionException | CancellationException e) {
@@ -99,12 +104,12 @@ class BenchmarkRunner implements ApplicationRunner {
      * A game that ended on an upstream failure is followed by a pause. Whatever turned it away is
      * unlikely to have cleared by the time the next game would otherwise start.
      */
-    private List<Callable<GameResult>> tasks(AttemptLog attempts) {
+    private List<Callable<GameResult>> tasks(AttemptLog attempts, BoardLog boards) {
         AtomicInteger finished = new AtomicInteger();
         List<Callable<GameResult>> tasks = new ArrayList<>(properties.games());
         for (int i = 0; i < properties.games(); i++) {
             tasks.add(() -> {
-                GameResult result = game.play(attempts);
+                GameResult result = game.play(attempts, boards);
                 log.info("game {}/{} · {} · score {} · {} turns · level {}",
                         finished.incrementAndGet(), properties.games(),
                         result.outcome(), result.score(), result.turns(), result.level());
@@ -117,7 +122,8 @@ class BenchmarkRunner implements ApplicationRunner {
         return tasks;
     }
 
-    String report(List<GameResult> results, AttemptLog attempts, Duration elapsed) {
+    String report(
+            List<GameResult> results, AttemptLog attempts, BoardLog boards, Duration elapsed) {
         List<GameResult> counted = results.stream().filter(GameResult::counted).toList();
         ScoreDistribution scores = ScoreDistribution.of(
                 counted.stream().map(GameResult::score).toList(), properties.scoreTarget());
@@ -134,6 +140,7 @@ class BenchmarkRunner implements ApplicationRunner {
                   turns      median %s · max %s
                   upstream   %d calls in %s (%.1f/s), settled at %s between calls
                   attempts   %d rows in %s
+                  boards     %d rows in %s
                 """.formatted(
                 properties.label(), results.size(), properties.concurrency(),
                 properties.strategy(), properties.model(),
@@ -145,7 +152,7 @@ class BenchmarkRunner implements ApplicationRunner {
                 turns.isEmpty() ? "—" : String.valueOf(median(turns)),
                 turns.isEmpty() ? "—" : String.valueOf(turns.getLast()),
                 client.calls(), human(elapsed), rate(client.calls(), elapsed), pacer.interval(),
-                attempts.rows(), attempts.file());
+                attempts.rows(), attempts.file(), boards.rows(), boards.file());
     }
 
     private static int median(List<Integer> sorted) {

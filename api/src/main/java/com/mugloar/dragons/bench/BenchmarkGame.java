@@ -51,7 +51,7 @@ class BenchmarkGame {
         this.properties = properties;
     }
 
-    GameResult play(AttemptLog attempts) {
+    GameResult play(AttemptLog attempts, BoardLog boards) {
         GameState state = games.startGame();
         // Also primes the session's price ledger, so purchases do not fetch the shop again.
         List<ShopItem> catalogue = shop.listItems(state.gameId()).items();
@@ -79,6 +79,7 @@ class BenchmarkGame {
                         state.gameId(), state.score(), state.turn(), state.level(), e.toString());
             }
 
+            boards.record(state, step.decision().ads());
             recordSolve(attempts, state, step);
             passes = step.decision().move().type() == MoveType.INVESTIGATE_REPUTATION
                     ? passes + 1
