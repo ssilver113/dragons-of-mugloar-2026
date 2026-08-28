@@ -175,6 +175,12 @@ export class FakeApi {
       return this.problem(route, failure.problem)
     }
 
+    if (method === 'GET' && path === '/api/meta') {
+      // The e2e backend stands in for a live server, so nothing here is simulated as far as the
+      // app is concerned and no caveat badge should appear.
+      return this.json(route, { offline: false })
+    }
+
     if (method === 'POST' && path === '/api/games') {
       return this.json(route, this.start())
     }

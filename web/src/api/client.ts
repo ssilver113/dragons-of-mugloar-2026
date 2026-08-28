@@ -5,6 +5,7 @@ import type {
   ErrorCode,
   GameView,
   InvestigationView,
+  MetaView,
   ProblemDetail,
   PurchaseResultView,
   ShopView,
@@ -80,6 +81,8 @@ async function problemFrom(response: Response): Promise<ApiError> {
 const games = '/api/games'
 
 export const api = {
+  meta: (): Promise<MetaView> => request<MetaView>('/api/meta'),
+
   startGame: (): Promise<GameView> => request<GameView>(games, { method: 'POST' }),
 
   listAds: (gameId: string): Promise<AdBoardView> =>

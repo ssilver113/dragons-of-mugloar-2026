@@ -784,3 +784,23 @@ describe('resuming after a reload', () => {
     expect((await reloaded()).advisorEnabled).toBe(true)
   })
 })
+
+describe('knowing which world it is playing', () => {
+  it('reports an offline server so the caveat can be shown', async () => {
+    server.use(http.get('/api/meta', () => HttpResponse.json({ offline: true })))
+    const store = useGameStore()
+
+    await store.loadMeta()
+
+    expect(store.offline).toBe(true)
+  })
+
+  it('assumes live when the server does not answer', async () => {
+    server.use(http.get('/api/meta', () => HttpResponse.error()))
+    const store = useGameStore()
+
+    await store.loadMeta()
+
+    expect(store.offline).toBe(false)
+  })
+})

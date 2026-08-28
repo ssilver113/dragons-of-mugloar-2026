@@ -9,6 +9,13 @@ export type AdFlag = 'EXPIRING_NEXT_TURN' | 'OUT_OF_LEAGUE' | 'NEVER_ATTEMPT' | 
 /** Equivalence class of probability labels. The prior lives on the tier, not on the label. */
 export type ProbabilityTier = 'SAFE' | 'FAVOURABLE' | 'EVEN' | 'POOR' | 'DOOMED' | 'UNKNOWN'
 
+/**
+ * What the server is, rather than what any game is. Fetched once, before a game exists.
+ */
+export interface MetaView {
+  offline: boolean
+}
+
 export interface GameView {
   gameId: string
   lives: number

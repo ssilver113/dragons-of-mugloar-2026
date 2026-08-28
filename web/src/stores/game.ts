@@ -72,6 +72,13 @@ export const useGameStore = defineStore('game', () => {
    */
   const reputation = ref<ReputationView | null>(null)
 
+  /**
+   * Whether this server plays a simulated game. A fact about the deployment, so it is read once
+   * and never with a game. A failed read leaves it false: showing no caveat on an offline game is
+   * a smaller lie than putting one on a live game the player just spent forty turns on.
+   */
+  const offline = ref(false)
+
   const started = computed(() => game.value !== null)
   const finished = computed(() => game.value?.finished ?? false)
 
@@ -100,6 +107,19 @@ export const useGameStore = defineStore('game', () => {
   const busy = computed(
     () => startStatus.value === 'pending' || boardStatus.value === 'pending' || acting.value,
   )
+
+  /**
+   * Read what kind of server this is, once, at startup. Deliberately silent on failure: the badge
+   * it feeds is a caveat about the score, and an app that refused to start because it could not
+   * fetch a caveat would be worse than one that quietly leaves it off.
+   */
+  async function loadMeta(): Promise<void> {
+    try {
+      offline.value = (await api.meta()).offline
+    } catch {
+      offline.value = false
+    }
+  }
 
   /**
    * Pick a remembered game back up after a reload. Nothing here spends a turn: the id is ours
@@ -458,6 +478,7 @@ export const useGameStore = defineStore('game', () => {
   return {
     game,
     ads,
+    offline,
     shopItems,
     startStatus,
     boardStatus,
@@ -487,6 +508,7 @@ export const useGameStore = defineStore('game', () => {
     buy,
     investigate,
     autoPlayStep,
+    loadMeta,
     toggleAdvisor,
     dismissError,
   }

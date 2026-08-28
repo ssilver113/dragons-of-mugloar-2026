@@ -22,6 +22,21 @@ describe('App', () => {
     expect(app.find('[aria-label="Dragon status"]').exists()).toBe(false)
   })
 
+  it('says nothing about the world when the server plays the real one', async () => {
+    const app = render()
+    await flushPromises()
+
+    expect(app.text()).not.toContain('Simulated world')
+  })
+
+  it('warns that the score is simulated when the server is offline', async () => {
+    server.use(http.get('/api/meta', () => HttpResponse.json({ offline: true })))
+    const app = render()
+    await flushPromises()
+
+    expect(app.text()).toContain('Simulated world')
+  })
+
   it('goes from a click to a scored board', async () => {
     server.use(
       http.post('/api/games', () => HttpResponse.json(aGame())),
