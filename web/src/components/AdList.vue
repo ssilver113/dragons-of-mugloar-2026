@@ -193,21 +193,74 @@ const filteredOut = computed(() => board.value.length > 0 && visible.value.lengt
       where the new board puts them, and the ones that arrive fade in behind them. A card that
       leaves goes at once — the job was taken, and its Solve button has been saying so.
     -->
-    <TransitionGroup v-else tag="ul" name="card" class="grid gap-3 sm:grid-cols-2">
-      <AdCard
-        v-for="entry in visible"
-        :key="entry.ad.adId"
-        :ad="entry.ad"
-        :read="entry.read"
-        :solving="entry.ad.adId === solvingAdId"
-        :disabled="disabled"
-        @solve="$emit('solve', $event)"
-      />
-    </TransitionGroup>
+    <div v-else class="board">
+      <TransitionGroup tag="ul" name="card" class="grid gap-3 sm:grid-cols-2">
+        <AdCard
+          v-for="entry in visible"
+          :key="entry.ad.adId"
+          :ad="entry.ad"
+          :read="entry.read"
+          :solving="entry.ad.adId === solvingAdId"
+          :disabled="disabled"
+          @solve="$emit('solve', $event)"
+        />
+      </TransitionGroup>
+    </div>
   </section>
 </template>
 
 <style scoped>
+/**
+ * The board the jobs are pinned to: cork, and nothing else.
+ *
+ * Cork rather than plank, and the reason is the tack. The whole conceit is paper *pinned up*, and
+ * cork is the thing you can actually push a pin into — a stud driven into a solid board is a
+ * picture of nothing. It also settles a problem rather than styling one: the plank it replaces was
+ * drawn with seams, and seams have to be got right at every width, in a margin only a few pixels
+ * wide, without reading as one more gap between the two card columns. There are no seams here to
+ * get wrong.
+ *
+ * A timber frame and four brass corner brackets were built and then taken out again. Each was
+ * defensible on its own and together they were three materials and a piece of hardware between the
+ * reader and ten sheets of paper. The surface and the tack are the whole idea; the frame was
+ * decoration on top of it.
+ *
+ * Nothing but the cards is ever laid on it, so no text is ever measured against this surface. The
+ * heading, the intro and the advisor's toolbar stay above it on the page, where they are panels
+ * like every other thing the app says.
+ */
+.board {
+  border-radius: 0.5rem;
+  padding: 1rem;
+  background-color: var(--color-cork);
+  /* Two passes of the same fibre tile at different scales is what makes cork read as cork: the
+     coarse one gives the crumb, the fine one the speckle between it. The blotches underneath stop
+     the crumb from tiling visibly. */
+  background-image:
+    radial-gradient(58% 46% at 18% 22%, oklch(66% 0.06 66 / 0.5), transparent 70%),
+    radial-gradient(52% 58% at 82% 16%, oklch(50% 0.05 58 / 0.45), transparent 72%),
+    radial-gradient(64% 52% at 72% 88%, oklch(63% 0.06 64 / 0.4), transparent 74%),
+    var(--parchment-grain), var(--parchment-grain);
+  background-size:
+    auto,
+    auto,
+    auto,
+    180px 180px,
+    61px 61px;
+  background-blend-mode: normal, normal, normal, multiply, multiply;
+  /* The hairline is the only thing drawing the board's edge now that the frame is gone. */
+  box-shadow:
+    inset 0 0 0 1px oklch(20% 0.02 50 / 0.55),
+    inset 0 0 26px oklch(20% 0.03 50 / 0.42),
+    0 2px 6px oklch(30% 0.028 52 / 0.4);
+}
+
+@media (width >= 40rem) {
+  .board {
+    padding: 1.5rem;
+  }
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .card-move {
     transition: transform 260ms cubic-bezier(0.22, 0.61, 0.36, 1);
@@ -220,14 +273,21 @@ const filteredOut = computed(() => board.value.length > 0 && visible.value.lengt
     visibility: hidden;
   }
 
-  /* Delayed by the length of the glide, so a new job does not appear in a slot another card is
-     still on its way out of. */
+  /* Never from nothing, and barely delayed. A card that is invisible still holds its grid cell, so
+     a turn that replaces most of the board used to punch a hole in it for the length of the delay
+     — invisible while the empty cell showed the page behind it, and a dark void once there was a
+     plank back there. Entering at a quarter opacity means there is always a sheet in the slot.
+
+     The delay it replaces was there so a new job did not land on top of a survivor still gliding
+     into the same slot. Sixty milliseconds and a ghost rather than two hundred and a hole: the
+     overlap that remains is between a moving card and a faint one, which is not what the eye goes
+     to. */
   .card-enter-active {
-    transition: opacity 200ms ease-out 200ms;
+    transition: opacity 240ms ease-out 60ms;
   }
 
   .card-enter-from {
-    opacity: 0;
+    opacity: 0.25;
   }
 }
 </style>

@@ -75,7 +75,7 @@ const hoverable = computed(() => !unsendable.value && !props.disabled)
 
 <template>
   <li
-    class="parchment torn flex flex-col gap-3 p-4"
+    class="ad-sheet parchment torn flex flex-col gap-3 p-4"
     :class="[{ 'opacity-60': unsendable }, hoverable ? 'hover:paper-lifted' : '']"
   >
     <div class="flex flex-col gap-2">
@@ -170,3 +170,66 @@ const hoverable = computed(() => !unsendable.value && !props.disabled)
     </div>
   </li>
 </template>
+
+<style scoped>
+/**
+ * Pinned rather than stacked. The tilt and the tack are one idea: paper hangs from a single point,
+ * so it hangs slightly crooked, and the crookedness is what stops ten sheets reading as ten boxes.
+ *
+ * It is the `rotate` property and deliberately not a `transform`. `AdList` re-ranks the board by
+ * FLIP, which writes `transform` on these same elements for the length of the glide — a tilt
+ * declared there would be overwritten for the move and snap back after it. The individual
+ * transform properties compose with `transform` instead of replacing it, so the sheet stays
+ * crooked while it travels.
+ *
+ * Cycled on a five against the tear's three, so the two patterns only line up every fifteenth
+ * card and a column never repeats itself.
+ */
+.ad-sheet {
+  rotate: -0.6deg;
+}
+
+.ad-sheet:nth-child(5n + 2) {
+  rotate: 0.65deg;
+}
+
+.ad-sheet:nth-child(5n + 3) {
+  rotate: -0.3deg;
+}
+
+.ad-sheet:nth-child(5n + 4) {
+  rotate: 0.45deg;
+}
+
+.ad-sheet:nth-child(5n) {
+  rotate: -0.75deg;
+}
+
+/**
+ * The tack. Inside the sheet rather than at its edge: the torn edge is a displacement of up to
+ * five or six pixels either way, so a tack sitting on the margin would spend some of the time off
+ * the paper it is supposed to be holding. Pushed through it, which is where a real one goes.
+ *
+ * `::after` is free — parchment draws the sheet on `::before`.
+ *
+ * Hung off a class rather than off `li`: the badge pills and the advisor's warnings are lists too,
+ * and a bare element selector tacked and tilted every one of them.
+ */
+.ad-sheet::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: 50%;
+  translate: -50%;
+  width: 11px;
+  height: 11px;
+  border-radius: 9999px;
+  background-image: radial-gradient(
+    circle at 34% 30%,
+    oklch(74% 0.015 70),
+    oklch(40% 0.02 55) 55%,
+    oklch(26% 0.015 50)
+  );
+  box-shadow: 0 1px 2px oklch(0% 0 0 / 0.45);
+}
+</style>

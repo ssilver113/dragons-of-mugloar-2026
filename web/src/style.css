@@ -27,6 +27,11 @@
   --color-warning: oklch(47% 0.11 82);
   --color-success: oklch(44% 0.095 150);
 
+  /* Furniture rather than ink: the surface the jobs are pinned to. It never sits behind text — the
+     cards carry their own paper — so it is outside the measured palette above and is the only
+     colour here that is not. */
+  --color-cork: oklch(56% 0.055 62);
+
   /* No webfont. The display face is the one every desktop already has, which is both a smaller
      app and the honest period choice: a browser game of this vintage had Georgia and Verdana and
      nothing else. The game's own name is artwork, so the face never has to carry the flourish.
