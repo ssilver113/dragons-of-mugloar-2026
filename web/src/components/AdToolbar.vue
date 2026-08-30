@@ -23,7 +23,7 @@ const lifeCostGold = computed(() => Math.round(props.lifeCost))
 </script>
 
 <template>
-  <div class="flex flex-col gap-3 rounded-lg border border-accent/40 bg-surface-raised/75 p-3">
+  <div class="panel flex flex-col gap-3 p-3">
     <div class="flex flex-wrap items-end gap-x-6 gap-y-3">
       <div class="flex flex-col gap-1">
         <label for="ad-sort" class="text-xs font-medium text-ink-muted">Sort by</label>
@@ -72,7 +72,7 @@ const lifeCostGold = computed(() => Math.round(props.lifeCost))
       </fieldset>
     </div>
 
-    <p class="text-xs text-ink-muted">
+    <p class="text-sm text-ink-muted">
       Value prices a life at {{ lifeCostGold }}g right now, then asks whether the reward covers the
       risk of losing one. Balanced is the stance the auto-player uses.
     </p>

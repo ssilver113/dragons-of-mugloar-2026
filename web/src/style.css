@@ -56,6 +56,51 @@ body {
 }
 
 /**
+ * The regular panel: everything the app itself says, as against the paper the world posts on.
+ *
+ * There was no such style before this — nine hand-rolled approximations of one, disagreeing on
+ * both alphas (`ink-muted/30|/35|/40` over `surface-raised/70|/75|/80`). Naming it is most of the
+ * fix; the rest is that panels and parchment now mean two different things rather than one thing
+ * twice.
+ *
+ * Opaque, and that is the load-bearing part rather than a taste call. The panels this replaces sat
+ * at 70-80% over a painted backdrop whose luminance runs from 0.16 to 0.55, so their text was
+ * measured against a ground that was partly the painting — the same problem that had already moved
+ * the footer onto a sheet. At full opacity the surface is exactly `surface-raised`, which every
+ * token in the palette has been measured against.
+ *
+ * Variants set a custom property and never override a declaration, for the same reason the
+ * parchment variants do: two utilities on one element would otherwise be settled by whichever
+ * Tailwind emitted second.
+ */
+@utility panel {
+  --panel-hue: var(--color-ink-muted);
+  --panel-edge: 35%;
+  --panel-surface: var(--color-surface-raised);
+
+  border: 1px solid color-mix(in oklab, var(--panel-hue) var(--panel-edge), transparent);
+  border-radius: 0.5rem;
+  background-color: var(--panel-surface);
+  box-shadow: 0 1px 3px oklch(30% 0.028 52 / 0.18);
+}
+
+/* The tint is mixed into the surface rather than laid over it, so the panel stays opaque and its
+   contrast stays a number we have measured. Eight percent, not the ten the dark theme used: the
+   tint is now the dark colour against a cream ground and reads considerably stronger for it. The
+   worst pairing on a tinted panel is warning at 5.19:1. */
+@utility panel-danger {
+  --panel-hue: var(--color-danger);
+  --panel-edge: 55%;
+  --panel-surface: color-mix(in oklab, var(--color-danger) 8%, var(--color-surface-raised));
+}
+
+@utility panel-success {
+  --panel-hue: var(--color-success);
+  --panel-edge: 55%;
+  --panel-surface: color-mix(in oklab, var(--color-success) 8%, var(--color-surface-raised));
+}
+
+/**
  * A sheet of parchment, drawn on a pseudo-element rather than on the element itself.
  *
  * That indirection is the whole trick. The torn edge is an SVG displacement filter, and a filter
@@ -129,30 +174,6 @@ body {
   &:nth-child(3n) {
     --paper-filter: url(#deckle-c) var(--paper-shadow);
   }
-}
-
-/**
- * What the sheet is saying. The hue drives the rim and, where the panel also takes `paper-tinted`,
- * a wash across the whole sheet — one property rather than a border colour and a background that
- * have to be kept in step.
- */
-@utility paper-danger {
-  --paper-hue: var(--color-danger);
-  --paper-edge-strength: 55%;
-}
-
-@utility paper-success {
-  --paper-hue: var(--color-success);
-  --paper-edge-strength: 55%;
-}
-
-@utility paper-accent {
-  --paper-hue: var(--color-accent);
-  --paper-edge-strength: 50%;
-}
-
-@utility paper-tinted {
-  --paper-tint: color-mix(in oklab, var(--paper-hue) 13%, transparent);
 }
 
 /* The hover cue: the rim inks up. Strength rather than colour, so it reads the same on a plain

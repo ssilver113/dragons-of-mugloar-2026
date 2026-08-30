@@ -93,11 +93,7 @@ function onSpeed(event: Event): void {
 
 <template>
   <section aria-labelledby="autoplay-heading">
-    <details
-      class="rounded-lg border border-ink-muted/35 bg-surface-raised/70"
-      :open="open"
-      @toggle="open = ($event.target as HTMLDetailsElement).open"
-    >
+    <details class="panel" :open="open" @toggle="open = ($event.target as HTMLDetailsElement).open">
       <summary
         class="rounded-lg px-4 py-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
       >

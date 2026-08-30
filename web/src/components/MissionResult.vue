@@ -50,8 +50,8 @@ const SOLVING = {
 }
 
 const TONES: Record<ResultTone, string> = {
-  success: 'paper-success paper-tinted',
-  failure: 'paper-danger paper-tinted',
+  success: 'panel-success',
+  failure: 'panel-danger',
   info: '',
 }
 
@@ -89,7 +89,7 @@ const mood = computed(() => (state.value.kind === 'outcome' ? MOODS[props.outcom
 
 <template>
   <div
-    class="parchment torn flex h-24 items-center gap-3 px-4 py-3"
+    class="panel flex h-24 items-center gap-3 px-4 py-3"
     :class="tone"
     role="status"
     :aria-live="live"

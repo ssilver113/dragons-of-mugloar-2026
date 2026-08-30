@@ -266,7 +266,7 @@ const banner = computed(() => {
         never picked back up, so this one starts fresh.
       </MessageBanner>
 
-      <section class="parchment torn flex flex-col items-start gap-4 p-6">
+      <section class="panel flex flex-col items-start gap-4 p-6">
         <p class="text-ink-muted">
           Start a game to draw a board of ten jobs, each scored for your dragon's level.
         </p>
@@ -285,7 +285,7 @@ const banner = computed(() => {
       <section
         ref="endPanel"
         tabindex="-1"
-        class="parchment torn flex flex-col items-start gap-4 p-6 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        class="panel flex flex-col items-start gap-4 p-6 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         role="status"
       >
         <DragonSigil
@@ -351,11 +351,7 @@ const banner = computed(() => {
 
       <MissionResult :pending="pending" :solver-running="autoPlay.running" :outcome="banner" />
 
-      <div
-        class="flex gap-1 rounded-lg border border-ink-muted/30 bg-surface-raised/80 p-1 lg:hidden"
-        role="group"
-        aria-label="Choose what to show"
-      >
+      <div class="panel flex gap-1 p-1 lg:hidden" role="group" aria-label="Choose what to show">
         <button
           v-for="panel in PANELS"
           :key="panel.id"
@@ -446,9 +442,15 @@ const banner = computed(() => {
       <!--
         Last on the page and quiet with it. This is the only way out of a run that is going badly
         but is not over, and it is deliberately nowhere near the buttons that spend turns.
+
+        On a sheet, like every other block of copy. A hairline rule left this text sitting on the
+        painted backdrop, whose luminance runs from 0.16 to 0.55 and so crosses the type's own —
+        muted ink measured 1.5:1 against it at worst. No colour survives a ground that mottled, and
+        no scrim rescues it either: even at 85%, which would erase the painting, muted text reaches
+        only 4.0:1. Paper is the only fix, and it is what the rest of the page already does.
       -->
       <footer
-        class="mt-auto flex flex-col items-start gap-2 border-t border-ink-muted/15 pt-4"
+        class="panel mt-auto flex flex-col items-start gap-2 p-4"
         @keydown.esc="keepPlaying()"
       >
         <template v-if="!abandoning">
@@ -461,7 +463,7 @@ const banner = computed(() => {
           >
             Start a new game
           </button>
-          <p class="text-xs text-ink-muted">
+          <p class="text-sm text-ink-muted">
             {{
               autoPlay.active
                 ? 'Pause the solver first — a turn already in flight would land on the new game.'

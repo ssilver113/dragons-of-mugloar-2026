@@ -30,7 +30,7 @@ const summary = computed(() =>
 </script>
 
 <template>
-  <details class="rounded-lg border border-ink-muted/35 bg-surface-raised/70">
+  <details class="panel">
     <summary
       class="cursor-pointer rounded-lg px-4 py-3 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
     >

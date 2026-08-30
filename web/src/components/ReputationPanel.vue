@@ -28,7 +28,7 @@ const reading = (faction: Faction): string => {
 </script>
 
 <template>
-  <section class="parchment torn flex flex-col gap-3 p-4">
+  <section class="panel flex flex-col gap-3 p-4">
     <div class="flex items-baseline justify-between gap-3">
       <h2 class="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-accent">
         <AppIcon name="standing" :size="16" />
@@ -68,7 +68,7 @@ const reading = (faction: Faction): string => {
       </div>
     </dl>
 
-    <p v-else class="text-xs text-ink-muted">
+    <p v-else class="text-sm text-ink-muted">
       Nobody has scouted this dragon's reputation yet. Sending scouts costs a turn and ages every ad
       by one — but it is the only move that cannot cost a life.
     </p>

@@ -8,9 +8,9 @@ defineEmits<{ dismiss: [] }>()
 
 // Full class strings rather than composed fragments, so Tailwind's scanner can see them.
 const TONES: Record<Tone, string> = {
-  error: 'paper-danger paper-tinted',
-  failure: 'paper-danger paper-tinted',
-  success: 'paper-success paper-tinted',
+  error: 'panel-danger',
+  failure: 'panel-danger',
+  success: 'panel-success',
   info: '',
 }
 
@@ -20,7 +20,7 @@ const role = computed(() => (props.tone === 'error' ? 'alert' : 'status'))
 </script>
 
 <template>
-  <div :class="tone" :role="role" class="parchment torn flex items-start gap-3 px-4 py-3">
+  <div :class="tone" :role="role" class="panel flex items-start gap-3 px-4 py-3">
     <div class="min-w-0 flex-1">
       <p class="font-semibold">{{ title }}</p>
       <p class="mt-0.5 text-sm text-ink-muted"><slot /></p>

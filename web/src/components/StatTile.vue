@@ -11,7 +11,7 @@ defineProps<{
 </script>
 
 <template>
-  <div class="parchment px-3 py-2" :class="{ flourish: emphasis }">
+  <div class="panel px-3 py-2" :class="{ flourish: emphasis }">
     <dt class="truncate font-display text-xs uppercase tracking-wide text-ink-muted">
       {{ label }}
     </dt>
@@ -34,7 +34,9 @@ defineProps<{
 
 <style scoped>
 @media (prefers-reduced-motion: no-preference) {
-  .flourish::before {
+  /* On the element now rather than on a pseudo-element: a panel draws its own surface, where
+     parchment drew the sheet behind itself and this had to reach for it. */
+  .flourish {
     animation: flourish 1.2s ease-out;
   }
 }

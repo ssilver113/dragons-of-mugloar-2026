@@ -71,7 +71,7 @@ describe('MissionResult', () => {
       outcome: { tone: 'failure', title: 'Mission failed', body: 'It did not go well.' },
     })
 
-    expect(lost.get('[role="status"]').classes()).toContain('paper-danger')
+    expect(lost.get('[role="status"]').classes()).toContain('panel-danger')
     expect(lost.get('img').classes()).toContain('defeated')
 
     const won = render({ outcome: WON })

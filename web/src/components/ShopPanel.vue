@@ -35,7 +35,7 @@ const failed = computed(() => props.status === 'error' && props.items.length ===
         <span class="tabular-nums">{{ gold }}</span> gold
       </p>
     </div>
-    <p class="-mt-1 text-xs text-ink-muted">Buying costs a turn, and ages every ad by one.</p>
+    <p class="-mt-1 text-sm text-ink-muted">Buying costs a turn, and ages every ad by one.</p>
 
     <ul v-if="loading" class="flex flex-col gap-2" aria-hidden="true">
       <li
@@ -46,11 +46,7 @@ const failed = computed(() => props.status === 'error' && props.items.length ===
     </ul>
     <p v-if="loading" class="sr-only" role="status">Loading the shop.</p>
 
-    <div
-      v-else-if="failed"
-      class="rounded-lg border border-danger/50 bg-danger/10 p-4"
-      role="alert"
-    >
+    <div v-else-if="failed" class="panel panel-danger p-4" role="alert">
       <p class="font-semibold">The shop could not be loaded.</p>
       <button
         type="button"

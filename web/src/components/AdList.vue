@@ -138,7 +138,7 @@ const filteredOut = computed(() => board.value.length > 0 && visible.value.lengt
         </button>
       </div>
     </div>
-    <p class="-mt-1 text-xs text-ink-muted">
+    <p class="-mt-1 text-sm text-ink-muted">
       {{
         advisor
           ? 'Jobs are ranked by what the advisor thinks they are worth.'
@@ -169,7 +169,7 @@ const filteredOut = computed(() => board.value.length > 0 && visible.value.lengt
     </ul>
     <p v-if="loading" class="sr-only" role="status">Loading the message board.</p>
 
-    <div v-else-if="failed" class="parchment torn paper-danger paper-tinted p-4" role="alert">
+    <div v-else-if="failed" class="panel panel-danger p-4" role="alert">
       <p class="font-semibold">The message board could not be loaded.</p>
       <button
         type="button"
@@ -180,11 +180,11 @@ const filteredOut = computed(() => board.value.length > 0 && visible.value.lengt
       </button>
     </div>
 
-    <p v-else-if="empty" class="parchment torn p-6 text-center text-ink-muted">
+    <p v-else-if="empty" class="panel p-6 text-center text-ink-muted">
       No ads on the board right now. Refresh to see what comes in.
     </p>
 
-    <p v-else-if="filteredOut" class="parchment torn p-6 text-center text-ink-muted">
+    <p v-else-if="filteredOut" class="panel p-6 text-center text-ink-muted">
       Every job on the board is filtered out. Loosen the filters to see them.
     </p>
 
