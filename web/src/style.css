@@ -60,6 +60,18 @@
   --color-oak-deep: oklch(62% 0.026 70);
   --color-brass: oklch(76% 0.1 86);
 
+  /* The log's stock, and the one cool surface in the app. Paper belongs to the world — an ad is
+     torn parchment — so the record the app keeps of its own turns had to be a different material
+     rather than a paler sheet of the same one: machine-made, cut square, and colder than anything
+     around it.
+
+     Measured on rendered pixels rather than on the token, which is the lesson the oak paid for.
+     Flat it is 0.872, above both surfaces; the fibre tile multiplies over it and brings the mean to
+     0.830, the fifth percentile to 0.770 and the darkest speck of grain to 0.667. The worst pairing
+     on it is `ink-muted`, at 6.29:1 on the mean and still 5.13:1 on that speck — clear of the
+     palette's own 4.94 floor, so nothing else needed remeasuring. */
+  --color-ledger: oklch(95.5% 0.008 240);
+
   /* No webfont. The display face is the one every desktop already has, which is both a smaller
      app and the honest period choice: a browser game of this vintage had Georgia and Verdana and
      nothing else. The game's own name is artwork, so the face never has to carry the flourish.
@@ -177,6 +189,68 @@ body {
     inset 0 0 0 1px oklch(20% 0.02 50 / 0.6),
     inset 0 0 26px oklch(18% 0.025 50 / 0.45),
     0 2px 6px oklch(30% 0.028 52 / 0.4);
+}
+
+/**
+ * The page of the log's bound volume. The stock is measured; see the token.
+ *
+ * Square-cut rather than torn, and the corner radius is deliberately smaller than a panel's: a
+ * volume is trimmed by a machine, and the two radii either side of the spine are what keep it from
+ * reading as one more rounded box.
+ */
+@utility ledger {
+  background-color: var(--color-ledger);
+  background-image: var(--parchment-grain);
+  background-size: 110px 110px;
+  background-blend-mode: multiply;
+  border-radius: 3px 2px 2px 3px;
+  box-shadow:
+    0 1px 2px oklch(30% 0.028 52 / 0.25),
+    0 6px 14px oklch(30% 0.028 52 / 0.14);
+}
+
+/**
+ * The ruling. Both the column heads and every entry are ruled by this, and they live in two
+ * different components — so the track list is here rather than in either of them. Heads and rows
+ * that disagree about a column are not a ledger, and nothing else would stop them drifting.
+ *
+ * The margin rule is drawn as a background rather than as a border on the entry, so it runs the
+ * full height of a row however tall the entry grows and whatever the figures fold into. Its
+ * position is the first track's own width, spent twice from one declaration.
+ *
+ * Narrow, the figures drop to a line of their own beneath the entry and share the width equally.
+ * Sizing them to their content instead overflowed a 375px screen by 126px, measured — `max-content`
+ * is exactly the thing that will not shrink. The column rules and the heads do not come down with
+ * them: a rule between two things that are no longer columns is just a mark, and each figure says
+ * its own unit once there is no head to say it.
+ */
+@utility ledger-row {
+  --ledger-margin: 2.9rem;
+  --ledger-pad: 0.5rem 0.7rem;
+
+  display: grid;
+  grid-template-columns: var(--ledger-margin) repeat(4, minmax(0, 1fr));
+  background-image: linear-gradient(
+    color-mix(in oklab, var(--color-danger) 45%, transparent),
+    color-mix(in oklab, var(--color-danger) 45%, transparent)
+  );
+  background-repeat: no-repeat;
+  background-size: 1px 100%;
+  background-position: var(--ledger-margin) 0;
+
+  & > * {
+    padding: var(--ledger-pad);
+  }
+
+  @media (width >= 48rem) {
+    --ledger-margin: 3.4rem;
+
+    grid-template-columns: var(--ledger-margin) minmax(0, 1fr) 4.8rem 4.2rem 3.8rem 3.2rem;
+
+    & > :nth-child(n + 3) {
+      border-left: 1px solid color-mix(in oklab, var(--color-ink-muted) 18%, transparent);
+    }
+  }
 }
 
 /**
