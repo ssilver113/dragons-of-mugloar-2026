@@ -26,6 +26,32 @@ describe('ReputationPanel', () => {
     expect(render({ reputation: null }).text()).toContain('costs a turn')
   })
 
+  /** The fixings are there and the shields are not, which is the state said as a picture. */
+  it('draws a mount for every faction while none of them has been read', () => {
+    const panel = render({ reputation: null })
+
+    expect(panel.findAll('.vacant')).toHaveLength(3)
+    expect(panel.findAll('.shield img')).toHaveLength(0)
+  })
+
+  it('hangs a crest on every mount once the scouts are back', () => {
+    const panel = render({ reputation: { people: 1, state: 2, underworld: 3 } })
+
+    expect(panel.findAll('.vacant')).toHaveLength(0)
+    expect(panel.findAll('.shield img')).toHaveLength(3)
+  })
+
+  /**
+   * The sign is drawn out of the flow so the figures line up across the three plates. It has to
+   * stay in the reading, though: lifted out of the text it would be a minus nobody hears.
+   */
+  it('keeps the sign in the reading even though it is set apart from the figure', () => {
+    const panel = render({ reputation: { people: 2, state: -0.5, underworld: 0 } })
+
+    expect(panel.findAll('dd .sign').map((s) => s.text())).toEqual(['+', '-', ''])
+    expect(panel.findAll('dd').map((d) => d.text())).toEqual(['+2.0', '-0.5', '0.0'])
+  })
+
   it('reads each faction out in signed tenths, so standing lost is visible as such', () => {
     const panel = render({ reputation: { people: 12.5, state: -3.25, underworld: 0 } })
 
