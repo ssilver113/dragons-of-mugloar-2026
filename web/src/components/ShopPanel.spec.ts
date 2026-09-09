@@ -57,17 +57,26 @@ describe('ShopPanel', () => {
     expect(shop.text()).toContain('effect unknown')
   })
 
-  it('will not offer to sell what the purse cannot cover, and says how short it is', () => {
+  it('will not offer to sell what the purse cannot cover, and shows the price instead of Buy', () => {
     const shop = render({
       status: 'ready',
       gold: 120,
-      items: [anItem({ id: 'cs', cost: 100 }), anItem({ id: 'wingpotmax', cost: 300 })],
+      items: [
+        anItem({ id: 'cs', cost: 100, levelsGained: 1 }),
+        anItem({ id: 'wingpotmax', cost: 300, levelsGained: 2 }),
+      ],
     })
 
     const buttons = shop.findAll('button')
     expect(buttons[0]?.attributes('disabled')).toBeUndefined()
+    expect(buttons[0]?.text()).toBe('Buy')
     expect(buttons[1]?.attributes('disabled')).toBeDefined()
-    expect(buttons[1]?.text()).toBe('180g short')
+    expect(buttons[1]?.text()).toBe('300g')
+
+    // The cost moves to the stud rather than being repeated beside it, but the shortfall itself is
+    // still spelled out for anyone who cannot see which rows are dimmed.
+    expect(shop.text()).toContain('100g · +1 level')
+    expect(shop.text()).not.toContain('300g · +2 levels')
     expect(buttons[1]?.attributes('aria-label')).toContain('180 more than you have')
   })
 

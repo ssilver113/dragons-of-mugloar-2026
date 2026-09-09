@@ -84,7 +84,14 @@ const filteredOut = computed(() => board.value.length > 0 && visible.value.lengt
       pixels lower than the shop's first row and the log's first entry — and switching between the
       three on a phone moved everything under the tabs.
     -->
-    <div class="flex flex-wrap items-center justify-between gap-x-2 gap-y-2 sm:gap-x-4">
+    <!--
+      `min-h-8.5` is shared with the shop's heading row, and the two are a pair: this row is taller
+      than that one because it carries controls, and the six pixels of difference pushed the board's
+      surface six pixels below the shopfront's. Two panels side by side, starting at the same
+      height, missing it by six. Pinning both rows to the height of a control settles it from
+      either side rather than making one column chase the other.
+    -->
+    <div class="flex min-h-8.5 flex-wrap items-center justify-between gap-x-2 gap-y-2 sm:gap-x-4">
       <h2
         id="board-heading"
         class="flex items-center gap-1.5 text-base font-semibold sm:gap-2 sm:text-lg"
@@ -193,7 +200,7 @@ const filteredOut = computed(() => board.value.length > 0 && visible.value.lengt
       where the new board puts them, and the ones that arrive fade in behind them. A card that
       leaves goes at once — the job was taken, and its Solve button has been saying so.
     -->
-    <div v-else class="board">
+    <div v-else class="board timber">
       <TransitionGroup tag="ul" name="card" class="grid gap-3 sm:grid-cols-2">
         <AdCard
           v-for="entry in visible"
@@ -211,48 +218,25 @@ const filteredOut = computed(() => board.value.length > 0 && visible.value.lengt
 
 <style scoped>
 /**
- * The board the jobs are pinned to: cork, and nothing else.
+ * The board the jobs are pinned to. Its surface is the `timber` utility, which the shop's
+ * shopfront also uses — this rule only sets what is particular to a board full of cards.
  *
- * Cork rather than plank, and the reason is the tack. The whole conceit is paper *pinned up*, and
- * cork is the thing you can actually push a pin into — a stud driven into a solid board is a
- * picture of nothing. It also settles a problem rather than styling one: the plank it replaces was
- * drawn with seams, and seams have to be got right at every width, in a margin only a few pixels
- * wide, without reading as one more gap between the two card columns. There are no seams here to
- * get wrong.
+ * It used to be cork, chosen because the whole conceit is paper *pinned up* and cork is the thing
+ * you can push a pin into. That reasoning was sound about the tack and wrong about the page: at the
+ * width the board actually renders, most of the cork shows as a margin between cards, where the
+ * crumb is too fine to register and it read as one more brown frame beside the shop's. Two
+ * materials that are almost the same are worse than one, so there is now one.
  *
- * A timber frame and four brass corner brackets were built and then taken out again. Each was
- * defensible on its own and together they were three materials and a piece of hardware between the
- * reader and ten sheets of paper. The surface and the tack are the whole idea; the frame was
- * decoration on top of it.
+ * A timber frame and four brass corner brackets were built for it once and taken out again. Each
+ * was defensible alone and together they were three materials and a piece of hardware between the
+ * reader and ten sheets of paper. The surface and the tack are still the whole idea.
  *
  * Nothing but the cards is ever laid on it, so no text is ever measured against this surface. The
  * heading, the intro and the advisor's toolbar stay above it on the page, where they are panels
  * like every other thing the app says.
  */
 .board {
-  border-radius: 0.5rem;
   padding: 1rem;
-  background-color: var(--color-cork);
-  /* Two passes of the same fibre tile at different scales is what makes cork read as cork: the
-     coarse one gives the crumb, the fine one the speckle between it. The blotches underneath stop
-     the crumb from tiling visibly. */
-  background-image:
-    radial-gradient(58% 46% at 18% 22%, oklch(66% 0.06 66 / 0.5), transparent 70%),
-    radial-gradient(52% 58% at 82% 16%, oklch(50% 0.05 58 / 0.45), transparent 72%),
-    radial-gradient(64% 52% at 72% 88%, oklch(63% 0.06 64 / 0.4), transparent 74%),
-    var(--parchment-grain), var(--parchment-grain);
-  background-size:
-    auto,
-    auto,
-    auto,
-    180px 180px,
-    61px 61px;
-  background-blend-mode: normal, normal, normal, multiply, multiply;
-  /* The hairline is the only thing drawing the board's edge now that the frame is gone. */
-  box-shadow:
-    inset 0 0 0 1px oklch(20% 0.02 50 / 0.55),
-    inset 0 0 26px oklch(20% 0.03 50 / 0.42),
-    0 2px 6px oklch(30% 0.028 52 / 0.4);
 }
 
 @media (width >= 40rem) {

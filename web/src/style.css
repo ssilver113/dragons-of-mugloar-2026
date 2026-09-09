@@ -27,10 +27,38 @@
   --color-warning: oklch(47% 0.11 82);
   --color-success: oklch(44% 0.095 150);
 
-  /* Furniture rather than ink: the surface the jobs are pinned to. It never sits behind text — the
-     cards carry their own paper — so it is outside the measured palette above and is the only
-     colour here that is not. */
-  --color-cork: oklch(56% 0.055 62);
+  /* The furniture: the timber both the board and the shop are built from. `oak-deep` is the frame
+     under everything and never sits behind text, so it is outside the measured palette above.
+
+     The board was cork and the shop was oak, which was one material too many — the two surfaces sat
+     side by side and argued rather than agreeing. One timber now carries both.
+
+     `oak-deep` was a dark walnut and is now weathered: lighter, and with barely half the chroma.
+     Lightness alone was not the problem. At 0.05 it was also the most saturated thing on a page
+     whose every other colour sits at or under 0.03, so it read as chocolate against dust — the
+     darkest element and the most colourful one at the same time. Both had to come off. The floor
+     underneath the choice is the shop: plaques are `oak` at 92%, and a frame much above the high
+     sixties stops holding them apart from the thing they hang on.
+
+     `oak` is the milled face of a plaque and does carry text, so it had to be bounded
+     rather than exempted: the intent was to keep it lighter than `surface`, so that every ratio in
+     the measured palette comes out at least as good on a plaque as on the page and nothing needed
+     remeasuring.
+
+     The first value was picked to clear that bound as a flat colour and did not clear it as a
+     rendered one — the grain multiplies over the face and took the mean down to 0.660 against
+     `surface`'s 0.704. So it was raised until the *rendered* pixels cleared it, sampled from a
+     screenshot rather than computed from the token: mean 0.741, and even the 5th percentile of the
+     grain holds `ink` at 8.9:1 and `ink-muted` at 4.9:1. The lesson is cheap to state and was not
+     cheap to notice — a texture is part of the surface being measured.
+
+     Brass is the shop's hardware and the Buy control's own colour, a deliberate departure from the
+     accent every other action uses: on a shopfront the thing you press is the fitting, not a
+     painted word. It takes `ink` rather than `surface` for that reason, at 6.37:1 flat and 5.18:1
+     under the darkest end of the `relief` bevel. */
+  --color-oak: oklch(92% 0.05 76);
+  --color-oak-deep: oklch(62% 0.026 70);
+  --color-brass: oklch(76% 0.1 86);
 
   /* No webfont. The display face is the one every desktop already has, which is both a smaller
      app and the honest period choice: a browser game of this vintage had Georgia and Verdana and
@@ -106,6 +134,52 @@ body {
 }
 
 /**
+ * The timber both boards are built from — the one the jobs are pinned to and the one the shop hangs
+ * from. Defined once because they are the same thing: two surfaces this close together cannot be
+ * allowed to drift, and they had already drifted once when one was cork and the other oak.
+ *
+ * The figure is a repeating gradient rather than a texture file, and its rhythm is uneven on
+ * purpose — lines at a constant pitch read as ruled paper. Under it, two passes of the parchment
+ * fibre tile stretched flat, which is what stops the gradient's own cycle from showing.
+ *
+ * Nothing is ever read against this surface. Everything laid on it — a torn sheet, a milled plaque
+ * — carries its own ground, and only those grounds are measured.
+ */
+@utility timber {
+  border-radius: 0.5rem;
+  background-color: var(--color-oak-deep);
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      oklch(100% 0 0 / 0.07) 0 1px,
+      transparent 1px 6px,
+      oklch(0% 0 0 / 0.12) 6px 8px,
+      transparent 8px 17px,
+      oklch(100% 0 0 / 0.05) 17px 18px,
+      transparent 18px 25px,
+      oklch(0% 0 0 / 0.09) 25px 26px,
+      transparent 26px 37px
+    ),
+    radial-gradient(60% 44% at 22% 24%, oklch(52% 0.055 68 / 0.55), transparent 72%),
+    radial-gradient(54% 56% at 80% 78%, oklch(36% 0.045 60 / 0.5), transparent 74%),
+    var(--parchment-grain), var(--parchment-grain);
+  background-size:
+    auto,
+    auto,
+    auto,
+    420px 30px,
+    90px 7px;
+  background-blend-mode: normal, normal, normal, multiply, multiply;
+  /* The figure and the blotches are deliberately warmer and more chromatic than the ground they sit
+     on. Desaturating them to match the new base was tried and made the timber read as grey plastic:
+     the base carries the page's restraint, and these layers are what keep it wood. */
+  box-shadow:
+    inset 0 0 0 1px oklch(20% 0.02 50 / 0.6),
+    inset 0 0 26px oklch(18% 0.025 50 / 0.45),
+    0 2px 6px oklch(30% 0.028 52 / 0.4);
+}
+
+/**
  * A sheet of parchment, drawn on a pseudo-element rather than on the element itself.
  *
  * That indirection is the whole trick. The torn edge is an SVG displacement filter, and a filter
@@ -113,12 +187,19 @@ body {
  * margins. Putting the sheet behind the content on `::before` lets the filter chew the paper while
  * the type stays flat on top of it.
  *
- * Six layers, cheapest last: a state tint, an edge vignette for age, three soft blotches that stop
- * it reading as card stock, and the fibre tile. Everything but the tint multiplies.
+ * Five layers, cheapest last: an edge vignette for age, three soft blotches that stop it reading as
+ * card stock, and the fibre tile. All of them multiply.
  *
- * Every variant below works by setting a custom property that this rule reads, never by
- * overriding a declaration here. Two utilities on one element would otherwise be settled by
- * whichever Tailwind happened to emit second, which is not a thing to leave to chance.
+ * There were six. A tinted variant used to colour the whole sheet by state, and when the panel
+ * utility took over everything the app itself says, the three tinted parchments went with it —
+ * leaving a tint layer that could only ever be `transparent` and a hue that could only ever be
+ * `ink-muted`. Both are gone, along with the blend-mode slot the tint needed. Ads are the one thing
+ * still printed on paper, and an ad is never tinted: what the advisor thinks of it is said in
+ * words on the card, not in the colour of the page.
+ *
+ * `paper-lifted` still works the way the tinted variants did — by setting a property this rule
+ * reads, never by overriding a declaration here. Two utilities on one element would otherwise be
+ * settled by whichever Tailwind happened to emit second, which is not a thing to leave to chance.
  */
 @utility parchment {
   position: relative;
@@ -126,9 +207,7 @@ body {
      stopping at its own element. */
   isolation: isolate;
 
-  --paper-hue: var(--color-ink-muted);
   --paper-edge-strength: 55%;
-  --paper-tint: transparent;
   --paper-shadow: drop-shadow(0 2px 4px oklch(30% 0.028 52 / 0.3));
   --paper-filter: var(--paper-shadow);
 
@@ -140,19 +219,18 @@ body {
     border-radius: var(--paper-radius, 0.5rem);
     background-color: var(--color-surface-raised);
     background-image:
-      linear-gradient(var(--paper-tint), var(--paper-tint)),
       radial-gradient(112% 112% at 50% 50%, transparent 44%, oklch(52% 0.06 58 / 0.3) 100%),
       radial-gradient(55% 45% at 16% 20%, oklch(68% 0.065 68 / 0.24), transparent 72%),
       radial-gradient(48% 55% at 84% 14%, oklch(72% 0.055 88 / 0.2), transparent 74%),
       radial-gradient(65% 50% at 74% 86%, oklch(66% 0.07 60 / 0.22), transparent 76%),
       var(--parchment-grain);
-    background-blend-mode: normal, multiply, multiply, multiply, multiply, multiply;
-    background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, repeat;
+    background-blend-mode: multiply, multiply, multiply, multiply, multiply;
+    background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, repeat;
     /* The rim, and the only thing that draws the edge of the sheet. It is an inset shadow rather
        than a border so the displacement filter bends it into the tear instead of leaving a
        straight rule with bites taken out of it. */
     box-shadow: inset 0 0 0 1px
-      color-mix(in oklab, var(--paper-hue) var(--paper-edge-strength), transparent);
+      color-mix(in oklab, var(--color-ink-muted) var(--paper-edge-strength), transparent);
     filter: var(--paper-filter);
     transition: box-shadow 150ms ease-out;
   }
