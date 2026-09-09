@@ -93,7 +93,7 @@ const reading = (faction: Faction): { sign: string; figure: string } => {
             first is where it stops being a description list. A plate is a term and its reading, so
             that is what each one is.
           -->
-          <dl class="plate">
+          <dl class="oak-plate plate">
             <dt class="truncate text-xs">{{ faction.label }}</dt>
             <!--
               The sign is out of the flow, so what gets centred is the figure. Its reading order is
@@ -125,7 +125,7 @@ const reading = (faction: Faction): { sign: string; figure: string } => {
             </span>
           </div>
         </div>
-        <p class="notice">
+        <p class="oak-plate notice">
           Nobody has scouted this dragon's reputation yet. Sending scouts costs a turn and ages
           every ad by one — but it is the only move that cannot cost a life.
         </p>
@@ -251,25 +251,17 @@ const reading = (faction: Faction): { sign: string; figure: string } => {
 }
 
 /**
- * The plate under a shield, and the only surface here that carries text. `oak` is the shop's milled
- * face and is bounded against the measured palette, so ink on it is at least as good as ink on the
- * page; the wood behind it is not, and never has to be.
+ * The plate under a shield, and one of the two surfaces here that carry text. The stock, the cut
+ * and the rim are the `oak-plate` utility; what is left is how this one is hung and set. `oak` is
+ * bounded against the measured palette, so ink on a plate is at least as good as ink on the page.
+ * The wood behind it is not, and never has to be.
  */
 .plate {
   display: block;
   margin-bottom: 0;
   margin-top: 0.5rem;
   width: 100%;
-  border-radius: 2px;
   padding: 0.1875rem 0.25rem 0.25rem;
-  background-color: var(--color-oak);
-  background-image: var(--parchment-grain);
-  background-size: 260px 17px;
-  background-blend-mode: multiply;
-  box-shadow:
-    inset 0 1px 0 oklch(100% 0 0 / 0.5),
-    inset 0 0 0 1px oklch(52% 0.05 66 / 0.55),
-    0 2px 3px oklch(18% 0.02 50 / 0.45);
   text-align: center;
 }
 
@@ -298,22 +290,13 @@ const reading = (faction: Faction): { sign: string; figure: string } => {
 }
 
 /**
- * The notice posted under the empty mounts. The same milled face as the plates, because it is the
- * same thing: the one surface on this wall that carries words. A paragraph set straight on the
- * timber would be text on a ground nothing has measured.
+ * The notice posted under the empty mounts. The same plate as the readings above it, because it is
+ * the same thing: a surface on this wall that carries words. A paragraph set straight on the timber
+ * would be text on a ground nothing has measured.
  */
 .notice {
   margin: 0.75rem 0 0;
-  border-radius: 2px;
   padding: 0.5rem 0.625rem;
-  background-color: var(--color-oak);
-  background-image: var(--parchment-grain);
-  background-size: 260px 17px;
-  background-blend-mode: multiply;
-  box-shadow:
-    inset 0 1px 0 oklch(100% 0 0 / 0.5),
-    inset 0 0 0 1px oklch(52% 0.05 66 / 0.55),
-    0 2px 3px oklch(18% 0.02 50 / 0.45);
   font-size: 0.8125rem;
   line-height: 1.4;
 }

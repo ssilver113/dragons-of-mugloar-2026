@@ -71,7 +71,7 @@ describe('MissionResult', () => {
       outcome: { tone: 'failure', title: 'Mission failed', body: 'It did not go well.' },
     })
 
-    expect(lost.get('[role="status"]').classes()).toContain('panel-danger')
+    expect(lost.get('[role="status"]').attributes('data-tone')).toBe('failure')
     expect(lost.get('img').classes()).toContain('defeated')
 
     const won = render({ outcome: WON })
@@ -81,5 +81,26 @@ describe('MissionResult', () => {
       outcome: { tone: 'info', title: 'Bought a potion', body: 'The shop obliged.' },
     })
     expect(bought.get('img').classes()).toContain('idle')
+  })
+
+  /**
+   * The painted edge is the one thing the tone changes, so an unjudged turn has to leave it unset
+   * rather than pick a third colour. A plate the stylesheet cannot find a tone for falls back to
+   * its own rim, which is what "no verdict" looks like.
+   */
+  it('paints an edge only for a turn the game judged', () => {
+    for (const wrapper of [
+      render(),
+      render({ pending: 'solve' }),
+      render({ solverRunning: true }),
+    ]) {
+      expect(wrapper.get('[role="status"]').attributes('data-tone')).toBe('none')
+    }
+
+    expect(
+      render({ outcome: { tone: 'info', title: 'The scouts are back', body: 'Nothing risked.' } })
+        .get('[role="status"]')
+        .attributes('data-tone'),
+    ).toBe('info')
   })
 })

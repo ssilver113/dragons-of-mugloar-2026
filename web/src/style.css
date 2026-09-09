@@ -192,6 +192,37 @@ body {
 }
 
 /**
+ * A plate: the only surface on the furniture that carries words, and the reason `oak` is bounded
+ * against the measured palette rather than exempted from it like the timber behind it.
+ *
+ * The whole plate rather than only its face — the stock, the square cut and the rim that says where
+ * it stops. The rim was left out at first, on the theory that it is the part that differs; it is
+ * not. Four plates in two components had written the same five lines, which is the drift this file
+ * exists to stop. What actually differs is padding and type, and those stay with the wearer.
+ *
+ * One gentle pass of the fibre tile stretched flat, and no milled figure. The figure belongs to the
+ * shop's plaques and was tried here first; measured on rendered pixels it is the wrong stock for
+ * text. Its bands cost the surface almost nothing on average — 0.730 against 0.741 — but they take
+ * the fifth percentile from 0.691 down to 0.614, which is half a point of `ink-muted` contrast in
+ * the places a reader actually loses, and they put fine ruling directly behind a line of type. A
+ * plaque carrying two short words can afford that. A plate carrying a sentence cannot.
+ *
+ * So the two are different stock on purpose: a plaque is milled and hung on ropes, a plate is planed
+ * and fixed flat. The shop keeps its own rule and is not a consumer here.
+ */
+@utility oak-plate {
+  border-radius: 2px;
+  background-color: var(--color-oak);
+  background-image: var(--parchment-grain);
+  background-size: 260px 17px;
+  background-blend-mode: multiply;
+  box-shadow:
+    inset 0 1px 0 oklch(100% 0 0 / 0.5),
+    inset 0 0 0 1px oklch(52% 0.05 66 / 0.55),
+    0 2px 3px oklch(18% 0.02 50 / 0.45);
+}
+
+/**
  * The page of the log's bound volume. The stock is measured; see the token.
  *
  * Square-cut rather than torn, and the corner radius is deliberately smaller than a panel's: a
