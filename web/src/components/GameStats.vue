@@ -15,7 +15,7 @@ const props = withDefaults(defineProps<{ game: GameView; announce?: boolean }>()
 
 /**
  * A level is the only figure here worth marking as it moves. Score and gold change most turns and
- * the turn counter changes every one of them, so flashing those would be a light that is always
+ * the turn counter changes every one of them, so striking those would be a light that is always
  * on; a level is bought deliberately, a few times a game, and is what the whole ad scale is read
  * against. It is a flourish and nothing more — the number itself is what says what happened.
  */
@@ -38,12 +38,12 @@ onBeforeUnmount(() => clearTimeout(clear))
 
 /**
  * Lives are drawn rather than counted, up to the point where drawing them stops being readable.
- * Four hearts is the widest row the tile can hold at every viewport it has to survive; a fifth
- * overruns the tile on the narrowest of them, so from five up the count is the statement and the
+ * Four hearts is the widest row the gauge can hold at every viewport it has to survive; a fifth
+ * overruns the window on the narrowest of them, so from five up the count is the statement and the
  * heart goes back to being a label.
  *
- * Zero takes the same path as a large number on purpose — a tile that drew nothing at all would
- * look like a tile that had failed to load, on the one turn where it matters most.
+ * Zero takes the same path as a large number on purpose — a window that drew nothing at all would
+ * look like one that had failed to load, on the one turn where it matters most.
  */
 const HEART_LIMIT = 4
 const hearts = computed(() =>
@@ -90,20 +90,30 @@ onBeforeUnmount(() => observer?.disconnect())
     row below it, which is the jump this was meant to remove rather than add.
 
     `-mx-4 px-4` is a net zero for the content and gives the pinned bar a ground that reaches the
-    column's edges, so a card scrolling underneath does not show through the gaps.
+    column's edges, so a card scrolling underneath does not show through the gaps either side of
+    the hide.
   -->
   <div
     ref="bar"
     class="sticky top-0 z-20 -mx-4 px-4 py-1.5 sm:py-2"
-    :class="stuck ? 'border-b border-accent/20 bg-surface/95 backdrop-blur-sm' : ''"
+    :class="stuck ? 'bg-surface/95 backdrop-blur-sm' : ''"
   >
     <!--
+      The instrument panel: five windows sunk into a leather bed, which is the same hide the log is
+      bound in and the solver's drive is bolted to. Leather is the app's own machine as against the
+      world's furniture, and that is the argument for it here — these five figures are the app
+      reading the dragon out, not something the world posted on a board.
+
+      Nothing is read against the hide itself. Every gauge brings its own ground, exactly as a
+      plaque does on the timber and a sheet does on the table.
+
       `aria-atomic` is what makes this one announcement rather than five: without it a polite
       region reads out each figure that changed, which is every figure on most turns.
     -->
     <dl
-      class="grid grid-cols-5 gap-1 sm:gap-2"
+      class="leather bed grid grid-cols-5 gap-1 sm:gap-2"
       aria-label="Dragon status"
+      :class="{ lifted: stuck }"
       :aria-live="announce ? 'polite' : 'off'"
       aria-atomic="true"
     >
@@ -112,13 +122,13 @@ onBeforeUnmount(() => observer?.disconnect())
       <StatTile label="Lives" icon="life" :value="game.lives">
         <!--
           Provided only while the hearts are drawable. Above the limit the slot is absent and the
-          tile falls back to its own mark-and-figure, which is what makes a large count look like
+          gauge falls back to its own mark-and-figure, which is what makes a large count look like
           every other figure on the strip rather than like a broken row of hearts.
         -->
         <template v-if="hearts" #figure>
           <!--
             Their own row, with its own spacing: four hearts have to fit a fifth of a 375px screen,
-            which the tile's ordinary mark-to-figure gap does not leave room for.
+            which the gauge's ordinary mark-to-figure gap does not leave room for.
           -->
           <span class="flex items-center gap-px sm:gap-1">
             <AppIcon
@@ -138,3 +148,44 @@ onBeforeUnmount(() => observer?.disconnect())
     </dl>
   </div>
 </template>
+
+<style scoped>
+/**
+ * The bed the windows are sunk into: the same hide as the log's spine and the solver's drive, with
+ * an edge that says it is a fitted panel rather than a painted rectangle. A thin dark rim, a worn
+ * highlight along the top where the hide catches light, and a shadow under it.
+ *
+ * The radius is the volume's rather than a panel's — small and square-ish, because this is a piece
+ * of the machine and not a card.
+ */
+.bed {
+  padding: 0.3125rem;
+  border-radius: 3px;
+  box-shadow:
+    inset 0 0 0 1px oklch(20% 0.02 40 / 0.75),
+    inset 0 1px 0 oklch(100% 0 0 / 0.1),
+    0 2px 5px oklch(30% 0.028 52 / 0.35);
+}
+
+@media (width >= 40rem) {
+  .bed {
+    padding: 0.4375rem;
+  }
+}
+
+/**
+ * Lifted off the page, and the only thing that changes when the bar pins. The height stays exactly
+ * as it was — the whole point of pinning this was to stop the rows below it moving, so a bar that
+ * resized as it stuck would put the jump back.
+ *
+ * The same treatment the solver's drive uses when it leaves its board: the rim stays and the cast
+ * shadow deepens. The wrapper behind it is what covers the column's margins, so nothing scrolls
+ * through the gaps either side.
+ */
+.lifted {
+  box-shadow:
+    inset 0 0 0 1px oklch(20% 0.02 40 / 0.75),
+    inset 0 1px 0 oklch(100% 0 0 / 0.1),
+    0 6px 14px oklch(30% 0.028 52 / 0.4);
+}
+</style>

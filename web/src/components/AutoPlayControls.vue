@@ -239,11 +239,13 @@ function onSpeed(event: Event): void {
   .machine.pinned {
     position: sticky;
     /* Under the figures, not behind them. The stats rail pins to the top of the window from `sm`
-       up and is 82px tall wherever its five tiles fit on one row, which is everywhere this rule
+       up and is 86px tall wherever its five gauges fit on one row, which is everywhere this rule
        applies. In rem rather than pixels so the offset grows with the type the bar is sized by,
        and the machine's stacking order is left below the rail's so that being wrong about it hides
-       the machine rather than letting it cover the score. */
-    top: 5.125rem;
+       the machine rather than letting it cover the score. Measured, not guessed: it went from 82
+       to 86 when the rail became an instrument panel, and this is the only place that number is
+       written down twice. */
+    top: 5.375rem;
     z-index: 1;
   }
 
