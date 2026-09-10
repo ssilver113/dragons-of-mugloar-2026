@@ -14,6 +14,7 @@ import com.mugloar.dragons.mugloar.exception.MugloarProtocolException;
 import com.mugloar.dragons.mugloar.exception.MugloarRateLimitedException;
 import com.mugloar.dragons.mugloar.exception.MugloarUnavailableException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.function.Supplier;
@@ -190,7 +191,7 @@ public class RestMugloarClient implements MugloarClient {
                 : text.substring(0, BODY_SNIPPET_LIMIT) + "…";
     }
 
-    static String readBodySafely(java.io.InputStream body) {
+    static String readBodySafely(InputStream body) {
         try {
             return snippet(body.readAllBytes());
         } catch (IOException e) {
