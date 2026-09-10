@@ -60,9 +60,10 @@ const hearts = computed(() =>
  * A one-pixel negative margin at the top is what turns "is on screen" into "is pinned": the bar
  * can only be fully within that inset region while it is still in its resting place.
  *
- * It pins from `sm` up. Below that the five figures wrap onto two rows, and two rows of tiles
- * nailed to the top of a 375px screen would take a sixth of it away from the board they are
- * there to be read against.
+ * It pins everywhere, phones included. That is what the strip was shrunk for: five figures on one
+ * row cost about sixty pixels of a 375px screen, where the two rows they used to wrap onto cost a
+ * sixth of it and were not worth nailing down. Pinned, the numbers a job is weighed against stay
+ * on screen while the advisor, the board and the message board scroll past them.
  */
 const bar = ref<HTMLElement | null>(null)
 const stuck = ref(false)
@@ -93,15 +94,15 @@ onBeforeUnmount(() => observer?.disconnect())
   -->
   <div
     ref="bar"
-    class="z-20 -mx-4 px-4 py-2 sm:sticky sm:top-0"
-    :class="stuck ? 'sm:border-b sm:border-accent/20 sm:bg-surface/95 sm:backdrop-blur-sm' : ''"
+    class="sticky top-0 z-20 -mx-4 px-4 py-1.5 sm:py-2"
+    :class="stuck ? 'border-b border-accent/20 bg-surface/95 backdrop-blur-sm' : ''"
   >
     <!--
       `aria-atomic` is what makes this one announcement rather than five: without it a polite
       region reads out each figure that changed, which is every figure on most turns.
     -->
     <dl
-      class="grid grid-cols-3 gap-2 sm:grid-cols-5"
+      class="grid grid-cols-5 gap-1 sm:gap-2"
       aria-label="Dragon status"
       :aria-live="announce ? 'polite' : 'off'"
       aria-atomic="true"
@@ -116,16 +117,16 @@ onBeforeUnmount(() => observer?.disconnect())
         -->
         <template v-if="hearts" #figure>
           <!--
-            Their own row, with its own spacing: four hearts have to fit a third of a 375px screen,
+            Their own row, with its own spacing: four hearts have to fit a fifth of a 375px screen,
             which the tile's ordinary mark-to-figure gap does not leave room for.
           -->
-          <span class="flex items-center gap-0.5 sm:gap-1">
+          <span class="flex items-center gap-px sm:gap-1">
             <AppIcon
               v-for="n in hearts"
               :key="n"
               name="life"
               :size="20"
-              class="size-3.5 sm:size-5"
+              class="size-2.5 sm:size-5"
             />
           </span>
           <!-- The hearts are pictures. This is what the live region actually reads out. -->

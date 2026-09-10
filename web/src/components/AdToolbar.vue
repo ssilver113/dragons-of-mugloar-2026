@@ -32,19 +32,21 @@ const lifeCostGold = computed(() => Math.round(props.lifeCost))
       <div class="flex flex-col gap-1">
         <label for="ad-sort" class="text-xs font-medium text-ink-muted">Sort by</label>
         <!--
-          `pr-7` rather than an even `px-2`: the chevron the browser draws for a select sits inside
-          the padding box, so with equal padding it had its nose against the rim.
+          The arrow is the shell's, not the browser's — the native one is laid out against the rim
+          and cannot be given room. `pr-7` is what reserves the space it is drawn in.
         -->
-        <select
-          id="ad-sort"
-          class="relief rounded-md border border-ink-muted/40 bg-surface py-1.5 pr-7 pl-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-advisor"
-          :value="sort"
-          @change="$emit('update:sort', ($event.target as HTMLSelectElement).value as SortKey)"
-        >
-          <option v-for="option in SORTS" :key="option.id" :value="option.id">
-            {{ option.label }}
-          </option>
-        </select>
+        <span class="select-shell">
+          <select
+            id="ad-sort"
+            class="relief rounded-md border border-ink-muted/40 bg-surface py-1.5 pr-7 pl-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-advisor"
+            :value="sort"
+            @change="$emit('update:sort', ($event.target as HTMLSelectElement).value as SortKey)"
+          >
+            <option v-for="option in SORTS" :key="option.id" :value="option.id">
+              {{ option.label }}
+            </option>
+          </select>
+        </span>
       </div>
 
       <!--

@@ -91,8 +91,8 @@ test('every control points at itself, and a disabled one does not', async ({ pag
   expect(await cursor('[role="switch"]')).toBe('pointer')
   expect(await cursor('button:disabled')).toBe('not-allowed')
 
-  // The filter checkboxes and the posture radios only exist once the advisor is on. The advisor's
-  // own twisty is a button rather than a `<summary>`, since its header carries a switch too.
+  // The filter checkboxes and the posture radios only exist once the advisor is on. Its switch is
+  // the disclosure as well, which is why the expandable thing here is the switch itself.
   await page.getByRole('switch', { name: 'Advisor' }).click()
   expect(await cursor('[aria-expanded]')).toBe('pointer')
   expect(await cursor('input[type="checkbox"]')).toBe('pointer')

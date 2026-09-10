@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed } from 'vue'
 import AdToolbar from './AdToolbar.vue'
 import CalibrationTable from './CalibrationTable.vue'
 import { advisorArt } from '../assets/artwork'
@@ -47,29 +47,6 @@ const subtitle = computed(() =>
 )
 
 /**
- * The record is worth reading even with the advice switched off, because it is a record of advice
- * already taken. An empty one is not: a tally of nothing, under a switch that is off, would be two
- * ways of saying the same nothing.
- */
-const showTally = computed(() => props.advisor || props.attempts > 0)
-
-/**
- * Open or shut, and the player's own choice once they have made one. Turning the advisor on opens
- * the table, because switching it on is a request to see what it thinks; turning it off does not
- * shut the table, because the record is still worth reading and shutting a panel under someone's
- * cursor is not something a switch should do.
- */
-const open = ref(props.advisor)
-watch(
-  () => props.advisor,
-  (on) => {
-    if (on) {
-      open.value = true
-    }
-  },
-)
-
-/**
  * The fold, measured rather than guessed. `height: auto` cannot be transitioned in the browsers
  * this ships to, so the element is given its own scroll height for the length of the animation and
  * handed back to the layout at the end of it.
@@ -97,12 +74,12 @@ function collapse(el: Element): void {
 <template>
   <section class="baize advisor" aria-labelledby="advisor-title">
     <!--
-      A disclosure built by hand rather than a `<details>`.
-      Two reasons, and the first is the one that matters: this header carries a control of its own,
-      and a button nested inside a `<summary>` is content the specification allows and assistive
-      technology has never reliably exposed. Two sibling buttons cannot go wrong that way. The
-      second is that a `<details>` cannot be animated in the browsers this ships to — the content is
-      hidden by the user agent, so there is nothing to transition.
+      One control, not two. The switch used to sit beside a twisty that opened the same panel, which
+      let the advisor be on with its table shut and off with its table open — four states for a
+      thing that has two. On is open and off is shut, so the switch is the disclosure as well.
+
+      Not a `<details>`, for the same reason as before: it cannot be animated in the browsers this
+      ships to, because the user agent hides the content itself and leaves nothing to transition.
     -->
     <div class="header">
       <span class="mark">
@@ -130,25 +107,19 @@ function collapse(el: Element): void {
         role="switch"
         class="switch"
         :aria-checked="advisor"
+        :aria-expanded="advisor"
+        aria-controls="advisor-body"
         aria-labelledby="advisor-title advisor-state"
         @click="$emit('toggle-advisor')"
       >
         <span id="advisor-state">{{ advisor ? 'On' : 'Off' }}</span>
         <!--
           The track is decoration; `aria-checked` is what is read out and the fill is what is seen.
+          The chevron is the second half of the same statement — this control opens the table as
+          well as switching the advice on, and a disclosure that gives no sign of being one is a
+          control people do not find.
         -->
         <span aria-hidden="true" class="track"><span class="knob" /></span>
-      </button>
-      <button
-        type="button"
-        class="twisty"
-        :aria-expanded="open"
-        aria-controls="advisor-body"
-        @click="open = !open"
-      >
-        <span class="sr-only">{{
-          open ? "Hide the advisor's table" : "Show the advisor's table"
-        }}</span>
         <svg
           class="chevron"
           viewBox="0 0 24 24"
@@ -171,7 +142,7 @@ function collapse(el: Element): void {
       reduced-motion query, so under `reduce` there is no rule to obey and the panel simply appears.
     -->
     <Transition name="fold" @enter="measure" @after-enter="release" @leave="collapse">
-      <div v-show="open" id="advisor-body" class="body">
+      <div v-show="advisor" id="advisor-body" class="body">
         <!--
           Sitting at the table rather than printed on it. Hidden below `sm`, where a figure this
           size would take a third of the sheet and the four filters already wrap twice at 375px.
@@ -188,14 +159,7 @@ function collapse(el: Element): void {
         />
 
         <div class="sheet">
-          <p v-if="!advisor" class="text-sm text-ink-muted">
-            Switched on, every job on the board is scored for this dragon's level and ranked by what
-            it is worth once the risk to a life is priced in. Nothing here is a fact about the board
-            — it is an estimate, and the tally below says how good an estimate it has been.
-          </p>
-
           <AdToolbar
-            v-if="advisor"
             :sort="sort"
             :posture="posture"
             :filters="filters"
@@ -208,10 +172,9 @@ function collapse(el: Element): void {
             @clear-filters="$emit('clear-filters')"
           />
 
-          <hr v-if="showTally" class="rule" />
+          <hr class="rule" />
 
           <CalibrationTable
-            v-if="showTally"
             :rows="rows"
             :attempts="attempts"
             :games="games"
@@ -283,22 +246,6 @@ function collapse(el: Element): void {
   padding: 0.375rem;
 }
 
-/**
- * The twisty. A button beside the switch rather than a `<summary>` wrapped around it: the header
- * carries two controls, and two siblings cannot be nested wrongly.
- */
-.twisty {
-  display: grid;
-  flex: none;
-  place-items: center;
-  border: 0;
-  border-radius: 9999px;
-  padding: 0.25rem;
-  background: none;
-  color: inherit;
-}
-
-.twisty:focus-visible,
 /**
  * The mark, and the same drawing as the figure below it seen close. Cream behind it because the
  * portrait's own ground is transparent and the head would otherwise sit on cloth; the crop is set
@@ -422,11 +369,15 @@ function collapse(el: Element): void {
   background-color: color-mix(in oklab, var(--color-surface-raised) 88%, var(--color-baize));
 }
 
+/* Inside the switch now, so it takes the colour of whichever state the plate is in rather than
+   carrying one of its own. Held back a little, because the word is what says On and Off. */
 .chevron {
-  width: 1rem;
-  height: 1rem;
+  width: 0.875rem;
+  height: 0.875rem;
   display: block;
-  color: color-mix(in oklab, var(--color-surface-raised) 88%, var(--color-baize));
+  flex: none;
+  margin-right: -0.15rem;
+  opacity: 0.75;
 }
 
 [aria-expanded='true'] .chevron {

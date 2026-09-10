@@ -183,15 +183,21 @@ function onSpeed(event: Event): void {
 
         <label class="flex items-center gap-2 text-sm text-ink-muted">
           Speed
-          <select
-            class="setting relief rounded-md px-2 py-1.5 text-sm text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-            :value="speed"
-            @change="onSpeed"
-          >
-            <option v-for="option in SPEEDS" :key="option.id" :value="option.id">
-              {{ option.label }}
-            </option>
-          </select>
+          <!--
+            The arrow is the shell's, not the browser's — the native one is laid out against the rim
+            and cannot be given room. `pr-7` is what reserves the space it is drawn in.
+          -->
+          <span class="select-shell">
+            <select
+              class="setting relief rounded-md py-1.5 pr-7 pl-2 text-sm text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+              :value="speed"
+              @change="onSpeed"
+            >
+              <option v-for="option in SPEEDS" :key="option.id" :value="option.id">
+                {{ option.label }}
+              </option>
+            </select>
+          </span>
         </label>
       </div>
 

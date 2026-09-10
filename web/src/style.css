@@ -494,6 +494,45 @@ body {
     inset 0 -1px 0 oklch(100% 0 0 / 0.25);
 }
 
+/**
+ * A `<select>` and the arrow drawn for it.
+ *
+ * The browser's own arrow cannot be given room. Chrome and Safari lay it out against the right edge
+ * of the border box and pay no attention to `padding-right`, so padding only ever widened the gap
+ * between the label and an arrow that stayed pressed against the rim — which is the state this
+ * replaces. So the native arrow is switched off and one is drawn on the shell instead, at an inset
+ * this file sets, with the select's own padding reserving the space it sits in.
+ *
+ * The arrow is on the wrapper rather than on the control, because a `<select>` has no
+ * pseudo-elements to draw it with and its background is already spent on the `relief` bevel.
+ */
+@utility select-shell {
+  position: relative;
+  display: inline-flex;
+
+  & > select {
+    appearance: none;
+    width: 100%;
+  }
+
+  /* Two strokes rather than a solid triangle, so it is the same drawn line as the chevrons
+     elsewhere in the app. `pointer-events: none` keeps the click on the control underneath. */
+  &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: 0.6875rem;
+    width: 0.375rem;
+    height: 0.375rem;
+    border-right: 1.5px solid currentColor;
+    border-bottom: 1.5px solid currentColor;
+    rotate: 45deg;
+    translate: 0 -0.2rem;
+    opacity: 0.7;
+    pointer-events: none;
+  }
+}
+
 @layer base {
   /* Set here rather than as a utility on every heading, so a heading added later is themed by
      default instead of by being remembered. */

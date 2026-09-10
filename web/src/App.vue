@@ -356,12 +356,12 @@ const banner = computed(() => {
     </template>
 
     <template v-else>
-      <MissionResult :pending="pending" :solver-running="autoPlay.running" :outcome="banner" />
-
       <!--
-        Above both columns, because it governs both and because opening it must not shove one of
-        them down while the other stands still. It is on every tab of the mobile switch for the
-        same reason: the ranking it sets is what the board below is drawn in.
+        First on the board, because it is what the rest of the page is read in: the ranking it sets
+        is the order the jobs below are listed in, and the risk posture is what their figures mean.
+        Above the result of the last job for the same reason it is above both columns — it governs
+        what comes after it, and opening it must not shove one column down while the other stands
+        still.
       -->
       <AdvisorPanel
         :advisor="store.advisorEnabled"
@@ -381,6 +381,8 @@ const banner = computed(() => {
         @clear-filters="boardView.clearFilters()"
         @reset-calibration="calibration.reset()"
       />
+
+      <MissionResult :pending="pending" :solver-running="autoPlay.running" :outcome="banner" />
 
       <div class="panel flex gap-1 p-1 lg:hidden" role="group" aria-label="Choose what to show">
         <button
