@@ -11,9 +11,15 @@ export type ProbabilityTier = 'SAFE' | 'FAVOURABLE' | 'EVEN' | 'POOR' | 'DOOMED'
 
 /**
  * What the server is, rather than what any game is. Fetched once, before a game exists.
+ *
+ * The build fields are null when the jar was assembled without build information, which the
+ * footer treats as nothing to say rather than as an error.
  */
 export interface MetaView {
   offline: boolean
+  version: string | null
+  /** ISO-8601 instant. */
+  builtAt: string | null
 }
 
 export interface GameView {

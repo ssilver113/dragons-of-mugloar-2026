@@ -177,8 +177,13 @@ export class FakeApi {
 
     if (method === 'GET' && path === '/api/meta') {
       // The e2e backend stands in for a live server, so nothing here is simulated as far as the
-      // app is concerned and no caveat badge should appear.
-      return this.json(route, { offline: false })
+      // app is concerned and no caveat badge should appear. The build stamp is fixed rather than
+      // taken from the jar, because a suite that asserted on today's date would rot overnight.
+      return this.json(route, {
+        offline: false,
+        version: '0.9',
+        builtAt: '2026-09-10T09:15:00Z',
+      })
     }
 
     if (method === 'POST' && path === '/api/games') {

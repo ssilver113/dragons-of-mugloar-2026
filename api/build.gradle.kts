@@ -6,8 +6,14 @@ plugins {
 }
 
 group = "com.mugloar"
-version = "0.0.1-SNAPSHOT"
+version = "0.9"
 description = "Dragons of Mugloar — game API adapter, ad scoring and solver"
+
+/* The version reaches the page through /api/meta, so the stamp has to travel in the jar rather
+   than in the bundle: build-info.properties is what the running server reads itself from. */
+springBoot {
+    buildInfo()
+}
 
 java {
     toolchain {

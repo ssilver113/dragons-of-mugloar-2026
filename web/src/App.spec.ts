@@ -37,6 +37,23 @@ describe('App', () => {
     expect(app.text()).toContain('Simulated world')
   })
 
+  /**
+   * The stamp comes off the wire rather than out of the bundle, which is the whole point of it:
+   * an older server still holding the port is the failure it exists to make visible.
+   */
+  it('stamps the footer with the build the server reported', async () => {
+    server.use(
+      http.get('/api/meta', () =>
+        HttpResponse.json({ offline: false, version: '0.9', builtAt: '2026-09-10T09:15:00Z' }),
+      ),
+    )
+    const app = render()
+    await flushPromises()
+
+    expect(app.get('footer').text()).toContain('Dragons of Mugloar v0.9')
+    expect(app.get('footer').text()).toContain('10 September 2026')
+  })
+
   it('goes from a click to a scored board', async () => {
     server.use(
       http.post('/api/games', () => HttpResponse.json(aGame())),

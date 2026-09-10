@@ -79,6 +79,14 @@ export const useGameStore = defineStore('game', () => {
    */
   const offline = ref(false)
 
+  /**
+   * Which build answered. Read from the server rather than compiled in, so the line in the footer
+   * names the process on the port instead of the bundle in the browser — the two disagree exactly
+   * when it matters, which is when an older server is still running.
+   */
+  const version = ref<string | null>(null)
+  const builtAt = ref<string | null>(null)
+
   const started = computed(() => game.value !== null)
   const finished = computed(() => game.value?.finished ?? false)
 
@@ -115,7 +123,10 @@ export const useGameStore = defineStore('game', () => {
    */
   async function loadMeta(): Promise<void> {
     try {
-      offline.value = (await api.meta()).offline
+      const meta = await api.meta()
+      offline.value = meta.offline
+      version.value = meta.version ?? null
+      builtAt.value = meta.builtAt ?? null
     } catch {
       offline.value = false
     }
@@ -479,6 +490,8 @@ export const useGameStore = defineStore('game', () => {
     game,
     ads,
     offline,
+    version,
+    builtAt,
     shopItems,
     startStatus,
     boardStatus,

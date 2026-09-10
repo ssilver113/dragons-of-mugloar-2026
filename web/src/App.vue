@@ -3,6 +3,7 @@ import { computed, nextTick, ref, watch } from 'vue'
 import AdList from './components/AdList.vue'
 import AdvisorPanel from './components/AdvisorPanel.vue'
 import AppBackdrop from './components/AppBackdrop.vue'
+import AppFooter from './components/AppFooter.vue'
 import PaperFilters from './components/PaperFilters.vue'
 import AppIcon from './components/AppIcon.vue'
 import AutoPlayControls from './components/AutoPlayControls.vue'
@@ -206,360 +207,369 @@ const banner = computed(() => {
   <AppBackdrop />
   <PaperFilters />
 
-  <main class="mx-auto flex min-h-dvh max-w-6xl flex-col gap-6 px-4 py-8">
-    <header class="flex flex-col items-center gap-1 text-center">
-      <!--
-        The wordmark carries the title, and the heading still carries the words: the name is a
-        drawing, not a font we could set, so the text stays for the accessibility tree and for
-        anything that reads the page rather than looks at it.
-      -->
-      <h1>
-        <img
-          :src="wordmarkArt"
-          alt=""
-          aria-hidden="true"
-          width="1344"
-          height="394"
-          class="h-auto w-full max-w-2xl drop-shadow-sm"
-        />
-        <span class="sr-only">Dragons of Mugloar</span>
-      </h1>
-      <!-- Balanced because a centred line that wraps looks accidental when the second line is short. -->
-      <p class="text-sm text-balance text-ink-muted">
-        Take the jobs your dragon can survive. Every action costs a turn.
-      </p>
-      <!--
-        Stated wherever a score is, because a simulated score is not a score. The board here is
-        generated from a model of the real one, so nothing won against it is a claim about the
-        real game.
-      -->
-      <p
-        v-if="store.offline"
-        class="rounded border border-warning/50 px-1.5 py-0.5 text-xs text-warning"
-      >
-        Simulated world — no live game behind this one
-      </p>
-    </header>
+  <!--
+    The frame rather than the content: it owns the page height so the footer lands under the
+    board on a long page and at the bottom of the window on a short one. `main` keeps its own
+    column and grows into what is left, which is what the abandon block hangs off.
+  -->
+  <div class="mx-auto flex min-h-dvh max-w-6xl flex-col gap-6 px-4 py-8">
+    <main class="flex flex-1 flex-col gap-6">
+      <header class="flex flex-col items-center gap-1 text-center">
+        <!--
+          The wordmark carries the title, and the heading still carries the words: the name is a
+          drawing, not a font we could set, so the text stays for the accessibility tree and for
+          anything that reads the page rather than looks at it.
+        -->
+        <h1>
+          <img
+            :src="wordmarkArt"
+            alt=""
+            aria-hidden="true"
+            width="1344"
+            height="394"
+            class="h-auto w-full max-w-2xl drop-shadow-sm"
+          />
+          <span class="sr-only">Dragons of Mugloar</span>
+        </h1>
+        <!-- Balanced because a centred line that wraps looks accidental when the second line is short. -->
+        <p class="text-sm text-balance text-ink-muted">
+          Take the jobs your dragon can survive. Every action costs a turn.
+        </p>
+        <!--
+          Stated wherever a score is, because a simulated score is not a score. The board here is
+          generated from a model of the real one, so nothing won against it is a claim about the
+          real game.
+        -->
+        <p
+          v-if="store.offline"
+          class="rounded border border-warning/50 px-1.5 py-0.5 text-xs text-warning"
+        >
+          Simulated world — no live game behind this one
+        </p>
+      </header>
 
-    <GameStats v-if="store.game" :game="store.game" :announce="!autoPlay.active" />
+      <GameStats v-if="store.game" :game="store.game" :announce="!autoPlay.active" />
 
-    <!--
-      `fault` is an alert and `note` is not: a refusal the server saw coming is not a failure, and
-      the app has usually already corrected itself by the time the sentence is read.
-    -->
-    <MessageBanner
-      v-if="failure"
-      :tone="failure.severity === 'fault' ? 'error' : 'info'"
-      :title="failure.title"
-      dismissible
-      @dismiss="store.dismissError()"
-    >
-      {{ failure.message }}
       <!--
-        A refetch, never a retry of the action itself: a solve or a purchase that timed out may
-        already have landed upstream, and repeating it would spend a second turn.
-      -->
-      <button
-        v-if="failure.offerRefresh && store.playable"
-        type="button"
-        class="ml-1 rounded font-semibold text-accent underline hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-        @click="store.refreshAds()"
-      >
-        Refresh the board
-      </button>
-    </MessageBanner>
-
-    <template v-if="!store.started">
-      <!--
-        Said once, on the way in: the game from before the reload is gone, but nothing the player
-        did lost it. A defeat panel would be claiming something about their dragon that is untrue.
+        `fault` is an alert and `note` is not: a refusal the server saw coming is not a failure, and
+        the app has usually already corrected itself by the time the sentence is read.
       -->
       <MessageBanner
-        v-if="store.resumeFailed"
-        tone="info"
-        title="The game from before could not be picked up"
+        v-if="failure"
+        :tone="failure.severity === 'fault' ? 'error' : 'info'"
+        :title="failure.title"
+        dismissible
+        @dismiss="store.dismissError()"
       >
-        The server had already let that session go — it aged out, or the API restarted. A session is
-        never picked back up, so this one starts fresh.
+        {{ failure.message }}
+        <!--
+          A refetch, never a retry of the action itself: a solve or a purchase that timed out may
+          already have landed upstream, and repeating it would spend a second turn.
+        -->
+        <button
+          v-if="failure.offerRefresh && store.playable"
+          type="button"
+          class="ml-1 rounded font-semibold text-accent underline hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          @click="store.refreshAds()"
+        >
+          Refresh the board
+        </button>
       </MessageBanner>
 
-      <section class="panel flex flex-col items-start gap-4 p-6">
-        <p class="text-ink-muted">
-          Start a game to draw a board of ten jobs, each scored for your dragon's level.
-        </p>
-        <button
-          type="button"
-          class="relief rounded-md bg-accent px-4 py-2 font-semibold text-surface hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
-          :disabled="starting"
-          @click="store.startGame()"
+      <template v-if="!store.started">
+        <!--
+          Said once, on the way in: the game from before the reload is gone, but nothing the player
+          did lost it. A defeat panel would be claiming something about their dragon that is untrue.
+        -->
+        <MessageBanner
+          v-if="store.resumeFailed"
+          tone="info"
+          title="The game from before could not be picked up"
         >
-          {{ starting ? 'Starting…' : 'Start a game' }}
-        </button>
-      </section>
-    </template>
+          The server had already let that session go — it aged out, or the API restarted. A session
+          is never picked back up, so this one starts fresh.
+        </MessageBanner>
 
-    <template v-else-if="ended">
-      <section
-        ref="endPanel"
-        tabindex="-1"
-        class="panel flex flex-col items-start gap-4 p-6 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-        role="status"
-      >
-        <DragonSigil
-          v-if="store.ending === 'finished'"
-          mood="defeated"
-          :size="256"
-          class="size-40 self-center sm:size-64"
-        />
-        <div class="flex flex-col gap-1">
-          <h2 class="text-lg font-semibold">{{ ended.heading }}</h2>
-          <p v-if="store.ending === 'lost'" class="text-ink-muted">
-            The server is no longer tracking this game — it aged out, or the API restarted. A
-            session is never picked back up, so the run ends here.
-          </p>
+        <section class="panel flex flex-col items-start gap-4 p-6">
           <p class="text-ink-muted">
-            {{ store.ending === 'lost' ? 'It was worth' : 'Final score' }}
-            {{ store.game?.score }} points after {{ store.game?.turn }} turns.
+            Start a game to draw a board of ten jobs, each scored for your dragon's level.
           </p>
-        </div>
-        <button
-          type="button"
-          class="relief rounded-md bg-accent px-4 py-2 font-semibold text-surface hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
-          :disabled="starting"
-          @click="store.startGame()"
+          <button
+            type="button"
+            class="relief rounded-md bg-accent px-4 py-2 font-semibold text-surface hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
+            :disabled="starting"
+            @click="store.startGame()"
+          >
+            {{ starting ? 'Starting…' : 'Start a game' }}
+          </button>
+        </section>
+      </template>
+
+      <template v-else-if="ended">
+        <section
+          ref="endPanel"
+          tabindex="-1"
+          class="panel flex flex-col items-start gap-4 p-6 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          role="status"
         >
-          {{ starting ? 'Starting…' : ended.action }}
-        </button>
-      </section>
+          <DragonSigil
+            v-if="store.ending === 'finished'"
+            mood="defeated"
+            :size="256"
+            class="size-40 self-center sm:size-64"
+          />
+          <div class="flex flex-col gap-1">
+            <h2 class="text-lg font-semibold">{{ ended.heading }}</h2>
+            <p v-if="store.ending === 'lost'" class="text-ink-muted">
+              The server is no longer tracking this game — it aged out, or the API restarted. A
+              session is never picked back up, so the run ends here.
+            </p>
+            <p class="text-ink-muted">
+              {{ store.ending === 'lost' ? 'It was worth' : 'Final score' }}
+              {{ store.game?.score }} points after {{ store.game?.turn }} turns.
+            </p>
+          </div>
+          <button
+            type="button"
+            class="relief rounded-md bg-accent px-4 py-2 font-semibold text-surface hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
+            :disabled="starting"
+            @click="store.startGame()"
+          >
+            {{ starting ? 'Starting…' : ended.action }}
+          </button>
+        </section>
 
-      <!-- The board is gone but the run is still worth reading, so the log outlives the game. -->
-      <DecisionLog
-        v-if="autoPlay.log.length"
-        :entries="autoPlay.log"
-        :halt="autoPlay.halt"
-        @keep-going="autoPlay.keepGoing()"
-        @retry="autoPlay.run()"
-      />
+        <!-- The board is gone but the run is still worth reading, so the log outlives the game. -->
+        <DecisionLog
+          v-if="autoPlay.log.length"
+          :entries="autoPlay.log"
+          :halt="autoPlay.halt"
+          @keep-going="autoPlay.keepGoing()"
+          @retry="autoPlay.run()"
+        />
 
-      <!--
-        The advisor's box goes with the board, so on the end screen the tally is on its own. It
-        carries no surface of its own any more, which is why the panel is here rather than in it.
-      -->
-      <section v-if="calibration.attempts" class="panel p-4">
-        <CalibrationTable
+        <!--
+          The advisor's box goes with the board, so on the end screen the tally is on its own. It
+          carries no surface of its own any more, which is why the panel is here rather than in it.
+        -->
+        <section v-if="calibration.attempts" class="panel p-4">
+          <CalibrationTable
+            :rows="calibration.rows"
+            :attempts="calibration.attempts"
+            :games="calibration.games"
+            @reset="calibration.reset()"
+          />
+        </section>
+      </template>
+
+      <template v-else>
+        <!--
+          First on the board, because it is what the rest of the page is read in: the ranking it sets
+          is the order the jobs below are listed in, and the risk posture is what their figures mean.
+          Above the result of the last job for the same reason it is above both columns — it governs
+          what comes after it, and opening it must not shove one column down while the other stands
+          still.
+        -->
+        <AdvisorPanel
+          :advisor="store.advisorEnabled"
+          :sort="boardView.sort.value"
+          :posture="boardView.posture.value"
+          :filters="boardView.filters.value"
+          :shown="boardView.shown.value"
+          :total="boardView.total.value"
+          :life-cost="boardView.lifeCost.value"
           :rows="calibration.rows"
           :attempts="calibration.attempts"
           :games="calibration.games"
-          @reset="calibration.reset()"
+          @toggle-advisor="store.toggleAdvisor()"
+          @update:sort="boardView.sort.value = $event"
+          @update:posture="boardView.posture.value = $event"
+          @toggle-filter="boardView.toggleFilter($event)"
+          @clear-filters="boardView.clearFilters()"
+          @reset-calibration="calibration.reset()"
         />
-      </section>
-    </template>
 
-    <template v-else>
-      <!--
-        First on the board, because it is what the rest of the page is read in: the ranking it sets
-        is the order the jobs below are listed in, and the risk posture is what their figures mean.
-        Above the result of the last job for the same reason it is above both columns — it governs
-        what comes after it, and opening it must not shove one column down while the other stands
-        still.
-      -->
-      <AdvisorPanel
-        :advisor="store.advisorEnabled"
-        :sort="boardView.sort.value"
-        :posture="boardView.posture.value"
-        :filters="boardView.filters.value"
-        :shown="boardView.shown.value"
-        :total="boardView.total.value"
-        :life-cost="boardView.lifeCost.value"
-        :rows="calibration.rows"
-        :attempts="calibration.attempts"
-        :games="calibration.games"
-        @toggle-advisor="store.toggleAdvisor()"
-        @update:sort="boardView.sort.value = $event"
-        @update:posture="boardView.posture.value = $event"
-        @toggle-filter="boardView.toggleFilter($event)"
-        @clear-filters="boardView.clearFilters()"
-        @reset-calibration="calibration.reset()"
-      />
+        <MissionResult :pending="pending" :solver-running="autoPlay.running" :outcome="banner" />
 
-      <MissionResult :pending="pending" :solver-running="autoPlay.running" :outcome="banner" />
-
-      <div class="panel flex gap-1 p-1 lg:hidden" role="group" aria-label="Choose what to show">
-        <button
-          v-for="panel in PANELS"
-          :key="panel.id"
-          type="button"
-          class="relative flex-1 rounded-md px-2 py-1.5 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent sm:px-3"
-          :class="
-            view === panel.id
-              ? 'relief-pressed bg-accent text-surface'
-              : 'text-ink-muted hover:text-ink'
-          "
-          :aria-pressed="view === panel.id"
-          @click="view = panel.id"
-        >
-          <!--
-            Held on one line. `Auto-play` is the longest label the row has ever carried and it wraps
-            at 375px against the padding three tabs used to be able to afford, which turns a 32px
-            switch into a 52px one.
-          -->
-          <span class="flex items-center justify-center gap-1.5 whitespace-nowrap">
-            <AppIcon :name="panel.icon" :size="16" />
-            {{ panel.label }}
-          </span>
-          <!--
-            A halt is the one state that needs an answer, and the buttons that give it are on the
-            other side of this switch. Out of the flow, because a label already at the width of its
-            tab cannot pay for a dot; said in words as well as drawn, because a colour on its own
-            is not a message.
-          -->
-          <template v-if="panel.id === 'solver' && autoPlay.halt">
-            <span
-              class="absolute top-1 right-1 size-1.5 rounded-full bg-danger"
-              aria-hidden="true"
-            />
-            <span class="sr-only">, stopped</span>
-          </template>
-        </button>
-      </div>
-
-      <!--
-        Hidden as a whole rather than one column at a time. Hiding only the children leaves an
-        empty grid box in the flow, and the page column still spends a `gap-6` on it — which is
-        why the log used to start twenty-four pixels lower than the board and the shop did.
-      -->
-      <div
-        class="items-start gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_20rem]"
-        :class="view === 'solver' ? 'hidden lg:grid' : 'grid'"
-      >
-        <div :class="onlyOnMobile('board')" class="min-w-0">
-          <AdList
-            :entries="boardView.entries.value"
-            :total="boardView.total.value"
-            :status="store.boardStatus"
-            :solving-ad-id="store.solvingAdId"
-            :advisor="store.advisorEnabled"
-            :disabled="store.busy || autoPlay.active"
-            @solve="store.solve($event)"
-            @refresh="store.refreshAds()"
-          />
-        </div>
-        <!--
-          The stack is a level in, as it is in the board column: `lg:block` and `flex` are both
-          display utilities, and the variant is emitted later, so the two on one element would
-          leave the column laid out as blocks with its gap doing nothing.
-        -->
-        <div :class="onlyOnMobile('shop')" class="min-w-0">
-          <div class="flex flex-col gap-4">
-            <ShopPanel
-              :items="store.shopItems"
-              :gold="store.game?.gold ?? 0"
-              :status="store.shopStatus"
-              :buying-item-id="store.buyingItemId"
-              :disabled="store.busy || autoPlay.active"
-              @buy="store.buy($event)"
-              @refresh="store.refreshShop()"
-            />
-            <ReputationPanel
-              :reputation="store.reputation"
-              :scouting="store.investigating"
-              :disabled="store.busy || autoPlay.active"
-              @scout="store.investigate()"
-            />
-          </div>
-        </div>
-      </div>
-
-      <!--
-        The drive and the record it writes, on one board. Same timber as the message board, the
-        shopfront and the standing wall: the drive is mounted on it and the log lies on it as a
-        book, with wood left showing around both. The board is also what the drive is sticky
-        within, which is what lets Pause stay on screen while the log scrolls past during a run.
-      -->
-      <div :class="onlyOnMobile('solver')">
-        <div class="timber solver-board flex flex-col gap-3">
-          <AutoPlayControls
-            :running="autoPlay.running"
-            :stepping="autoPlay.stepping"
-            :waiting="autoPlay.waiting"
-            :speed="autoPlay.speed"
-            :can-play="autoPlay.canPlay"
-            :busy="store.busy"
-            :halt="autoPlay.halt"
-            :turns="autoPlay.log.length"
-            @run="autoPlay.run()"
-            @pause="autoPlay.pause()"
-            @step="autoPlay.step()"
-            @update:speed="autoPlay.speed = $event"
-          />
-          <DecisionLog
-            :entries="autoPlay.log"
-            :halt="autoPlay.halt"
-            @keep-going="autoPlay.keepGoing()"
-            @retry="autoPlay.run()"
-          />
-        </div>
-      </div>
-
-      <!--
-        Last on the page and quiet with it. This is the only way out of a run that is going badly
-        but is not over, and it is deliberately nowhere near the buttons that spend turns.
-
-        On a sheet, like every other block of copy. A hairline rule left this text sitting on the
-        painted backdrop, whose luminance runs from 0.16 to 0.55 and so crosses the type's own —
-        muted ink measured 1.5:1 against it at worst. No colour survives a ground that mottled, and
-        no scrim rescues it either: even at 85%, which would erase the painting, muted text reaches
-        only 4.0:1. Paper is the only fix, and it is what the rest of the page already does.
-      -->
-      <footer
-        class="panel mt-auto flex flex-col items-start gap-2 p-4"
-        @keydown.esc="keepPlaying()"
-      >
-        <template v-if="!abandoning">
+        <div class="panel flex gap-1 p-1 lg:hidden" role="group" aria-label="Choose what to show">
           <button
-            ref="startNew"
+            v-for="panel in PANELS"
+            :key="panel.id"
             type="button"
-            class="relief rounded-md border border-ink-muted/40 bg-surface-raised/60 px-3 py-1.5 text-sm font-semibold text-ink-muted hover:border-ink hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
-            :disabled="!canAbandon"
-            @click="askToAbandon()"
+            class="relative flex-1 rounded-md px-2 py-1.5 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent sm:px-3"
+            :class="
+              view === panel.id
+                ? 'relief-pressed bg-accent text-surface'
+                : 'text-ink-muted hover:text-ink'
+            "
+            :aria-pressed="view === panel.id"
+            @click="view = panel.id"
           >
-            Start a new game
+            <!--
+              Held on one line. `Auto-play` is the longest label the row has ever carried and it wraps
+              at 375px against the padding three tabs used to be able to afford, which turns a 32px
+              switch into a 52px one.
+            -->
+            <span class="flex items-center justify-center gap-1.5 whitespace-nowrap">
+              <AppIcon :name="panel.icon" :size="16" />
+              {{ panel.label }}
+            </span>
+            <!--
+              A halt is the one state that needs an answer, and the buttons that give it are on the
+              other side of this switch. Out of the flow, because a label already at the width of its
+              tab cannot pay for a dot; said in words as well as drawn, because a colour on its own
+              is not a message.
+            -->
+            <template v-if="panel.id === 'solver' && autoPlay.halt">
+              <span
+                class="absolute top-1 right-1 size-1.5 rounded-full bg-danger"
+                aria-hidden="true"
+              />
+              <span class="sr-only">, stopped</span>
+            </template>
           </button>
-          <p class="text-sm text-ink-muted">
-            {{
-              autoPlay.active
-                ? 'Pause the solver first — a turn already in flight would land on the new game.'
-                : 'Ends this run and deals a fresh board. The game itself costs nothing to start.'
-            }}
-          </p>
-        </template>
+        </div>
 
-        <template v-else>
-          <p id="abandon-question" class="text-sm">
-            Abandon this run? It is worth {{ store.game?.score }} points after
-            {{ store.game?.turn }} turns, and cannot be picked back up.
-          </p>
-          <div class="flex flex-wrap gap-2">
-            <button
-              ref="confirmAbandon"
-              type="button"
-              class="relief rounded-md bg-accent px-3 py-1.5 text-sm font-semibold text-surface hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
-              aria-describedby="abandon-question"
-              :disabled="!canAbandon || starting"
-              @click="abandon()"
-            >
-              {{ starting ? 'Starting…' : 'Yes, start a new game' }}
-            </button>
-            <button
-              type="button"
-              class="relief rounded-md border border-ink-muted/40 bg-surface-raised/60 px-3 py-1.5 text-sm font-semibold text-ink-muted hover:border-ink hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-              @click="keepPlaying()"
-            >
-              Keep playing
-            </button>
+        <!--
+          Hidden as a whole rather than one column at a time. Hiding only the children leaves an
+          empty grid box in the flow, and the page column still spends a `gap-6` on it — which is
+          why the log used to start twenty-four pixels lower than the board and the shop did.
+        -->
+        <div
+          class="items-start gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_20rem]"
+          :class="view === 'solver' ? 'hidden lg:grid' : 'grid'"
+        >
+          <div :class="onlyOnMobile('board')" class="min-w-0">
+            <AdList
+              :entries="boardView.entries.value"
+              :total="boardView.total.value"
+              :status="store.boardStatus"
+              :solving-ad-id="store.solvingAdId"
+              :advisor="store.advisorEnabled"
+              :disabled="store.busy || autoPlay.active"
+              @solve="store.solve($event)"
+              @refresh="store.refreshAds()"
+            />
           </div>
-        </template>
-      </footer>
-    </template>
-  </main>
+          <!--
+            The stack is a level in, as it is in the board column: `lg:block` and `flex` are both
+            display utilities, and the variant is emitted later, so the two on one element would
+            leave the column laid out as blocks with its gap doing nothing.
+          -->
+          <div :class="onlyOnMobile('shop')" class="min-w-0">
+            <div class="flex flex-col gap-4">
+              <ShopPanel
+                :items="store.shopItems"
+                :gold="store.game?.gold ?? 0"
+                :status="store.shopStatus"
+                :buying-item-id="store.buyingItemId"
+                :disabled="store.busy || autoPlay.active"
+                @buy="store.buy($event)"
+                @refresh="store.refreshShop()"
+              />
+              <ReputationPanel
+                :reputation="store.reputation"
+                :scouting="store.investigating"
+                :disabled="store.busy || autoPlay.active"
+                @scout="store.investigate()"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!--
+          The drive and the record it writes, on one board. Same timber as the message board, the
+          shopfront and the standing wall: the drive is mounted on it and the log lies on it as a
+          book, with wood left showing around both. The board is also what the drive is sticky
+          within, which is what lets Pause stay on screen while the log scrolls past during a run.
+        -->
+        <div :class="onlyOnMobile('solver')">
+          <div class="timber solver-board flex flex-col gap-3">
+            <AutoPlayControls
+              :running="autoPlay.running"
+              :stepping="autoPlay.stepping"
+              :waiting="autoPlay.waiting"
+              :speed="autoPlay.speed"
+              :can-play="autoPlay.canPlay"
+              :busy="store.busy"
+              :halt="autoPlay.halt"
+              :turns="autoPlay.log.length"
+              @run="autoPlay.run()"
+              @pause="autoPlay.pause()"
+              @step="autoPlay.step()"
+              @update:speed="autoPlay.speed = $event"
+            />
+            <DecisionLog
+              :entries="autoPlay.log"
+              :halt="autoPlay.halt"
+              @keep-going="autoPlay.keepGoing()"
+              @retry="autoPlay.run()"
+            />
+          </div>
+        </div>
+
+        <!--
+          Last on the page and quiet with it. This is the only way out of a run that is going badly
+          but is not over, and it is deliberately nowhere near the buttons that spend turns.
+
+          On a sheet, like every other block of copy. A hairline rule left this text sitting on the
+          painted backdrop, whose luminance runs from 0.16 to 0.55 and so crosses the type's own —
+          muted ink measured 1.5:1 against it at worst. No colour survives a ground that mottled, and
+          no scrim rescues it either: even at 85%, which would erase the painting, muted text reaches
+          only 4.0:1. Paper is the only fix, and it is what the rest of the page already does.
+        -->
+        <footer
+          class="panel mt-auto flex flex-col items-start gap-2 p-4"
+          @keydown.esc="keepPlaying()"
+        >
+          <template v-if="!abandoning">
+            <button
+              ref="startNew"
+              type="button"
+              class="relief rounded-md border border-ink-muted/40 bg-surface-raised/60 px-3 py-1.5 text-sm font-semibold text-ink-muted hover:border-ink hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
+              :disabled="!canAbandon"
+              @click="askToAbandon()"
+            >
+              Start a new game
+            </button>
+            <p class="text-sm text-ink-muted">
+              {{
+                autoPlay.active
+                  ? 'Pause the solver first — a turn already in flight would land on the new game.'
+                  : 'Ends this run and deals a fresh board. The game itself costs nothing to start.'
+              }}
+            </p>
+          </template>
+
+          <template v-else>
+            <p id="abandon-question" class="text-sm">
+              Abandon this run? It is worth {{ store.game?.score }} points after
+              {{ store.game?.turn }} turns, and cannot be picked back up.
+            </p>
+            <div class="flex flex-wrap gap-2">
+              <button
+                ref="confirmAbandon"
+                type="button"
+                class="relief rounded-md bg-accent px-3 py-1.5 text-sm font-semibold text-surface hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
+                aria-describedby="abandon-question"
+                :disabled="!canAbandon || starting"
+                @click="abandon()"
+              >
+                {{ starting ? 'Starting…' : 'Yes, start a new game' }}
+              </button>
+              <button
+                type="button"
+                class="relief rounded-md border border-ink-muted/40 bg-surface-raised/60 px-3 py-1.5 text-sm font-semibold text-ink-muted hover:border-ink hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                @click="keepPlaying()"
+              >
+                Keep playing
+              </button>
+            </div>
+          </template>
+        </footer>
+      </template>
+    </main>
+
+    <AppFooter :version="store.version" :built-at="store.builtAt" />
+  </div>
 </template>
