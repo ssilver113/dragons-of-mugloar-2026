@@ -7,17 +7,9 @@ import type { CalibrationRow } from '../stores/calibration'
 import type { FilterId, Posture, SortKey } from '../advisor/ranking'
 
 /**
- * Everything the advisor is and everything it has been wrong about, in one box above both columns.
- *
- * It was three things before — a switch in the board's heading row, a toolbar between that heading
- * and the first card, and the calibration tally in a disclosure of its own somewhere below. Three
- * surfaces for one opinion, and the two halves of the advisor's own argument were never next to
- * each other: what it thinks of this board, and how often it has been right about boards like it.
- *
- * Above the board and the shop rather than inside either, and the reason is movement. It governs
- * both columns, so anywhere inside one of them it would push that column's contents around every
- * time it opened while the other stood still. At the top of the page it opens downwards into space
- * of its own and its header never moves.
+ * Everything the advisor is, and everything it has been wrong about, in one box. Above both
+ * columns rather than inside either: it governs both, and inside one it would shove that column
+ * around on every toggle while the other stood still.
  */
 const props = defineProps<{
   advisor: boolean
@@ -46,15 +38,11 @@ const subtitle = computed(() =>
     : 'Off — the board is listed in the order it was posted',
 )
 
-/**
- * The fold, measured rather than guessed. `height: auto` cannot be transitioned in the browsers
- * this ships to, so the element is given its own scroll height for the length of the animation and
- * handed back to the layout at the end of it.
- */
+/** `height: auto` cannot be transitioned in the target browsers, so the height is written here. */
 function measure(el: Element): void {
   const box = el as HTMLElement
   box.style.height = '0px'
-  // Read, so the browser has a start value to animate from rather than one paint at the end.
+  // Forces a reflow, so the browser has a start value to animate from.
   void box.offsetHeight
   box.style.height = `${box.scrollHeight}px`
 }
@@ -73,14 +61,8 @@ function collapse(el: Element): void {
 
 <template>
   <section class="baize advisor" aria-labelledby="advisor-title">
-    <!--
-      One control, not two. The switch used to sit beside a twisty that opened the same panel, which
-      let the advisor be on with its table shut and off with its table open — four states for a
-      thing that has two. On is open and off is shut, so the switch is the disclosure as well.
-
-      Not a `<details>`, for the same reason as before: it cannot be animated in the browsers this
-      ships to, because the user agent hides the content itself and leaves nothing to transition.
-    -->
+    <!-- One control: on is open, off is shut. Not a `<details>` — the user agent hides the content
+         itself, leaving nothing to transition. -->
     <div class="header">
       <span class="mark">
         <img
@@ -96,12 +78,8 @@ function collapse(el: Element): void {
         <span id="advisor-title" class="title">The Advisor</span>
         <span class="subtitle">{{ subtitle }}</span>
       </span>
-      <!--
-        Named from the title beside it plus its own word, so the accessible name is "The Advisor
-        On" and contains the label a voice user can see. A bare `aria-label` of "Advisor" would read
-        well and would not: the visible word on the control is the state, and a name that leaves it
-        out is a name nobody can say out loud.
-      -->
+      <!-- Named "The Advisor On" from the title plus its own word, so the accessible name
+           contains the visible label a voice user would say. -->
       <button
         type="button"
         role="switch"
@@ -113,12 +91,8 @@ function collapse(el: Element): void {
         @click="$emit('toggle-advisor')"
       >
         <span id="advisor-state">{{ advisor ? 'On' : 'Off' }}</span>
-        <!--
-          The track is decoration; `aria-checked` is what is read out and the fill is what is seen.
-          The chevron is the second half of the same statement — this control opens the table as
-          well as switching the advice on, and a disclosure that gives no sign of being one is a
-          control people do not find.
-        -->
+        <!-- The track is decoration; `aria-checked` carries the state. The chevron says this
+             control is also the disclosure. -->
         <span aria-hidden="true" class="track"><span class="knob" /></span>
         <svg
           class="chevron"
@@ -134,19 +108,13 @@ function collapse(el: Element): void {
       </button>
     </div>
 
-    <!--
-      The fold. Height is written by JavaScript rather than transitioned from `auto`, because the
-      declarative ways of doing it are both too new for the browsers this ships to: `auto` keywords
-      need `interpolate-size`, and the `0fr`/`1fr` grid trick needs a Chrome and a Safari newer than
-      the build targets. The transition itself is still CSS, and still lives inside the
-      reduced-motion query, so under `reduce` there is no rule to obey and the panel simply appears.
-    -->
+    <!-- Height is scripted because both declarative routes are too new for the build targets:
+         `interpolate-size` for the `auto` keywords, and newer engines for the `0fr`/`1fr` grid
+         trick. The transition itself is still CSS, inside the reduced-motion query. -->
     <Transition name="fold" @enter="measure" @after-enter="release" @leave="collapse">
       <div v-show="advisor" id="advisor-body" class="body">
-        <!--
-          Sitting at the table rather than printed on it. Hidden below `sm`, where a figure this
-          size would take a third of the sheet and the four filters already wrap twice at 375px.
-        -->
+        <!-- Hidden below `sm`, where it would take a third of the sheet and the filters already
+             wrap twice at 375px. -->
         <img
           class="scribe"
           :src="advisorArt"
@@ -187,23 +155,15 @@ function collapse(el: Element): void {
 </template>
 
 <style scoped>
-/**
- * The table. Its surface is the `baize` utility, shared with nothing else — the advisor is the only
- * thing in the app laid out on cloth. This rule sets what is particular to a table with a sheet and
- * a counsellor at it.
- */
+/** The table. `baize` is the surface, shared with nothing else; this sets what is particular. */
 .advisor {
   position: relative;
   padding: 0.75rem;
 }
 
 /**
- * Brass corner clips, drawn with `filter: drop-shadow` rather than `box-shadow`.
- *
- * That is not a preference. A shadow is cast by the border box whatever is painted in it, so an
- * L-shaped clip with only two borders drawn throws the shadow of a whole square and leaves stray
- * dark lines along the two edges that were never painted. The same mistake cost the board its
- * corner brackets once.
+ * Brass corner clips. `drop-shadow`, not `box-shadow`: a box shadow follows the border box, so an
+ * L-shaped clip would throw the shadow of a whole square along two edges that were never painted.
  */
 .advisor::before,
 .advisor::after {
@@ -232,12 +192,8 @@ function collapse(el: Element): void {
 }
 
 /**
- * The header row, and the one thing on this panel that never moves.
- *
- * Its padding is even on all four sides, so the mark and the two lines are centred on the closed
- * box and stay exactly where they are when it opens — the gap to the sheet below is the sheet's
- * own top padding, not extra space under the header. Uneven padding here is what made the closed
- * bar look top-heavy and made the whole row shift by ten pixels on every toggle.
+ * The one thing on this panel that never moves. Padding is even on all four sides so the row does
+ * not shift on a toggle; the gap below is the fold's own top padding.
  */
 .header {
   display: flex;
@@ -246,12 +202,8 @@ function collapse(el: Element): void {
   padding: 0.375rem;
 }
 
-/**
- * The mark, and the same drawing as the figure below it seen close. Cream behind it because the
- * portrait's own ground is transparent and the head would otherwise sit on cloth; the crop is set
- * from the head rather than the box, since the drawing is a whole dragon at a desk and only the top
- * fifth of it survives at this size.
- */
+/** The same drawing as the figure below, cropped to the head. Cream behind it, because the art is
+ * transparent and the head would otherwise sit on cloth. */
 .mark {
   width: 2.25rem;
   height: 2.25rem;
@@ -264,11 +216,7 @@ function collapse(el: Element): void {
     0 1px 2px oklch(20% 0.03 150 / 0.5);
 }
 
-/* Set from the head's own place in the drawing rather than by eye, and then corrected against the
-   rendered pixels twice over: the face centres on 58% across and 19% down. The horizontal figure
-   is roughly the mirror of what it was, because the drawing itself was flipped so the dragon faces
-   into the page rather than off its left edge. At this scale the head fills most of a 36px disc,
-   which is what a roundel is for. */
+/* Measured against the rendered pixels, not eyeballed: the face centres on 58% across, 19% down. */
 .mark img {
   display: block;
   width: 195%;
@@ -284,8 +232,7 @@ function collapse(el: Element): void {
   flex-direction: column;
 }
 
-/* Cream on cloth is 6.7:1; nothing on this surface has a sheet under it, so both lines were
-   measured against the baize itself. */
+/* Cream on cloth is 6.7:1. Nothing here sits on a sheet, so both lines are measured on baize. */
 .title {
   font-family: var(--font-display);
   font-size: 1rem;
@@ -301,10 +248,7 @@ function collapse(el: Element): void {
   color: color-mix(in oklab, var(--color-surface-raised) 82%, var(--color-baize));
 }
 
-/**
- * On, the switch is a cream plate with the advisor's own ink on it; off, it is the cloth showing
- * through a pale rim. The state is a word before it is a fill, as the ad verdicts are.
- */
+/** The state is a word before it is a fill, as the ad verdicts are. */
 .switch {
   display: flex;
   flex: none;
@@ -369,8 +313,7 @@ function collapse(el: Element): void {
   background-color: color-mix(in oklab, var(--color-surface-raised) 88%, var(--color-baize));
 }
 
-/* Inside the switch now, so it takes the colour of whichever state the plate is in rather than
-   carrying one of its own. Held back a little, because the word is what says On and Off. */
+/* Held back, because the word is what says On and Off. */
 .chevron {
   width: 0.875rem;
   height: 0.875rem;
@@ -384,11 +327,7 @@ function collapse(el: Element): void {
   rotate: 180deg;
 }
 
-/**
- * The fold. `overflow: hidden` is permanent rather than only worn during the transition, because
- * the figure is taller than the sheet on a short tally and would otherwise hang out of the box for
- * the length of the animation.
- */
+/** `overflow: hidden` is permanent: on a short tally the figure is taller than the sheet. */
 .body {
   display: flex;
   align-items: flex-start;
@@ -429,11 +368,7 @@ function collapse(el: Element): void {
   }
 }
 
-/**
- * The working sheet. Square-cut and set flat on the cloth: paper in this app is torn and pinned,
- * and this is not the world's paper — it is the sheet the advisor is writing on, so it is the same
- * machine-made stock idea as the log's without being the log.
- */
+/** Square-cut and flat: the advisor's own stock, not the torn parchment the world is drawn on. */
 .sheet {
   display: flex;
   min-width: 0;

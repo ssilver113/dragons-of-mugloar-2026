@@ -18,12 +18,9 @@ import org.slf4j.LoggerFactory;
  * Wraps the real client for the benchmark profile: every call waits its turn at the {@link Pacer},
  * and a rate-limited one widens the gap for everybody before it is rethrown.
  *
- * <p>A decorator rather than pacing inside the client itself, because the rate only needs managing
- * when something is deliberately playing hundreds of games. The application a human uses cannot go
- * fast enough to matter, and giving it a throttle would slow every click for no reason.
- *
- * <p>Nothing is retried here. The client's own policy already decides what may be attempted twice,
- * and a rate limiter is the one failure where a second attempt makes things worse.
+ * <p>A decorator rather than pacing inside the client, because only a run of hundreds of games
+ * needs managing; a human cannot click fast enough to matter. Nothing is retried here — the
+ * client's own policy decides that, and a rate limit is where a second attempt makes things worse.
  */
 final class PacedMugloarClient implements MugloarClient {
 

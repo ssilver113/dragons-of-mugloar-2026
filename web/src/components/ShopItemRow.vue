@@ -52,11 +52,8 @@ const shortfall = computed(() => props.item.cost - props.gold)
     />
     <div class="min-w-0 flex-1">
       <p class="truncate text-sm font-medium">{{ item.name }}</p>
-      <!--
-        The cost moves rather than repeating. A row the player can act on says it here, next to what
-        it buys; a row they cannot says it on the stud instead, where the label "Buy" has nothing to
-        offer and the price is the only thing left worth reading.
-      -->
+      <!-- The cost moves rather than repeating: on an unaffordable row it is on the stud, where
+           the word "Buy" has nothing left to offer. -->
       <p class="text-xs" :class="affordable ? 'text-ink-muted' : 'text-ink'">
         <template v-if="affordable">
           <span class="tabular-nums">{{ item.cost }}g</span>
@@ -89,31 +86,17 @@ const shortfall = computed(() => props.item.cost - props.gold)
 
 <style scoped>
 /**
- * A plaque strung from the shop's rail on two ropes.
- *
- * Two ropes rather than one, and that is the whole difference from the ads next to it. A sheet on a
- * single tack hangs crooked, which is why every ad on the board is tilted; a board on two ropes
- * hangs level, so these are not. The same physical logic gives two materials two different resting
- * postures without either needing a rule about it.
- *
- * `--rope-drop` is owned by `ShopPanel`, which uses the same value for the column's gap — the ropes
- * span the gap exactly. It is read with a fallback rather than redeclared here: a custom property
- * set on the element would win over the inherited one, and the shop's gap would silently stop
- * reaching the ropes that are supposed to span it.
+ * A plaque strung from the shop's rail on two ropes, which is why it hangs level where an ad on one
+ * tack hangs crooked. `--rope-drop` is owned by `ShopPanel` and read with a fallback, never
+ * redeclared: a property set here would win over the inherited one and the gap would stop matching.
  */
 .plaque {
   position: relative;
   border-radius: 3px;
   background-color: var(--color-oak);
-  /* Figure, in two parts, and the split is a contrast decision rather than a drawing one.
-     The bands are symmetric — a light line and a dark line of comparable weight — so they add
-     visible grain at no net cost to the surface's luminance, which is the half that has to stay
-     measurable.
-
-     The cycle is forty-one pixels with six lines in it at unequal spacing, and the unevenness is
-     the point: lines at a constant pitch read as ruled paper rather than as timber, which is a
-     material this app is about to use for something else. The stretched noise underneath breaks
-     the cycle's own repeat. It only darkens, so it is kept to one faint pass. */
+  /* Symmetric bands, so the grain costs the surface's luminance nothing and stays measurable.
+     Unequal spacing over a 41px cycle: a constant pitch reads as ruled paper rather than timber.
+     The noise underneath breaks the repeat, and only darkens, so it is one faint pass. */
   background-image:
     repeating-linear-gradient(
       0deg,
@@ -138,16 +121,12 @@ const shortfall = computed(() => props.item.cost - props.gold)
     inset 0 -1px 0 oklch(30% 0.03 55 / 0.28),
     inset 0 0 0 1px oklch(52% 0.05 66 / 0.55),
     0 2px 4px oklch(30% 0.028 52 / 0.35);
-  /* The pivot is where the ropes meet the rail, not the plaque's own top edge. A swing about its
-     own edge is a plaque bending; a swing about the rail is a plaque hanging. */
+  /* The pivot is where the ropes meet the rail: a swing about its own edge would be it bending. */
   transform-origin: 50% calc(-1 * var(--rope-drop, 20px));
 }
 
-/* Two ropes, drawn as one strip: two 3px columns of a single background, so the pair cannot drift
-   apart. The gradient runs across each cord rather than down it — a bright core between two dark
-   edges is what makes a cylinder out of a line, the same trick the rail uses lying down. Inset from
-   the ends rather than at the corners; a rope tied at the very corner of a board would tear it
-   out. */
+/* Two ropes as one strip, so the pair cannot drift apart. The gradient runs across each cord: a
+   bright core between two dark edges is what makes a cylinder out of a line. */
 .plaque::before {
   content: '';
   position: absolute;
@@ -168,27 +147,11 @@ const shortfall = computed(() => props.item.cost - props.gold)
 }
 
 /**
- * Unaffordable, and readable while it says so.
- *
- * It used to be `opacity-60` on the row *and* `disabled:opacity-60` on the button. Nested opacity
- * multiplies, so the label the player most needed — how much the thing costs — rendered at 36% and
- * measured about 1.7:1. At the start of a game nothing is affordable, so that was the state the
- * whole shop opened in.
- *
- * One dim now, on the row, and nothing on the stud. The stud loses its brass instead — a stronger
- * signal than fading was, and one that costs the text nothing.
- *
- * The value is measured rather than chosen, and it has been measured three times. Opacity here
- * composites the plaque over the frame behind it, which is nearly black, so dimming does not merely
- * wash the row out — it darkens the ground everything on it is read against. 0.8 put the price at
- * 4.39:1 and 0.85 fixed that, but at 0.85 the row was barely distinguishable from an affordable one
- * at a glance, which is the whole job the dimming exists to do.
- *
- * 0.72 separates them — the faces differ by 0.27 in luminance rather than 0.10 — and it is
- * affordable because the row stops muting its own text at the same time. `ink-muted` is a
- * de-emphasis applied *within* a row; on a row the surface has already de-emphasised, it was being
- * applied twice, and the effect line fell to 3.87:1. One de-emphasis, not two: everything on an
- * unavailable plaque prints in `ink`, and the plaque itself carries the state.
+ * Unaffordable, and readable while it says so. One dim, on the row: nested opacity multiplies, and
+ * a second on the stud once put the price at 1.7:1. The value is measured — this composites over a
+ * near-black frame, so it darkens the ground rather than only washing the row out. 0.85 was legible
+ * but indistinguishable from an affordable row; 0.72 separates them by 0.27 in luminance, and is
+ * affordable only because the row stops muting its own text at the same time.
  */
 .is-dimmed {
   opacity: 0.72;

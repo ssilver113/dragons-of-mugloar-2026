@@ -20,14 +20,12 @@ import org.springframework.stereotype.Component;
 /**
  * Plays one game from start to death, taking the same turns the auto-play UI would.
  *
- * <p>It goes through {@link AutoPlayService} rather than the strategy directly, so what the
- * benchmark measures is the bot as shipped — the same guards, the same session ledger, the same
- * turn accounting. The one thing it does differently is read the shop once instead of once a turn,
- * which is a saving in upstream calls and changes no decision, because prices are fixed.
+ * <p>Through {@link AutoPlayService} rather than the strategy directly, so the benchmark measures
+ * the bot as shipped. The one difference is reading the shop once instead of once a turn, which
+ * changes no decision because prices are fixed.
  *
- * <p>Two bounds stop a game that will not end on its own: a turn cap, and a limit on consecutive
- * passes. A pass costs a turn and cannot cost a life, so a dragon with no gold facing a board it
- * cannot afford to touch has no move that ends the game.
+ * <p>A turn cap and a consecutive-pass limit bound a game that will not end on its own: a pass
+ * cannot cost a life, so a broke dragon on an unaffordable board has no move that ends it.
  */
 @Component
 @Profile("bench")

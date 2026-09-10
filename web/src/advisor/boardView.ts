@@ -27,16 +27,10 @@ export interface BoardView {
 
 /**
  * How the board is presented: the sort, the posture, the filters, and the ranking they produce.
+ * Lifted out of `AdList` because the advisor's panel needs the same four values, including the
+ * filtered count, which cannot be had without running the whole pipeline.
  *
- * This lived inside `AdList` while the advisor's controls sat above the first card. They are on
- * opposite sides of the page now — the advisor above both columns, the cards inside the left one —
- * and the two need exactly the same four values, including the count of what survives the filters,
- * which cannot be derived without running the whole pipeline. Lifting the pipeline is cheaper than
- * running it twice, and far cheaper than lifting the ranking into `App.vue` by hand.
- *
- * It is deliberately not a store. None of this outlives a game or a tab, nothing outside the board
- * reads it, and it is per-mount state that happens to be shared by two siblings — which is what a
- * composable is for and what a store is not.
+ * Not a store: none of it outlives a game, and nothing outside the board reads it.
  */
 export function useBoardView(sources: {
   ads: Ref<AdView[]> | ComputedRef<AdView[]>
@@ -51,16 +45,10 @@ export function useBoardView(sources: {
   const filters = ref<FilterId[]>([])
 
   /**
-   * The board a turn began with, held until that turn's own refetch lands.
-   *
-   * A turn writes the state three times — the optimistic board on the click, the new figures when
-   * the response arrives, then the real board — and the cards moved on each of them, twice
-   * visibly. The middle write is the least obvious and the worst: a life lost reprices every ad on
-   * a board that has not changed, so the ranking reshuffles for a reason the player cannot see.
-   *
-   * Holding the two inputs the ranking reads collapses all three into one change, at the moment
-   * there is genuinely something new to show. Only the data is held: sorting, filtering and the
-   * posture still answer immediately, because they are the player's own controls.
+   * The board a turn began with, held until that turn's own refetch lands. A turn writes the state
+   * three times and the cards moved on each; the worst is the middle one, where a lost life
+   * reprices an unchanged board and the ranking reshuffles for no visible reason. Only the data is
+   * held — the player's own controls still answer immediately.
    */
   const board = ref<AdView[]>(sources.ads.value)
   const boardLives = ref(sources.lives.value)

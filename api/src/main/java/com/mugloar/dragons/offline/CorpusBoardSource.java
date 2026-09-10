@@ -9,21 +9,16 @@ import java.util.random.RandomGenerator;
 /**
  * Deals ads by sampling boards recorded from live play.
  *
- * <p>Rows are bucketed by level and turn, because the reward a board offers depends on both and on
- * nothing else we could measure. A request draws a row from its own bucket, so the label and the
- * reward arrive together as the game actually paired them, rather than from two distributions
- * fitted separately.
+ * <p>Bucketed by level and turn, the only two things the reward was measured to depend on. Drawing
+ * a whole row keeps the label and the reward paired as the game paired them.
  *
- * <p><b>The corpus covers the path the solver walks, and only that.</b> Every row was recorded
- * while the bot was playing, and the bot levels hard and early, so there is nothing in it for a
- * dragon sitting at level 0 on turn 80 — a corner a human player reaches easily and the recording
- * never visited. Those requests fall through to {@link #fallback} rather than to the nearest
- * populated bucket, because "nearest" across level means handing a level-0 dragon a board drawn
- * for a level-40 one, which is a worse answer than an honest guess.
+ * <p><b>The corpus covers the path the solver walks, and only that.</b> The bot levels hard and
+ * early, so nothing was recorded for a dragon at level 0 on turn 80 — a corner a human reaches
+ * easily. Those fall through to {@link #fallback} rather than to the nearest populated bucket,
+ * since "nearest" across level hands a level-0 dragon a board drawn for a level-40 one.
  *
- * <p>Encryption is not sampled: the recording carries the decoded text, which is what the world
- * needs, and the flag was never in the decision the rows came from. It stays on the measured rates
- * in {@link OfflineProperties.Board}.
+ * <p>Encryption is not sampled — the recording carries decoded text — so it stays on the measured
+ * rates in {@link OfflineProperties.Board}.
  */
 class CorpusBoardSource implements BoardSource {
 

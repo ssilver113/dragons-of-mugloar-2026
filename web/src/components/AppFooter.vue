@@ -24,17 +24,9 @@ const built = computed(() => {
 </script>
 
 <template>
-  <!--
-    The page's one contentinfo landmark, and the only thing on it that is about the software rather
-    than about the game.
-
-    Printed on the painting rather than on paper. It cannot join the abandon block above it, which
-    is the obvious way to spend one sheet instead of two: that block only exists while a game is in
-    progress, and this line has to be there on the start screen and after a run has ended. Two
-    identical sheets stacked at the foot of the page read as one panel that broke in half, so the
-    lower one gives up its sheet instead — see the collar in the style below for how it stays
-    readable without one.
-  -->
+  <!-- The one contentinfo landmark, printed on the painting rather than on paper. It cannot share
+       the abandon block's sheet: that block exists only during a game, and two stacked sheets read
+       as one panel broken in half. The collar below is what keeps it legible without one. -->
   <footer
     class="colophon flex flex-wrap items-baseline justify-center gap-x-4 text-center text-sm font-medium text-ink"
   >
@@ -54,29 +46,15 @@ const built = computed(() => {
 
 <style scoped>
 /**
- * The collar, and the reason this line can sit on the backdrop when no other copy in the app does.
+ * The collar, and why this line can sit on the backdrop when no other copy does. The painting runs
+ * 0.16 to 0.55 in luminance and takes muted ink to 1.5:1, which no scrim fixes, so the ground is
+ * brought to the glyph: a stroke of the app's own paper, against which ink measures 9.86:1.
  *
- * The painting runs from 0.16 to 0.55 in luminance, which crosses the type's own — muted ink
- * measures 1.5:1 against it at worst, and no scrim short of erasing the picture fixes that. So the
- * ground is brought to the glyph instead of the glyph to a sheet: the type is given a stroke of the
- * app's own paper, and inside that stroke it is read against `surface`, where ink measures 9.86:1.
- * Contrast is spent on the collar, so the face is full-strength ink at medium weight rather than
- * the muted grade a panel would have allowed.
- *
- * `paint-order` is what makes this a collar rather than a hollowing-out: without it the stroke is
- * painted over the fill and eats the letterform from both sides. It is centred on the outline, so
- * a 4px stroke shows 2px of paper outside the glyph and the other half is covered by the fill,
- * which keeps the face at its drawn weight.
- *
- * The `@supports` gate is not ceremony. Every browser the bundle targets has `paint-order` on HTML
- * text, but the failure if one did not would be the worst possible one — a light stroke painted
- * straight over dark type, which is thinner and paler than no stroke at all. The eight-offset ring
- * below is what such a browser gets: the same idea at one pixel, built out of shadows, which paint
- * behind the glyph by definition and so cannot do that.
- *
- * The soft pass is in both branches and does no contrast work. It stops the collar reading as a
- * cut-out where the backdrop goes dark, which is what a hard edge alone looks like over the
- * treeline.
+ * `paint-order` is what makes it a collar rather than a hollowing-out — without it the stroke is
+ * painted over the fill and eats the letterform from both sides. The `@supports` gate matters
+ * because that failure is worse than no stroke at all; the fallback ring is the same idea built
+ * from shadows, which paint behind the glyph by definition. The soft pass does no contrast work
+ * and only stops the collar reading as a cut-out where the backdrop goes dark.
  */
 .colophon {
   text-shadow:

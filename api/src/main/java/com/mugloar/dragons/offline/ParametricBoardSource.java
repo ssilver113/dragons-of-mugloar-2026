@@ -9,21 +9,16 @@ import java.util.random.RandomGenerator;
 /**
  * Generates a board from parameters rather than from recorded data.
  *
- * <p>Since the recording landed this is the <em>fallback</em>, reached only where
- * {@link CorpusBoardSource} has nothing — the corners of the level and turn space the solver's own
- * play never visited, which a human player wanders into easily by not levelling.
+ * <p>The <em>fallback</em>, reached only where {@link CorpusBoardSource} has nothing — the corners
+ * of the level and turn space the solver's own play never visited.
  *
- * <p>It is the invented half of the offline world, and it stays honest about that. The reward scale is anchored to
- * the level's safe ceiling and then inflated by the turn, which reproduces the one shape the
- * exploration did establish — a board that outgrows a dragon standing still is what turns
- * {@code Piece of cake} from 0.95 into 0.04 over fifty turns — without the accident that comes of
- * making the scale level-blind, where a dragon that levels twice leaves the board behind for good
- * and the game becomes unloseable. Everything else here, the label mix and the spread most of all,
- * is a guess.
+ * <p>It is the invented half of the offline world. The reward scale is anchored to the level's safe
+ * ceiling and inflated by the turn, which reproduces the one shape the exploration established: a
+ * board that outgrows a dragon standing still, turning {@code Piece of cake} from 0.95 into 0.04
+ * over fifty turns. A level-blind scale would instead make the game unloseable.
  *
- * <p>The label weights are the exploration's own sample counts, which were drawn to cover the
- * labels rather than to measure how often each appears, so they describe that sampling at least as
- * much as they describe the game.
+ * <p>Everything else is a guess. The label weights are the exploration's sample counts, drawn to
+ * cover the labels rather than to measure how often each appears.
  */
 class ParametricBoardSource implements BoardSource {
 

@@ -23,18 +23,10 @@ defineProps<{
       because a label on two lines would make the bar a different height on every screen.
     -->
     <dt class="legend">{{ label }}</dt>
-    <!--
-      The mark sits with the figure rather than with the legend: at the figure's size it is a thing
-      to be read, and it leaves the Lives gauge free to draw its hearts here instead of carrying a
-      heart in both rows.
-
-      Unlike the panel this replaces, the mark survives on a phone. It has to: the drawings are the
-      only thing on the bar that is not text, and a window with nothing in it but a number stops
-      being a gauge. What pays for it is that the figure and the mark both drop a step below `sm`.
-
-      The slot is what Lives fills. It is provided conditionally, so a count too large to draw
-      falls through to the fallback and reads exactly like every other gauge.
-    -->
+    <!-- The mark sits with the figure, which leaves the Lives gauge free to draw its hearts here
+         rather than carry one in both rows. It survives on a phone because the figure and the mark
+         both drop a step below `sm`. The slot is what Lives fills, conditionally, so a count too
+         large to draw falls through and reads like every other gauge. -->
     <dd class="reading">
       <slot name="figure">
         <AppIcon :name="icon" :size="20" class="size-2.5 sm:size-5" />
@@ -46,19 +38,12 @@ defineProps<{
 
 <style scoped>
 /**
- * The window, and the one place in the app where a figure is read against a dark ground.
+ * The window, and the one place a figure is read against a dark ground. Cut into the hide rather
+ * than laid on it: the inverse of `relief`, so it reads as a hollow.
  *
- * It is cut into the hide rather than laid on it — the shadow runs dark along the top and the
- * light catches the bottom lip, which is the inverse of `relief` and so reads as a hollow. The
- * same construction as the mission alcove, at a tenth of the size.
- *
- * The ground is a shade darker than that alcove's, because this one has type in it rather than a
- * painted figure.
- *
- * Measured against the lightest ground the type can land on rather than against the base colour —
- * the highlight is painted over the top of the window at full strength, which is exactly where the
- * legend sits, and measuring the base would have flattered both numbers. Legend 6.08:1, figure
- * 10.64:1, against a palette floor of 4.94.
+ * Measured against the lightest ground the type can land on, not the base colour — the highlight
+ * is painted at full strength exactly where the legend sits, so the base would flatter both
+ * numbers. Legend 6.08:1, figure 10.64:1, against a palette floor of 4.94.
  */
 .gauge {
   display: flex;
@@ -141,13 +126,9 @@ defineProps<{
 }
 
 /**
- * The lamp. Every mark in the app is painted in the same warm dark ink — the palette is baked into
- * each file, so none of them can be re-tinted for a dark ground — and against this window they
- * would all but disappear. A `drop-shadow` follows the painted pixels rather than the box, so this
- * is a rim of light on the drawing and not a square behind it. The mission alcove lights its dragon
- * the same way and for the same reason.
- *
- * `:deep` because the hearts are slotted in by the parent and carry its scope, not this one.
+ * The lamp. Each mark bakes its own dark ink and cannot be re-tinted, so against this window they
+ * would disappear. `drop-shadow` follows the painted pixels, making a rim rather than a square.
+ * `:deep` because the hearts are slotted in by the parent and carry its scope.
  */
 .reading :deep(img) {
   filter: drop-shadow(0 0 2px oklch(90% 0.06 84 / 0.85))

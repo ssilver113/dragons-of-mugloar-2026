@@ -15,19 +15,13 @@ import org.springframework.stereotype.Component;
  * Scores every ad as {@code reward × p − lifeCost × (1 − p)} and spends the turn on the best thing
  * available, buying before solving when the dragon is falling behind.
  *
- * <p>Pricing the risk in gold is what makes the posture emerge instead of being enumerated: the
- * cost of a life is divided by the lives in hand, so a board worth a gamble at three lives is
- * refused at one, with no per-lives table to keep in step with anything.
+ * <p>Pricing risk in gold is what makes the posture emerge rather than be enumerated: a life's cost
+ * is divided by the lives in hand, so a board worth a gamble at three lives is refused at one.
  *
- * <p>The ladder is: heal when low, level when behind, otherwise take the best ad. If nothing is
- * worth a life the turn still has to go somewhere, so it buys whatever it can afford, and passes
- * only when it can afford nothing — a pass costs a turn and redraws the board, which beats
- * attempting a mission we expect to lose.
- *
- * <p>Levelling comes before solving rather than after because the board's reward scale climbs on
- * its own: recon watched a {@code Piece of cake} decay from 0.95 to 0.04 across fifty turns at a
- * static level 0. Spending is free in score terms — score counts gold earned, not gold held — so
- * the only real cost of a purchase is the turn, and the expiry tick it puts on every ad.
+ * <p>The ladder is heal when low, level when behind, otherwise the best ad; failing all three it
+ * buys what it can and passes only when it can afford nothing. Levelling outranks solving because
+ * the reward scale climbs on its own — recon watched a {@code Piece of cake} fall from 0.95 to
+ * 0.04 over fifty turns at a static level 0.
  */
 @Component
 public class RiskAdjustedStrategy implements Strategy {
@@ -78,9 +72,8 @@ public class RiskAdjustedStrategy implements Strategy {
     }
 
     /**
-     * Best first. Ties break towards the ad that expires soonest, because the one with turns left
-     * will still be there next turn and the other will not; the id keeps the order total, so a
-     * benchmark run is reproducible.
+     * Best first, ties to the ad expiring soonest. The id keeps the order total, so a benchmark
+     * run is reproducible.
      */
     private List<ScoredAd> rank(List<EnrichedAd> board, GameState game) {
         double lifeCost = parameters.lifeCost(game.lives());
@@ -172,9 +165,8 @@ public class RiskAdjustedStrategy implements Strategy {
     }
 
     /**
-     * The three offers worth weighing. Every 100-gold item is the same purchase and so is every
-     * 300-gold one, so the shop's eleven entries collapse to one candidate per effect. An item at a
-     * price recon never measured is left out rather than guessed at.
+     * The shop's eleven entries collapse to one candidate per effect, since price determines the
+     * purchase. An item at a price recon never measured is left out rather than guessed at.
      */
     private record Offers(
             Optional<ShopItem> potion,

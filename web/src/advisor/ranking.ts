@@ -1,11 +1,8 @@
 import type { AdView } from '../api/types'
 
 /**
- * How dearly the player holds a life, in gold. The solver keeps one such number and divides it by
- * the lives in hand, so the last life is always the dearest; a posture is that number moved.
- *
- * `balanced` is the figure the backend strategy actually plays with, so the ordering the player
- * sees at `balanced` is the ordering the bot would produce. The other two are what-ifs.
+ * How dearly the player holds a life, in gold, divided by the lives in hand. `balanced` is the
+ * figure the backend strategy plays with, so that ordering is the bot's; the other two are what-ifs.
  */
 export type Posture = 'cautious' | 'balanced' | 'bold'
 
@@ -34,9 +31,8 @@ export const FILTERS: ReadonlyArray<{ id: FilterId; label: string; hint: string 
 ]
 
 /**
- * Three bands, because the question a player is asking has three answers: take it, take it if
- * nothing better shows up, leave it. `strong` is relative to the best the board is offering —
- * an absolute cutoff would either praise a weak board or condemn a good one.
+ * Take it, take it if nothing better shows up, leave it. `strong` is relative to the best on the
+ * board: an absolute cutoff would either praise a weak board or condemn a good one.
  */
 export type ValueBand = 'strong' | 'fair' | 'poor'
 
@@ -65,18 +61,10 @@ export function riskAdjustedScore(ad: AdView, posture: Posture, lives: number): 
 }
 
 /**
- * Among the board's best by reward and among its worst by value, and losing money at that: the ad
- * that looks like the obvious pick and is close to the worst one there.
- *
- * All three conditions earn their place. Reward alone flags the biggest job on every board;
- * a negative score alone flags most of a weak board, where nothing covers its own risk. Requiring
- * the ad to be *relatively* bad as well is what keeps the flag rare enough to be worth reading —
- * a live board of ten ads at level 0 had a 35g job scoring −1g, which the first two conditions
- * branded as the job that ends a run. It is not; it is merely not worth a turn.
- *
- * Judged at `balanced` whatever posture is being browsed: it is a claim about the board, not about
- * the player's nerve, and a flag that vanished on the bold setting would be gone exactly when it
- * is most needed.
+ * The ad that looks like the obvious pick and is close to the worst on the board. All three
+ * conditions earn their place: reward alone flags the biggest job on every board, and a negative
+ * score alone flags most of a weak one. Judged at `balanced` whatever posture is browsed, because
+ * it is a claim about the board rather than about the player's nerve.
  */
 function isTrap(score: number, reward: number, cutoffs: Cutoffs): boolean {
   return reward >= cutoffs.richReward && score <= 0 && score <= cutoffs.poorScore
@@ -143,9 +131,8 @@ export function filterBoard(
 }
 
 /**
- * Sorted descending on the chosen key, except expiry, where sooner is more urgent. Every key
- * breaks its ties on expiry and then on ad id, so an equal board keeps a stable order across
- * re-renders instead of shuffling under the cursor each turn.
+ * Descending on the chosen key, except expiry. Ties break on expiry then ad id, so an equal board
+ * does not shuffle under the cursor between renders.
  */
 export function sortBoard(scored: ScoredAd[], key: SortKey): ScoredAd[] {
   const primary: Record<SortKey, (entry: ScoredAd) => number> = {

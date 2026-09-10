@@ -10,26 +10,18 @@ const props = defineProps<{ entries: LogEntry[]; halt: Halt | null }>()
 defineEmits<{ 'keep-going': []; retry: [] }>()
 
 /**
- * How many turns are drawn before the log asks whether you want the rest.
- *
- * The cap is on the rendering, never on the record: a run at max speed is fifty turns and every
- * entry carries two tables of the solver's reasoning, which is what makes the page unmanageable —
- * but that reasoning is the whole point of keeping a log, and throwing the older half away to
- * shorten a page would be discarding the evidence to tidy the exhibit.
+ * How many turns are drawn before the log asks whether you want the rest. The cap is on the
+ * rendering, never on the record: the reasoning is the whole point of keeping a log.
  */
 const VISIBLE = 10
 const expanded = ref(false)
 
-/**
- * Whether pressing Run again could do anything. A lost session or a finished game cannot be
- * resumed, and a button that silently does nothing is worse than no button.
- */
+/** Whether Run could do anything. A button that silently does nothing is worse than no button. */
 const resumable = computed(
   () => props.halt?.kind === 'error' && present(props.halt.error.code).severity !== 'terminal',
 )
 
-// Newest first. A run at max speed outpaces reading, and chasing the bottom of a growing list is
-// worse than losing the chronology.
+// Newest first: a run at max speed outpaces reading, and chasing a growing list is worse.
 const newestFirst = computed(() => [...props.entries].reverse())
 
 const shown = computed(() =>
@@ -40,21 +32,14 @@ const hidden = computed(() => props.entries.length - shown.value.length)
 
 <template>
   <section aria-labelledby="log-heading">
-    <!--
-      The binding says nothing and is out of the tree for the same reason the shop's rail is: to a
-      screen reader this section is a heading, a list of turns and a button.
-    -->
+    <!-- The binding is out of the tree: to a screen reader this is a heading, a list and a button. -->
     <div class="volume ledger">
       <div class="spine leather" aria-hidden="true">
         <span class="band band-head" /><span class="band band-tail" />
       </div>
 
-      <!--
-        The running head, printed on the page rather than floating above the book. It was outside
-        the volume until the volume was laid on timber, where nothing is ever read against the wood
-        and a heading above the book would have needed a ground of its own. A ledger carries its
-        title on its first page in any case.
-      -->
+      <!-- Printed on the page rather than above the book: nothing is ever read against the wood,
+           so a heading outside the volume would need a ground of its own. -->
       <div class="running-head">
         <h2 id="log-heading" class="flex items-center gap-1.5 text-base font-semibold sm:gap-2">
           <AppIcon name="log" :size="20" class="size-4 sm:size-5" />
@@ -65,8 +50,8 @@ const hidden = computed(() => props.entries.length - shown.value.length)
         </p>
       </div>
 
-      <!-- Laid on the page, for the same reason, and because a halt is answered from here: the
-           way out belongs with the record of what stopped. -->
+      <!-- Laid on the page, for the same reason, and because the way out belongs with the record
+           of what stopped. -->
       <div v-if="halt && halt.kind !== 'finished'" class="p-3">
         <MessageBanner
           v-if="halt.kind === 'stalled'"
@@ -118,10 +103,8 @@ const hidden = computed(() => props.entries.length - shown.value.length)
           <DecisionEntry v-for="entry in shown" :key="entry.id" :entry="entry" />
         </ul>
 
-        <!--
-          At the foot rather than beside the heading: the heading row has to stay one line wide on a
-          375px screen, and this is where you arrive having read what is drawn.
-        -->
+        <!-- At the foot: the heading row has to stay one line at 375px, and this is where you
+             arrive having read what is drawn. -->
         <div v-if="hidden > 0 || expanded" class="flex justify-center p-3">
           <button
             type="button"
@@ -138,11 +121,8 @@ const hidden = computed(() => props.entries.length - shown.value.length)
 
 <style scoped>
 /**
- * The volume. The page is the `ledger` utility; this rule is only the binding it is sewn into.
- *
- * The spine is absolute and the page is inset past it, rather than the two being columns of a grid:
- * an entry that grows has to take the binding with it, and a raised band has to be able to sit at a
- * fixed distance from an edge that moves.
+ * The volume. `ledger` is the page; this is the binding it is sewn into. Absolute rather than a
+ * grid column, so the spine grows with an entry and the bands can sit off a moving edge.
  */
 .volume {
   position: relative;
@@ -161,10 +141,7 @@ const hidden = computed(() => props.entries.length - shown.value.length)
     inset 1px 0 0 oklch(100% 0 0 / 0.12);
 }
 
-/**
- * The running head. Ruled off from the entries below it, which is the one rule on this page that is
- * not a column: everything under it is the record, and this line is what the record is called.
- */
+/** The running head, ruled off: the one rule on this page that is not a column boundary. */
 .running-head {
   display: flex;
   flex-wrap: wrap;
@@ -175,10 +152,7 @@ const hidden = computed(() => props.entries.length - shown.value.length)
   border-bottom: 1px solid color-mix(in oklab, var(--color-ink-muted) 25%, transparent);
 }
 
-/**
- * A raised band is a cord under the leather, so it is proud of the spine rather than printed on it,
- * and the gilt lines are ruled either side of the swell instead of on top of it.
- */
+/** A cord under the leather, so it is proud of the spine and the gilt is ruled either side. */
 .band {
   position: absolute;
   left: 0;

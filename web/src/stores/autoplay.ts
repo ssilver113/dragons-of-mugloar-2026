@@ -36,9 +36,8 @@ export type Halt =
   { kind: 'finished' } | { kind: 'stalled'; passes: number } | { kind: 'error'; error: ApiError }
 
 /**
- * Passes in a row before the loop stops to ask. At one life with too little gold to buy anything,
- * the solver correctly declines every ad and passes instead — which is right for a turn and wrong
- * for a hundred, because a pass risks nothing and so the game never ends on its own.
+ * Passes in a row before the loop stops to ask. A pass risks nothing, so a solver that correctly
+ * declines every ad would otherwise never end the game.
  */
 const STALL_LIMIT = 10
 
@@ -65,11 +64,7 @@ const savedSpeed = persisted<SpeedId>('local', 'mugloar.speed')
 export const useAutoPlayStore = defineStore('autoplay', () => {
   const games = useGameStore()
 
-  /**
-   * Snapshotted here, before the watcher below is registered. Restoring a game assigns a game id,
-   * which resets this store and so empties the stored log — so the only safe time to read it is
-   * before that can happen.
-   */
+  /** Read before the reset watcher exists: restoring a game id is what empties the stored log. */
   const remembered = savedLog.read()
 
   const log = ref<LogEntry[]>([])
@@ -89,10 +84,8 @@ export const useAutoPlayStore = defineStore('autoplay', () => {
   const active = computed(() => running.value || stepping.value)
   const canPlay = computed(() => games.playable)
 
-  /**
-   * Run until the game ends, the solver stalls, or something breaks. There is no server-side loop
-   * by design: this one shows every turn as it lands and can be stopped between any two of them.
-   */
+  /** Run until the game ends, the solver stalls, or something breaks. Client-side, so it can be
+   * stopped between any two turns. */
   async function run(): Promise<void> {
     if (active.value || !canPlay.value) {
       return
@@ -145,20 +138,13 @@ export const useAutoPlayStore = defineStore('autoplay', () => {
     }
   }
 
-  /**
-   * Stop the loop. Aborting a run and pausing one are the same operation because there is nothing
-   * to roll back: a turn already sent upstream is already spent, so it is allowed to settle and be
-   * logged rather than dropped. What differs is only whether the player presses Run again.
-   */
+  /** A turn already sent is already spent, so it settles and is logged rather than dropped. */
   function pause(): void {
     running.value = false
     wake?.()
   }
 
-  /**
-   * Carry on past a stall. The streak restarts rather than being switched off, so a game that is
-   * still genuinely stuck comes back and says so instead of spinning unwatched.
-   */
+  /** The streak restarts rather than switching off, so a still-stuck game asks again. */
   function keepGoing(): void {
     if (halt.value?.kind !== 'stalled') {
       return
@@ -177,13 +163,8 @@ export const useAutoPlayStore = defineStore('autoplay', () => {
   }
 
   /**
-   * Put the interrupted run's log back, if the game now on screen is the one it was written for.
-   * Called after the game itself is restored, never before: a log beside the wrong board would
-   * be worse than no log.
-   *
-   * The halt is deliberately not restored. Whatever stopped the loop was answered by the reload —
-   * Run is available again, and a stale "the solver has stopped to check in" would be describing
-   * a moment that is now over.
+   * Put the interrupted run's log back, only if the game on screen is the one it was written for.
+   * The halt is not restored: the reload already answered whatever stopped the loop.
    */
   function restore(gameId: string): void {
     if (remembered?.gameId !== gameId) {
@@ -193,9 +174,8 @@ export const useAutoPlayStore = defineStore('autoplay', () => {
     nextId = remembered.nextId
   }
 
-  // A new game is a new log. Watching the id rather than exposing a reset the view must remember
-  // to call keeps the two from drifting apart. Synchronous, so a reset can never land after a turn
-  // recorded in the same tick and swallow it.
+  // A new game is a new log. Synchronous, so a reset cannot land after a turn recorded in the
+  // same tick and swallow it.
   watch(() => games.game?.gameId, reset, { flush: 'sync' })
 
   watch(log, (entries) => {
@@ -212,7 +192,7 @@ export const useAutoPlayStore = defineStore('autoplay', () => {
       record(await games.autoPlayStep(refreshBoard))
     } catch (e) {
       const failure = asApiError(e)
-      // The edge refused the request, so no turn was spent upstream and there is nothing to undo.
+      // The edge refused it, so no turn was spent upstream and there is nothing to undo.
       if (failure.code === 'UPSTREAM_RATE_LIMITED') {
         return 'rate-limited'
       }
@@ -220,8 +200,7 @@ export const useAutoPlayStore = defineStore('autoplay', () => {
       return 'halt'
     }
 
-    // Only reached when the turn landed, so the session cannot have been lost: the one way to
-    // stop being playable here is the dragon dying, which is what `finished` means.
+    // Only reached when the turn landed, so the only way to stop being playable is the dragon dying.
     if (games.finished) {
       halt.value = { kind: 'finished' }
       return 'halt'

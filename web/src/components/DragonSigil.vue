@@ -8,18 +8,9 @@ const src = computed(() => dragonArt(props.mood))
 </script>
 
 <template>
-  <!--
-    Decorative. Every mood it can be in is already stated in words next to it — the banner after a
-    turn, the heading on the end panel — so describing the picture as well would only make a
-    screen reader say the same thing twice.
-
-    Keyed on the mood so a change remounts the image and replays the entrance, rather than
-    swapping the source underneath a static element.
-
-    Each pose is cropped to its own outline, so the three differ in shape. `size` reserves the
-    square they are laid into and `object-contain` fits the drawing inside it — a pose that is
-    wider than it is tall simply leaves the box short, rather than stretching to fill it.
-  -->
+  <!-- Decorative: every mood is already stated in words beside it. Keyed on the mood so a change
+       remounts and replays the entrance. The poses are cropped to their own outlines and differ in
+       shape, so `object-contain` fits each inside the square `size` reserves. -->
   <img
     :key="mood"
     :src="src"

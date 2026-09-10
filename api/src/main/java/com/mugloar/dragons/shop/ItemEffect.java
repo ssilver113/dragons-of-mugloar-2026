@@ -7,10 +7,9 @@ package com.mugloar.dragons.shop;
  * 100-gold items add exactly one level, and all five 300-gold items add exactly two. The names are
  * pure flavour — {@code Claw Sharpening} and {@code Book of Tricks} are the same purchase.
  *
- * <p>The two level tiers trade gold against turns and neither dominates: three 100-gold items are
- * +3 levels for 300 gold and three turns, one 300-gold item is +2 for 300 gold and one turn. So the
- * cheap tier buys 1.5× the level per <em>gold</em> and the dear tier 2× per <em>turn</em>, which is
- * why the solver picks between them on how much gold is in hand rather than by a fixed rule.
+ * <p>Neither level tier dominates: three 100-gold items are +3 levels for three turns, one
+ * 300-gold item is +2 for one. The cheap tier buys 1.5× the level per <em>gold</em>, the dear tier
+ * 2× per <em>turn</em>, so the solver picks between them on the gold in hand.
  */
 public enum ItemEffect {
 

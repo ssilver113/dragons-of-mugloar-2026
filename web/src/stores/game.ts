@@ -9,13 +9,8 @@ import type { AdView, AutoPlayStepView, GameView, ReputationView, ShopItemView }
 export type RequestStatus = 'idle' | 'pending' | 'ready' | 'error'
 
 /**
- * What a reload needs to pick a game back up. Only the parts the server cannot tell us again:
- * the id it is keyed by, the state we last saw so the figures are on screen before the board
- * comes back, and the standing, which is client-side because nothing but an `investigate`
- * response carries it and that response costs a turn.
- *
- * The board and the shop are deliberately absent. Listing either costs no turn upstream, so
- * refetching them is cheaper than trusting a copy that may be a turn out of date.
+ * What a reload needs to pick a game back up. Standing is here because only `investigate` carries
+ * it and that costs a turn; the board and shop are not, because refetching them is free.
  */
 interface StoredGame {
   gameId: string
@@ -23,19 +18,13 @@ interface StoredGame {
   reputation: ReputationView | null
 }
 
-/**
- * Per tab, not per browser: a reload keeps the game, a second tab starts its own. Two tabs on one
- * `gameId` would have both read-modify-writing the same session.
- */
+/** Per tab: two tabs sharing one `gameId` would read-modify-write the same session. */
 const savedGame = persisted<StoredGame>('session', 'mugloar.game')
 
 /** A preference rather than game state, so it outlives the tab. */
 const savedAdvisor = persisted<boolean>('local', 'mugloar.advisor')
 
-/**
- * What the last turn did, in the shape the banner needs. One slot rather than one per action:
- * only one turn can be the most recent, so two slots could only ever disagree.
- */
+/** What the last turn did. One slot, because only one turn can be the most recent. */
 export type TurnOutcome =
   | { kind: 'solve'; success: boolean; message: string }
   | { kind: 'purchase'; success: boolean; item: ShopItemView }
@@ -59,43 +48,22 @@ export const useGameStore = defineStore('game', () => {
   const lastOutcome = ref<TurnOutcome | null>(null)
   const advisorEnabled = ref(savedAdvisor.read() ?? false)
   const resuming = ref(false)
-  /**
-   * A game was remembered and could not be picked up. Not an `ApiError`: the player did nothing
-   * but reload, so it is a note about what is missing rather than a failed action, and the panel
-   * that says "this game was lost" would be answering a question nobody asked.
-   */
+  /** A remembered game could not be picked up. A note, not a failed action, so not an `ApiError`. */
   const resumeFailed = ref(false)
-  /**
-   * The last standing the scouts reported, or null if this game has never paid for one. It is
-   * never inferred: nothing else on the wire carries it, so an unscouted game says so rather
-   * than showing three zeroes that would look like a measurement.
-   */
+  /** The last standing scouted, or null. Never inferred — an unscouted game says so. */
   const reputation = ref<ReputationView | null>(null)
 
-  /**
-   * Whether this server plays a simulated game. A fact about the deployment, so it is read once
-   * and never with a game. A failed read leaves it false: showing no caveat on an offline game is
-   * a smaller lie than putting one on a live game the player just spent forty turns on.
-   */
+  /** Whether this server simulates. A deployment fact, read once; a failed read leaves it false. */
   const offline = ref(false)
 
-  /**
-   * Which build answered. Read from the server rather than compiled in, so the line in the footer
-   * names the process on the port instead of the bundle in the browser — the two disagree exactly
-   * when it matters, which is when an older server is still running.
-   */
+  /** Which build answered. From the server, not compiled in, so a stale server is visible. */
   const version = ref<string | null>(null)
   const builtAt = ref<string | null>(null)
 
   const started = computed(() => game.value !== null)
   const finished = computed(() => game.value?.finished ?? false)
 
-  /**
-   * Why this game is no longer playable, if it isn't. `lost` is the server having forgotten the
-   * session — unrecoverable by design, since a session is never re-adopted — and `finished` is
-   * the dragon dying, which is the game working. Both end the run, so both replace the board
-   * rather than sitting in a banner above one that can no longer be played.
-   */
+  /** Why the game is no longer playable. Both endings replace the board rather than banner it. */
   const ending = computed<'lost' | 'finished' | null>(() => {
     if (game.value === null) {
       return null
@@ -116,11 +84,7 @@ export const useGameStore = defineStore('game', () => {
     () => startStatus.value === 'pending' || boardStatus.value === 'pending' || acting.value,
   )
 
-  /**
-   * Read what kind of server this is, once, at startup. Deliberately silent on failure: the badge
-   * it feeds is a caveat about the score, and an app that refused to start because it could not
-   * fetch a caveat would be worse than one that quietly leaves it off.
-   */
+  /** Silent on failure: this only feeds a caveat badge, not worth blocking startup for. */
   async function loadMeta(): Promise<void> {
     try {
       const meta = await api.meta()
@@ -133,16 +97,8 @@ export const useGameStore = defineStore('game', () => {
   }
 
   /**
-   * Pick a remembered game back up after a reload. Nothing here spends a turn: the id is ours
-   * already, and listing the board and the shop is free, so the only cost of trying is two GETs.
-   *
-   * The stored state is applied before the fetches so the figures are on screen immediately and
-   * the board shows its skeleton rather than the app flashing the start screen. A game that had
-   * already ended is restored from the record alone — the server refuses to list ads for one, and
-   * the ending panel is the whole of what is left to show.
-   *
-   * Returns whether a game is now on screen, which is what tells the caller whether the rest of
-   * the run — the decision log — is worth restoring alongside it.
+   * Pick a remembered game back up. Costs two free GETs and never a turn. Stored state is applied
+   * before them so the start screen never flashes. Returns whether a game is now on screen.
    */
   async function resume(): Promise<boolean> {
     const saved = savedGame.read()
@@ -165,8 +121,7 @@ export const useGameStore = defineStore('game', () => {
       resuming.value = false
     }
 
-    // The server let the session go while the tab was closed. That is the one outcome the ending
-    // panel must not claim, so the record is dropped and the player is offered a new game.
+    // The session went while the tab was closed, which is not an ending the panel may claim.
     if (sessionLost.value) {
       forget()
       resumeFailed.value = true
@@ -204,8 +159,7 @@ export const useGameStore = defineStore('game', () => {
       game.value = await api.startGame()
       startStatus.value = 'ready'
       calibration.noteGame()
-      // The shop is static for the life of a game and listing it costs no turn, so it is fetched
-      // once, up front: affordability is then answerable the moment the player looks.
+      // The shop is static for the game and free to list, so fetch it once up front.
       await Promise.all([refreshAds(), refreshShop()])
     } catch (e) {
       game.value = null
@@ -216,8 +170,7 @@ export const useGameStore = defineStore('game', () => {
 
   async function refreshAds(): Promise<void> {
     const current = game.value
-    // Nothing to reconcile against a session the server has forgotten, and the retry would only
-    // fail the same way. The ending panel is the way out of that state, not another fetch.
+    // A forgotten session has nothing to reconcile against; the ending panel is the way out.
     if (!current || sessionLost.value) {
       return
     }
@@ -250,10 +203,8 @@ export const useGameStore = defineStore('game', () => {
   }
 
   /**
-   * Optimistic in the only way this game allows: whether the ad succeeds is unknowable here, but
-   * the mechanical half of a turn is not. The ad leaves the board, the turn counter moves and
-   * every other ad ages by one. The authoritative state replaces the guess on the way back, and a
-   * failure restores the snapshot untouched.
+   * Predicts only the mechanical half of the turn — the ad leaves, the counter moves, the rest
+   * age. Whether it succeeds is unknowable here. Rolls back on failure.
    */
   async function solve(adId: string): Promise<void> {
     const current = game.value
@@ -262,8 +213,7 @@ export const useGameStore = defineStore('game', () => {
     }
     const previousGame = current
     const previousAds = ads.value
-    // Read before the optimistic update takes the ad off the board: its label and the estimate
-    // it carried are half of the calibration record, and the outcome is the other half.
+    // Read before the optimistic update takes the ad off the board.
     const attempted = previousAds.find((ad) => ad.adId === adId)
 
     error.value = null
@@ -291,7 +241,7 @@ export const useGameStore = defineStore('game', () => {
       game.value = previousGame
       ads.value = previousAds
       const failure = fail(e)
-      // A stale board is what causes both of these, and a board fetch costs no turn upstream.
+      // Both mean a stale board, and refetching one costs no turn.
       if (failure.code === 'AD_NOT_AVAILABLE' || failure.code === 'INVALID_ACTION') {
         await refreshAds()
       }
@@ -300,11 +250,7 @@ export const useGameStore = defineStore('game', () => {
     }
   }
 
-  /**
-   * A purchase predicts more than a solve, because more of it is known: the price is fixed, the
-   * effect was measured, and the turn ages the board exactly as a solve does. That leaves only
-   * the shop's own refusal unpredictable, and the server refuses everything it can see coming.
-   */
+  /** Predicts the whole turn: price and effect are both known, unlike a solve's outcome. */
   async function buy(itemId: string): Promise<void> {
     const current = game.value
     const item = shopItems.value.find((candidate) => candidate.id === itemId)
@@ -342,12 +288,7 @@ export const useGameStore = defineStore('game', () => {
     }
   }
 
-  /**
-   * Spend a turn on scouting. It is the only move that cannot cost a life, which is what makes it
-   * worth offering by hand: when every ad on the board is a bad bet, a fresh board is worth more
-   * than the best of them. It ages every ad exactly as any other turn does, so the board is
-   * predicted the same way a purchase is.
-   */
+  /** Scouting: the only move that cannot cost a life, so worth offering when the board is bad. */
   async function investigate(): Promise<void> {
     const current = game.value
     if (!playable.value || !current || acting.value) {
@@ -380,13 +321,8 @@ export const useGameStore = defineStore('game', () => {
   }
 
   /**
-   * One turn taken by the solver. There is nothing to predict optimistically here — which move it
-   * will pick is exactly what the call returns — so the state is only ever written from the
-   * response, and a failure leaves everything as it was.
-   *
-   * Unlike `solve` and `buy` this throws instead of parking the failure in `error`: the auto-play
-   * loop has to tell a rate limit, which is a wait, from a failure, which is a halt, and it shows
-   * either one next to the log rather than in the app-wide banner.
+   * One solver turn. Nothing to predict — the move is what the call returns. Throws rather than
+   * parking in `error`, because the loop must tell a rate limit (a wait) from a failure (a halt).
    */
   async function autoPlayStep(refreshBoard: boolean): Promise<AutoPlayStepView> {
     const current = game.value
@@ -397,8 +333,7 @@ export const useGameStore = defineStore('game', () => {
     try {
       const step = await api.autoPlayStep(current.gameId)
       game.value = step.game
-      // The solver passes for the turn rather than for the answer, but the answer was paid for
-      // all the same, so the crests fill in from an auto-played scout exactly as from a manual one.
+      // An auto-played scout was paid for too, so it fills the crests like a manual one.
       if (step.reputation) {
         reputation.value = step.reputation
       }
@@ -408,19 +343,14 @@ export const useGameStore = defineStore('game', () => {
       }
       return step
     } catch (e) {
-      // Classified, not parked: the loop shows the failure next to the log, but the two codes
-      // that end the session have to land on the state here or the loop would offer to resume a
-      // game that no longer exists.
+      // Classified even though it is rethrown: the session-ending codes must land on the state.
       throw classify(e)
     } finally {
       autoStepping.value = false
     }
   }
 
-  /**
-   * The solver's turns feed the same ledger the player's do. The ad is read off the decision
-   * rather than off the board, which at max speed is a turn or more out of date.
-   */
+  /** Reads the ad off the decision, not the board, which at max speed lags by a turn or more. */
   function recordSolverAttempt(step: AutoPlayStepView): void {
     const { move, targetId, ads: weighed } = step.decision
     if (move !== 'SOLVE_AD' || targetId === null) {
@@ -441,8 +371,7 @@ export const useGameStore = defineStore('game', () => {
     advisorEnabled.value = !advisorEnabled.value
   }
 
-  // Remembered as it changes rather than on unload: `beforeunload` is unreliable on mobile, where
-  // a tab is suspended and killed without one, and every write here is a few hundred bytes.
+  // Written as it changes, not on unload: mobile kills suspended tabs without `beforeunload`.
   watch([game, reputation], ([current, standing]) => {
     if (current === null) {
       savedGame.clear()
@@ -458,12 +387,8 @@ export const useGameStore = defineStore('game', () => {
   }
 
   /**
-   * Record what a failure means for the game itself. A forgotten session cannot be recovered, and
-   * an upstream that says the game is over is describing a fact we had not caught up with — both
-   * would otherwise leave the player looking at a board they can no longer play.
-   *
-   * Callers roll the optimistic state back before calling this, so `game` is already the last
-   * state we actually saw from the server.
+   * Record what a failure means for the game itself. Callers roll back first, so `game` is
+   * already the last state the server actually sent.
    */
   function classify(e: unknown): ApiError {
     const failure = asApiError(e)
@@ -475,11 +400,7 @@ export const useGameStore = defineStore('game', () => {
     return failure
   }
 
-  /**
-   * Classify, then show. A terminal failure is deliberately not parked in `error`: the panel that
-   * replaces the board says the same thing with somewhere to go, and a banner above it would only
-   * repeat itself.
-   */
+  /** Classify, then show. A terminal failure is left out of `error` — its panel already says it. */
   function fail(e: unknown): ApiError {
     const failure = classify(e)
     error.value = present(failure.code).severity === 'terminal' ? null : failure
@@ -528,13 +449,13 @@ export const useGameStore = defineStore('game', () => {
 })
 
 function ageBoard(board: AdView[], solvedAdId?: string): AdView[] {
-  // The server never returns an ad that has run out, so the prediction does not invent one.
+  // The server never returns an ad that has run out, so neither does the prediction.
   return board.filter((ad) => ad.adId !== solvedAdId && ad.expiresIn > 1).map(aged)
 }
 
 function aged(ad: AdView): AdView {
   const expiresIn = ad.expiresIn - 1
-  // The one server-side rule mirrored here, so no card can show its last turn without the badge.
+  // The one server rule mirrored client-side; changing either side means changing both.
   const expiring = expiresIn <= 1 && !ad.flags.includes('EXPIRING_NEXT_TURN')
   return {
     ...ad,

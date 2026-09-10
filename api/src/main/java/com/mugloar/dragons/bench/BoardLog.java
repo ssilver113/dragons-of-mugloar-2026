@@ -16,14 +16,9 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * Writes every ad on every board to a CSV, one row per ad per turn.
  *
- * <p>Distinct from {@link AttemptLog}, and the distinction is the whole point. The attempt corpus
- * holds only the ads the solver chose, which is exactly the wrong sample for asking what a board
- * offers — it is filtered by the estimate under test. This holds the board as posted, including
- * every ad rejected, so the offline world's generator can be built from what the game deals rather
- * than from what the bot liked.
- *
- * <p>It costs nothing upstream. The strategy already scores the whole board to choose one ad, and
- * carries all of it on the decision, so recording is a read of something already in hand.
+ * <p>Distinct from {@link AttemptLog}, which holds only the ads the solver chose and so is
+ * filtered by the estimate under test. This holds the board as posted, rejected ads included.
+ * It costs nothing upstream: the decision already carries the whole scored board.
  */
 final class BoardLog implements Closeable {
 

@@ -13,11 +13,7 @@ const props = defineProps<{
 }>()
 defineEmits<{ solve: [adId: string] }>()
 
-/**
- * Flags split by who is making the claim. `EXPIRING_NEXT_TURN` restates the game's own
- * `expiresIn` and `UNREADABLE` explains why an ad is not offered, so both are facts about the
- * board. The other two are the model's judgement and belong with the rest of its advice.
- */
+/** Split by who is making the claim: these two are facts about the board, the others are ours. */
 const BOARD_FLAGS: Partial<Record<AdFlag, { text: string; class: string }>> = {
   EXPIRING_NEXT_TURN: { text: 'Last turn', class: 'border-warning/50 text-warning' },
   UNREADABLE: { text: 'Unreadable', class: 'border-ink-muted/40 text-ink-muted' },
@@ -28,10 +24,7 @@ const ADVISOR_FLAGS: Partial<Record<AdFlag, string>> = {
   NEVER_ATTEMPT: 'Never worth a turn, whatever it pays.',
 }
 
-/**
- * A verdict, because the row asks a question. It is a word before it is a colour, so the ranking
- * survives anyone who cannot separate red from green; the gold behind it says by how much.
- */
+/** A word before it is a colour, so the ranking survives anyone who cannot separate red from green. */
 const BANDS: Record<ValueBand, { text: string; class: string }> = {
   strong: { text: 'Yes', class: 'text-success' },
   fair: { text: 'Ok', class: 'text-ink' },
@@ -47,8 +40,7 @@ const badges = computed(() =>
 
 const warnings = computed(() => props.ad.flags.flatMap((flag) => ADVISOR_FLAGS[flag] ?? []))
 
-// Deliberately imprecise. The estimate is a fit over a handful of measurements per level band,
-// and a bare "85%" would claim more than we know.
+// Deliberately imprecise: the estimate is a fit, and a bare "85%" would claim more than we know.
 const chance = computed(() => `~${Math.round(props.ad.successProbability * 20) * 5}%`)
 const payout = computed(() => `~${Math.round(props.ad.expectedValue)}g`)
 const turns = computed(() => `${props.ad.expiresIn} ${props.ad.expiresIn === 1 ? 'turn' : 'turns'}`)
@@ -65,11 +57,7 @@ const value = computed(() => {
 // thing the player is not offered. Bad odds are still the player's call to make.
 const unsendable = computed(() => props.ad.flags.includes('UNREADABLE'))
 
-/**
- * A card is not itself a click target — the Solve button is — so the hover cue is a border that
- * warms rather than a surface that lifts. It says the row is live without promising that landing
- * anywhere on it does something. A job that cannot be sent gets none of it.
- */
+/** The card is not a click target, so the cue warms a border rather than promising a click. */
 const hoverable = computed(() => !unsendable.value && !props.disabled)
 </script>
 
@@ -109,24 +97,12 @@ const hoverable = computed(() => !unsendable.value && !props.disabled)
       </div>
     </dl>
 
-    <!--
-      Everything below is our reading of the board, not the game's. It says so, and it is the
-      advisor's own green rather than the accent every action on the page uses — the same ink as
-      the box at the foot of the board, so a player can see at a glance which marks on a card come
-      from the advisor and which come from the game.
-
-      Three rows rather than three columns. Across, each label sat over its own figure in a column
-      barely wider than the words, so `Payout on average` wrapped to two lines on most cards and the
-      three readings never lined up between one card and the next. Down, the labels are one column,
-      the figures are another, and the three are read as a list of answers to the same question.
-    -->
+    <!-- Our reading, not the game's: the advisor's own ink rather than the accent, so a player
+         can see which marks come from which. Rows rather than columns because across, the labels
+         wrapped and the figures never lined up between one card and the next. -->
     <div v-if="read && band" class="advisor-read">
-      <!--
-        No mark beside it. The icon set carries its own baked palette, as the crests and the item
-        drawings do, so the eye is drawn in the world's warm brown — a small russet blob against a
-        green label, on a card too small to make an argument for it. The colour is the tie to the
-        box at the foot of the board; the words are the rest.
-      -->
+      <!-- No mark beside it: the icon set bakes its own palette, so the eye would come out warm
+           brown against a green label. -->
       <p class="text-xs font-semibold uppercase tracking-wide text-advisor">Advisor's read</p>
       <dl class="mt-1.5 text-sm">
         <div class="row">
@@ -167,10 +143,7 @@ const hoverable = computed(() => !unsendable.value && !props.disabled)
 
     <div class="flex items-center justify-between gap-3">
       <p class="text-xs text-ink-muted">Expires in {{ turns }}</p>
-      <!--
-        The accessible name tracks the visible label. One that still read "Solve" while the button
-        says "Solving…" would hide the only state change there is to hear.
-      -->
+      <!-- The accessible name tracks the visible label, which is the only state change to hear. -->
       <button
         type="button"
         class="relief rounded-md bg-accent px-3 py-1.5 text-sm font-semibold text-surface hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
@@ -189,13 +162,8 @@ const hoverable = computed(() => !unsendable.value && !props.disabled)
 
 <style scoped>
 /**
- * The advisor's slip on the sheet. Its rim and its rules are the advisor's ink, so what belongs to
- * the advisor is one colour across the whole page: this box, the table it heads, and the cloth the
- * controls sit on at the foot of the board.
- *
- * A wash of the same ink rather than a flat fill, so the paper's own blotches and fibre still show
- * through it. Ads are never tinted — what the advisor thinks is said in words, not in the colour of
- * the sheet — and this is not the sheet: it is a slip laid on it.
+ * The advisor's slip on the sheet. A wash rather than a fill, so the paper's blotches still show
+ * through. The sheet itself is never tinted — the verdict is words, not the colour of the paper.
  */
 .advisor-read {
   border: 1px solid color-mix(in oklab, var(--color-advisor) 42%, transparent);
@@ -207,10 +175,7 @@ const hoverable = computed(() => !unsendable.value && !props.disabled)
   padding: 0.625rem 0.6875rem;
 }
 
-/**
- * Label left, figure right, ruled between. The rule is the advisor's ink at a fifth, which is what
- * keeps three readings legible as a table without drawing a grid on a scrap of paper.
- */
+/** Label left, figure right, ruled between at a fifth so it reads as a table and not a grid. */
 .row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -228,17 +193,10 @@ const hoverable = computed(() => !unsendable.value && !props.disabled)
 }
 
 /**
- * Pinned rather than stacked. The tilt and the tack are one idea: paper hangs from a single point,
- * so it hangs slightly crooked, and the crookedness is what stops ten sheets reading as ten boxes.
- *
- * It is the `rotate` property and deliberately not a `transform`. `AdList` re-ranks the board by
- * FLIP, which writes `transform` on these same elements for the length of the glide — a tilt
- * declared there would be overwritten for the move and snap back after it. The individual
- * transform properties compose with `transform` instead of replacing it, so the sheet stays
- * crooked while it travels.
- *
- * Cycled on a five against the tear's three, so the two patterns only line up every fifteenth
- * card and a column never repeats itself.
+ * Paper hangs from one tack, so it hangs crooked, which is what stops ten sheets reading as ten
+ * boxes. `rotate` and not `transform`: the FLIP re-rank writes `transform` on these same elements,
+ * and the individual properties compose with it rather than being replaced. Cycled on a five
+ * against the tear's three, so the patterns line up only every fifteenth card.
  */
 .ad-sheet {
   rotate: -0.6deg;
@@ -261,14 +219,9 @@ const hoverable = computed(() => !unsendable.value && !props.disabled)
 }
 
 /**
- * The tack. Inside the sheet rather than at its edge: the torn edge is a displacement of up to
- * five or six pixels either way, so a tack sitting on the margin would spend some of the time off
- * the paper it is supposed to be holding. Pushed through it, which is where a real one goes.
- *
- * `::after` is free — parchment draws the sheet on `::before`.
- *
- * Hung off a class rather than off `li`: the badge pills and the advisor's warnings are lists too,
- * and a bare element selector tacked and tilted every one of them.
+ * The tack, inset rather than on the margin: the torn edge displaces five or six pixels either
+ * way, so a tack at the edge would spend some of its time off the paper. `::after` because
+ * `parchment` draws the sheet on `::before`, and a class because the pills are `li` too.
  */
 .ad-sheet::after {
   content: '';

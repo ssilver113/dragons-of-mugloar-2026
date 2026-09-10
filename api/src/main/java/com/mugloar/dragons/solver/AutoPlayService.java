@@ -14,13 +14,9 @@ import org.springframework.stereotype.Service;
 /**
  * Advances exactly one turn: read the board and the shop, ask the strategy, carry out its move.
  *
- * <p>It acts through the existing services rather than the upstream client, so the guards, the
- * session ledgers and the turn accounting are the same ones the human player goes through. The bot
- * gets no private path to the game.
- *
- * <p>One turn per call and no loop of its own — running to completion is the client repeating this,
- * which is what keeps a run abortable and lets the UI show every turn as it happens. Reading the
- * board and the shop costs nothing, so both are refreshed before every decision.
+ * <p>Through the existing services rather than the upstream client, so the bot gets no private
+ * path to the game. One turn per call and no loop of its own, which is what keeps a run abortable
+ * and lets the UI show every turn. Reading the board and the shop is free, so both are refreshed.
  */
 @Service
 public class AutoPlayService {

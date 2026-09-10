@@ -13,11 +13,9 @@ import java.util.Set;
  * <p>Synchronised because a player can have the auto-play loop and the UI acting on the same game
  * at once, and both read-modify-write the state.
  *
- * <p>Alongside the state it keeps ledgers, so an action that cannot succeed is refused without
- * spending an upstream call: the ids from the board we last fetched, every id we have already
- * attempted, and what the shop charges. Ids and prices rather than the objects themselves — an
- * ad's remaining life changes with every turn, and a cached copy that quietly disagreed with the
- * board would be worse than no cache at all.
+ * <p>Its ledgers let an impossible action be refused without an upstream call: the last board's
+ * ids, every id already attempted, and the shop's prices. Ids and prices rather than the objects,
+ * because an ad's remaining life changes every turn and a stale copy would be worse than none.
  */
 public class GameSession {
 

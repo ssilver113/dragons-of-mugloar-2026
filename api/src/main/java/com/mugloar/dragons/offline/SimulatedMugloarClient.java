@@ -19,13 +19,9 @@ import java.util.random.RandomGenerator;
 /**
  * A {@link MugloarClient} with no network behind it, backed by {@link SimulatedWorld}.
  *
- * <p>It sits on the same seam as {@code RestMugloarClient} and returns the same wire records, so
- * nothing above the interface — the game service, the ad board, the shop, the solver, the whole
- * frontend — can tell which one it is talking to. That is the point: the offline game exercises the
- * real application rather than a second implementation of it.
- *
- * <p>Failures are raised as the same exception types the HTTP client maps its statuses onto, so the
- * error contract the UI branches on holds here too.
+ * <p>Same seam and same wire records as {@code RestMugloarClient}, so nothing above the interface
+ * can tell which one it is talking to and the offline game exercises the real application.
+ * Failures use the same exception types, so the error contract the UI branches on holds here too.
  */
 public class SimulatedMugloarClient implements MugloarClient {
 

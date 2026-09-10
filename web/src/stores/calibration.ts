@@ -45,14 +45,10 @@ interface Tally {
 }
 
 /**
- * A ledger of what the model said would happen against what did, kept per probability label.
- *
- * Per label rather than per tier deliberately: the model's own claim is that the labels inside a
- * tier are interchangeable, and this is the table on which that claim can be seen to hold or not.
- *
- * It accumulates across games and is only emptied on request. One game supplies a few dozen
- * attempts spread over eleven labels, which is too thin to show anything converging; several
- * games are what make the estimate visibly settle.
+ * What the model said would happen against what did, per probability label. Per label rather than
+ * per tier deliberately: the model claims the labels inside a tier are interchangeable, and this
+ * is the table that claim can be checked on. It accumulates across games, because one game spreads
+ * a few dozen attempts over eleven labels and nothing visibly converges.
  */
 /**
  * The ledger is the one thing here that is meant to accumulate over many games, so it is kept

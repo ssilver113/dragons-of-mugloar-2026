@@ -9,13 +9,9 @@ import java.time.Instant;
 /**
  * What the client needs to know about the server before a game exists.
  *
- * <p>Properties of the deployment rather than of any one game, which is why they are not folded
- * into {@link GameView}: threading them through every response that carries state would repeat
- * three constants six times over.
- *
- * <p>The build stamp is read from the running jar rather than compiled into the bundle, so the
- * footer names the server actually answering — the failure it is meant to expose is an older
- * process still holding the port, which a number baked into the frontend could never show.
+ * <p>Properties of the deployment, not of a game, so folding them into {@link GameView} would
+ * repeat three constants on every response. The build stamp comes from the running jar rather than
+ * the bundle, because the failure it exposes is an older process still holding the port.
  *
  * @param offline true when the game is simulated, so the player is never told a score means
  *                something it does not

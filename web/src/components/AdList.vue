@@ -6,12 +6,8 @@ import type { BoardEntry } from '../advisor/boardView'
 import type { RequestStatus } from '../stores/game'
 
 /**
- * The cards, drawn in the order they arrive in.
- *
- * The ranking itself is not here any more, and neither are the controls that set it. The advisor
- * moved above both columns, so the sort, the posture and the filters left with it — into
- * `useBoardView`, which both this and the panel read. What is left is a section that renders the
- * board it is handed and knows the four states it can be in.
+ * The cards, drawn in the order they arrive in. Ranking and the controls that set it live in
+ * `useBoardView`, which this and the advisor's panel both read.
  */
 const props = defineProps<{
   /** Already scored, filtered and ranked. `read` is null on every entry while the advisor is off. */
@@ -135,22 +131,9 @@ const filteredOut = computed(() => props.total > 0 && props.entries.length === 0
 
 <style scoped>
 /**
- * The board the jobs are pinned to. Its surface is the `timber` utility, which the shop's
- * shopfront also uses — this rule only sets what is particular to a board full of cards.
- *
- * It used to be cork, chosen because the whole conceit is paper *pinned up* and cork is the thing
- * you can push a pin into. That reasoning was sound about the tack and wrong about the page: at the
- * width the board actually renders, most of the cork shows as a margin between cards, where the
- * crumb is too fine to register and it read as one more brown frame beside the shop's. Two
- * materials that are almost the same are worse than one, so there is now one.
- *
- * A timber frame and four brass corner brackets were built for it once and taken out again. Each
- * was defensible alone and together they were three materials and a piece of hardware between the
- * reader and ten sheets of paper. The surface and the tack are still the whole idea.
- *
- * Nothing but the cards is ever laid on it, so no text is ever measured against this surface. The
- * heading and the intro stay above it on the page; the advisor's own controls are on their own
- * surface above the whole layout.
+ * The board the jobs are pinned to. `timber` is the surface, shared with the shopfront; this sets
+ * what is particular to a board full of cards. Nothing but cards is laid on it, so no text is ever
+ * measured against this surface — the heading and the intro stay above it on the page.
  */
 .board {
   padding: 1rem;
@@ -167,22 +150,16 @@ const filteredOut = computed(() => props.total > 0 && props.entries.length === 0
     transition: transform 260ms cubic-bezier(0.22, 0.61, 0.36, 1);
   }
 
-  /* Out of the flow before the survivors are measured, or they would glide towards the gap the
-     departing card is still holding open and then snap when it goes. */
+  /* Out of the flow before the survivors are measured, or they glide towards a gap that is about
+     to close and then snap. */
   .card-leave-active {
     position: absolute;
     visibility: hidden;
   }
 
-  /* Never from nothing, and barely delayed. A card that is invisible still holds its grid cell, so
-     a turn that replaces most of the board used to punch a hole in it for the length of the delay
-     — invisible while the empty cell showed the page behind it, and a dark void once there was a
-     plank back there. Entering at a quarter opacity means there is always a sheet in the slot.
-
-     The delay it replaces was there so a new job did not land on top of a survivor still gliding
-     into the same slot. Sixty milliseconds and a ghost rather than two hundred and a hole: the
-     overlap that remains is between a moving card and a faint one, which is not what the eye goes
-     to. */
+  /* Never from nothing: an invisible card still holds its cell, so a turn replacing most of the
+     board punched a hole in the plank behind it. A quarter opacity keeps a sheet in every slot,
+     which is what buys the delay down from 200ms to 60. */
   .card-enter-active {
     transition: opacity 240ms ease-out 60ms;
   }

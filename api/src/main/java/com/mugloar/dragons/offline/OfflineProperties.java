@@ -33,14 +33,12 @@ public record OfflineProperties(
      * Parameters for {@link ParametricBoardSource}, which deals only where the recorded corpus has
      * nothing to say. Every value here is a guess, which is why it is confined to that role.
      *
-     * <p>The reward scale is anchored to the level's own safe ceiling because the alternative — a
-     * scale that climbs only with the turn — produces a game nobody can lose: the dragon levels
-     * past the board within twenty turns and never comes back to it. Anchoring keeps difficulty
-     * roughly flat in level and rising in turn, which is the arc the real game has.
+     * <p>The reward scale is anchored to the level's safe ceiling: a scale climbing only with the
+     * turn makes a game nobody can lose, because the dragon levels past the board and never returns
+     * to it.
      *
-     * <p>The cipher rates are the exception: those <em>are</em> measured, at 343 and 28 of 5130
-     * observed board entries, and the corpus defers to them because the recording carries decoded
-     * text and never carried the flag.
+     * <p>The cipher rates are the exception — those are measured, at 343 and 28 of 5130 board
+     * entries, and the corpus defers to them because the recording carried decoded text.
      *
      * @param boardSize             ads the board is topped up to each turn, when the corpus is
      *                              not the one saying so

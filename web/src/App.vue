@@ -30,10 +30,7 @@ const calibration = useCalibrationStore()
 const starting = computed(() => store.startStatus === 'pending')
 const outcome = computed(() => store.lastOutcome)
 
-/**
- * How the board is ranked, held here because two siblings need it: the advisor's table, which sets
- * it, and the list, which is drawn from it. Neither owns it any more.
- */
+/** Held here because two siblings need it: the advisor's table sets it, the list is drawn from it. */
 const boardView = useBoardView({
   ads: computed(() => store.ads),
   lives: computed(() => store.game?.lives ?? 1),
@@ -41,12 +38,7 @@ const boardView = useBoardView({
   holding: computed(() => store.acting),
 })
 
-/**
- * A reload is not a new game. The id of the one in progress outlives the page, and neither
- * listing the board nor listing the shop costs a turn, so the whole thing can be picked back up
- * for the price of two GETs. The log follows the game rather than leading it: it is restored only
- * once the game it belongs to is known to be on screen.
- */
+/** A reload is not a new game. The log follows the game, restored only once it is on screen. */
 void store.loadMeta()
 void resumeInterrupted()
 
@@ -58,19 +50,12 @@ async function resumeInterrupted(): Promise<void> {
   }
 }
 
-/**
- * Abandoning takes two clicks. Starting a game costs nothing upstream, but the run it replaces is
- * gone for good, and a stray click at turn forty is an expensive way to learn that.
- */
+/** Abandoning takes two clicks: the run it replaces is gone for good. */
 const abandoning = ref(false)
 const confirmAbandon = ref<HTMLButtonElement | null>(null)
 const startNew = ref<HTMLButtonElement | null>(null)
 
-/**
- * Not while the solver is mid-run: a turn already sent would land after the new game had started
- * and write the old game's state over it. Pausing first is the player's call, not something to do
- * silently on their behalf.
- */
+/** Never mid-turn: one already sent would land on the game that replaced it. */
 const canAbandon = computed(() => !store.acting && !autoPlay.active)
 
 async function askToAbandon(): Promise<void> {
@@ -91,14 +76,8 @@ function abandon(): void {
 }
 
 /**
- * Which part of the game is on screen — but only where they do not all fit. From `lg` up the
- * board, the shop and the solver are all visible and this is inert, which is why the switch is
- * buttons rather than a tablist: a tab that controls nothing on a wide screen would be a lie to a
- * screen reader.
- *
- * The third holds the drive and the log together, because they are one thing: the log records the
- * solver's turns and nothing else's, and a halt used to raise its alarm on this tab while the
- * buttons that answered it sat on that one.
+ * Which part of the game is on screen, and inert from `lg` up where all three fit. Buttons rather
+ * than a tablist for that reason: a tab controlling nothing would be a lie to a screen reader.
  */
 type Panel = 'board' | 'shop' | 'solver'
 const PANELS: { id: Panel; label: string; icon: IconName }[] = [
@@ -109,20 +88,13 @@ const PANELS: { id: Panel; label: string; icon: IconName }[] = [
 const view = ref<Panel>('board')
 const onlyOnMobile = (panel: Panel) => (view.value === panel ? '' : 'hidden lg:block')
 
-/**
- * A failure, dressed for how much it matters. Terminal codes never arrive here — the store puts
- * those on the game's state instead, and the panel that replaces the board says them.
- */
+/** Terminal codes never arrive here: the store puts those on the game's state instead. */
 const failure = computed(() => {
   const e = store.error
   return e === null ? null : { ...present(e.code), message: e.message }
 })
 
-/**
- * Where the run stopped, and what to say about it. A lost session is not a defeat: the dragon
- * was fine, the server simply stopped tracking it, and telling the player their dragon fell
- * would be a lie about their own game.
- */
+/** A lost session is not a defeat — the dragon was fine, the server stopped tracking it. */
 const ENDINGS = {
   finished: {
     heading: 'The dragon has fallen',
@@ -136,14 +108,9 @@ const ENDINGS = {
 
 const ended = computed(() => (store.ending === null ? null : ENDINGS[store.ending]))
 
-/**
- * The button that ended the run is gone by the time this renders, so keyboard focus would land
- * back at the top of the document with no announcement of why. Moving it to the panel puts the
- * explanation and the way out under the cursor that is already there.
- */
+/** The button that ended the run has unmounted, so focus would otherwise fall to the document. */
 const endPanel = ref<HTMLElement | null>(null)
-// An open confirmation belongs to the run that was live when it opened. A game that ends under it
-// answers the question, and the next game must not inherit a half-pressed button.
+// A game ending answers the confirmation, so the next one does not inherit a half-pressed button.
 watch(
   () => store.playable,
   () => (abandoning.value = false),
@@ -155,11 +122,7 @@ watch(ended, async (now, before) => {
   }
 })
 
-/**
- * Which of the player's own moves is in flight. The solver's turns are deliberately not here:
- * they arrive several a second at max speed, and a placeholder strobing between two states is
- * worse than one that says plainly who is holding the game.
- */
+/** The player's own moves only: the solver's arrive several a second and would strobe. */
 const pending = computed<PendingKind | null>(() => {
   if (store.solvingAdId !== null) {
     return 'solve'
@@ -207,19 +170,12 @@ const banner = computed(() => {
   <AppBackdrop />
   <PaperFilters />
 
-  <!--
-    The frame rather than the content: it owns the page height so the footer lands under the
-    board on a long page and at the bottom of the window on a short one. `main` keeps its own
-    column and grows into what is left, which is what the abandon block hangs off.
-  -->
+  <!-- Owns the page height, so the footer lands under the board on a long page and at the bottom
+       of the window on a short one. -->
   <div class="mx-auto flex min-h-dvh max-w-6xl flex-col gap-6 px-4 py-8">
     <main class="flex flex-1 flex-col gap-6">
       <header class="flex flex-col items-center gap-1 text-center">
-        <!--
-          The wordmark carries the title, and the heading still carries the words: the name is a
-          drawing, not a font we could set, so the text stays for the accessibility tree and for
-          anything that reads the page rather than looks at it.
-        -->
+        <!-- The name is a drawing, not type, so the words stay for the accessibility tree. -->
         <h1>
           <img
             :src="wordmarkArt"
@@ -235,11 +191,8 @@ const banner = computed(() => {
         <p class="text-sm text-balance text-ink-muted">
           Take the jobs your dragon can survive. Every action costs a turn.
         </p>
-        <!--
-          Stated wherever a score is, because a simulated score is not a score. The board here is
-          generated from a model of the real one, so nothing won against it is a claim about the
-          real game.
-        -->
+        <!-- Stated wherever a score is: nothing won against a simulated board is a claim about
+             the real game. -->
         <p
           v-if="store.offline"
           class="rounded border border-warning/50 px-1.5 py-0.5 text-xs text-warning"
@@ -250,10 +203,7 @@ const banner = computed(() => {
 
       <GameStats v-if="store.game" :game="store.game" :announce="!autoPlay.active" />
 
-      <!--
-        `fault` is an alert and `note` is not: a refusal the server saw coming is not a failure, and
-        the app has usually already corrected itself by the time the sentence is read.
-      -->
+      <!-- `fault` alerts and `note` does not: a refusal the server saw coming is not a failure. -->
       <MessageBanner
         v-if="failure"
         :tone="failure.severity === 'fault' ? 'error' : 'info'"
@@ -262,10 +212,7 @@ const banner = computed(() => {
         @dismiss="store.dismissError()"
       >
         {{ failure.message }}
-        <!--
-          A refetch, never a retry of the action itself: a solve or a purchase that timed out may
-          already have landed upstream, and repeating it would spend a second turn.
-        -->
+        <!-- A refetch, never a retry: an action that timed out may already have landed upstream. -->
         <button
           v-if="failure.offerRefresh && store.playable"
           type="button"
@@ -277,10 +224,8 @@ const banner = computed(() => {
       </MessageBanner>
 
       <template v-if="!store.started">
-        <!--
-          Said once, on the way in: the game from before the reload is gone, but nothing the player
-          did lost it. A defeat panel would be claiming something about their dragon that is untrue.
-        -->
+        <!-- The game from before is gone, but nothing the player did lost it, so this is a note
+             rather than the defeat panel. -->
         <MessageBanner
           v-if="store.resumeFailed"
           tone="info"
@@ -348,10 +293,8 @@ const banner = computed(() => {
           @retry="autoPlay.run()"
         />
 
-        <!--
-          The advisor's box goes with the board, so on the end screen the tally is on its own. It
-          carries no surface of its own any more, which is why the panel is here rather than in it.
-        -->
+        <!-- On the end screen the tally is on its own, and it carries no surface, so the panel
+             is here rather than in it. -->
         <section v-if="calibration.attempts" class="panel p-4">
           <CalibrationTable
             :rows="calibration.rows"
@@ -363,13 +306,8 @@ const banner = computed(() => {
       </template>
 
       <template v-else>
-        <!--
-          First on the board, because it is what the rest of the page is read in: the ranking it sets
-          is the order the jobs below are listed in, and the risk posture is what their figures mean.
-          Above the result of the last job for the same reason it is above both columns — it governs
-          what comes after it, and opening it must not shove one column down while the other stands
-          still.
-        -->
+        <!-- First, because it is what the rest of the page is read in: it sets the order of the
+             jobs below and what their figures mean. -->
         <AdvisorPanel
           :advisor="store.advisorEnabled"
           :sort="boardView.sort.value"
@@ -405,21 +343,14 @@ const banner = computed(() => {
             :aria-pressed="view === panel.id"
             @click="view = panel.id"
           >
-            <!--
-              Held on one line. `Auto-play` is the longest label the row has ever carried and it wraps
-              at 375px against the padding three tabs used to be able to afford, which turns a 32px
-              switch into a 52px one.
-            -->
+            <!-- Held on one line: `Auto-play` wraps at 375px, which turns a 32px switch into a
+                 52px one. -->
             <span class="flex items-center justify-center gap-1.5 whitespace-nowrap">
               <AppIcon :name="panel.icon" :size="16" />
               {{ panel.label }}
             </span>
-            <!--
-              A halt is the one state that needs an answer, and the buttons that give it are on the
-              other side of this switch. Out of the flow, because a label already at the width of its
-              tab cannot pay for a dot; said in words as well as drawn, because a colour on its own
-              is not a message.
-            -->
+            <!-- A halt is the one state needing an answer from behind this switch. Out of the
+                 flow, and said in words as well as drawn. -->
             <template v-if="panel.id === 'solver' && autoPlay.halt">
               <span
                 class="absolute top-1 right-1 size-1.5 rounded-full bg-danger"
@@ -430,11 +361,8 @@ const banner = computed(() => {
           </button>
         </div>
 
-        <!--
-          Hidden as a whole rather than one column at a time. Hiding only the children leaves an
-          empty grid box in the flow, and the page column still spends a `gap-6` on it — which is
-          why the log used to start twenty-four pixels lower than the board and the shop did.
-        -->
+        <!-- Hidden as a whole: hiding only the children leaves an empty grid box that still
+             spends the column's `gap-6`. -->
         <div
           class="items-start gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_20rem]"
           :class="view === 'solver' ? 'hidden lg:grid' : 'grid'"
@@ -451,11 +379,8 @@ const banner = computed(() => {
               @refresh="store.refreshAds()"
             />
           </div>
-          <!--
-            The stack is a level in, as it is in the board column: `lg:block` and `flex` are both
-            display utilities, and the variant is emitted later, so the two on one element would
-            leave the column laid out as blocks with its gap doing nothing.
-          -->
+          <!-- The stack is a level in: `lg:block` and `flex` are both display utilities and the
+               variant is emitted later, so one element could not carry both. -->
           <div :class="onlyOnMobile('shop')" class="min-w-0">
             <div class="flex flex-col gap-4">
               <ShopPanel
@@ -477,12 +402,8 @@ const banner = computed(() => {
           </div>
         </div>
 
-        <!--
-          The drive and the record it writes, on one board. Same timber as the message board, the
-          shopfront and the standing wall: the drive is mounted on it and the log lies on it as a
-          book, with wood left showing around both. The board is also what the drive is sticky
-          within, which is what lets Pause stay on screen while the log scrolls past during a run.
-        -->
+        <!-- The drive and the record it writes, on one board — which is also the box the drive
+             is sticky within, so Pause stays on screen while the log scrolls past. -->
         <div :class="onlyOnMobile('solver')">
           <div class="timber solver-board flex flex-col gap-3">
             <AutoPlayControls
@@ -508,16 +429,9 @@ const banner = computed(() => {
           </div>
         </div>
 
-        <!--
-          Last on the page and quiet with it. This is the only way out of a run that is going badly
-          but is not over, and it is deliberately nowhere near the buttons that spend turns.
-
-          On a sheet, like every other block of copy. A hairline rule left this text sitting on the
-          painted backdrop, whose luminance runs from 0.16 to 0.55 and so crosses the type's own —
-          muted ink measured 1.5:1 against it at worst. No colour survives a ground that mottled, and
-          no scrim rescues it either: even at 85%, which would erase the painting, muted text reaches
-          only 4.0:1. Paper is the only fix, and it is what the rest of the page already does.
-        -->
+        <!-- Last on the page and nowhere near the buttons that spend turns. On a sheet rather
+             than the backdrop, which runs 0.16 to 0.55 in luminance and took muted ink to 1.5:1;
+             even an 85% scrim only reaches 4.0:1. -->
         <footer
           class="panel mt-auto flex flex-col items-start gap-2 p-4"
           @keydown.esc="keepPlaying()"

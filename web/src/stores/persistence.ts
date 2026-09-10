@@ -1,14 +1,10 @@
 /**
- * One JSON value in Web Storage, with the failures that actually happen handled rather than
- * thrown.
+ * One JSON value in Web Storage, with every operation guarded. Storage is not reliably there:
+ * Safari's private mode throws on the property access itself, an origin can be storage-blocked,
+ * and a long solver run can fill the quota. None of that is worth interrupting a game for.
  *
- * Every operation is guarded, because storage is not reliably there: Safari's private mode throws
- * on the property access itself, an origin can be storage-blocked entirely, and a write can hit
- * the quota when a long solver run fills the log. None of those are worth interrupting a game
- * for — the app simply stops remembering, which is where it was before.
- *
- * Values are wrapped in a version so a payload written by an older build is discarded instead of
- * being cast to a shape it no longer has. Bump `VERSION` whenever a stored shape changes.
+ * Values carry a version, so a payload from an older build is discarded rather than cast to a
+ * shape it no longer has. Bump `VERSION` whenever a stored shape changes.
  */
 const VERSION = 1
 

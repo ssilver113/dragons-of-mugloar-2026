@@ -17,20 +17,16 @@ import java.util.random.RandomGenerator;
 /**
  * One simulated game: the board, the purse and the turn clock.
  *
- * <p>Everything the upstream was measured doing is reproduced here, including the parts that are
- * easy to get wrong. A turn is spent by solving, buying <em>or failing to buy</em>, and
- * investigating, and every one of them ages the whole board. A failed ad leaves the board rather
- * than being offered again. A rejected purchase is a success-looking response carrying
- * {@code shoppingSuccess=false}. Once lives reach zero every later call is refused outright.
+ * <p>Reproduces what the upstream was measured doing, including the parts easy to get wrong: a
+ * turn is spent by solving, buying <em>or failing to buy</em>, and investigating, all of which age
+ * the whole board; a failed ad leaves the board; a rejected purchase is a success-looking response
+ * with {@code shoppingSuccess=false}; at zero lives every later call is refused.
  *
- * <p>What is <em>not</em> reproduced is reputation, which stays at zero: the exploration measured
- * its turn cost exactly and never established that the three figures move at all, so inventing a
- * drift would put a fact into the game that nobody has seen.
+ * <p>Reputation stays at zero. The exploration measured its turn cost and never established that
+ * the figures move, so a drift would put a fact into the game nobody has seen.
  *
- * <p>The outcome of a solve is drawn against {@link SuccessModel}, the same estimator the solver
- * scores with. That makes the offline world exactly as right as the fit is — a benchmark run
- * against it measures the solver's arithmetic and not its judgement, so tuning still belongs
- * against the live API.
+ * <p>A solve is drawn against {@link SuccessModel}, the estimator the solver scores with, so a run
+ * here measures the solver's arithmetic and not its judgement. Tuning belongs against the live API.
  */
 class SimulatedWorld {
 

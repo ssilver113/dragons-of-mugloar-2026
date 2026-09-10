@@ -5,14 +5,10 @@ import java.util.List;
 /**
  * Boards recorded from live play, as the resource stores them.
  *
- * <p>One row per ad per turn, taken from the whole board rather than from the ads the solver chose
- * — the attempt corpus is filtered by the estimate under test and so cannot say what a board
- * offers. Rows are {@code [level, turn, reward, labelIndex]}, packed as integers because there are
- * thousands of them and every one is a small number.
- *
- * <p>Messages are pooled rather than kept with their row. Ad text carries no information the
- * simulation acts on, and the same few hundred strings recur across thousands of ads, so pairing
- * them back up would multiply the file for nothing.
+ * <p>One row per ad per turn, from the whole board rather than the ads the solver chose. Rows are
+ * {@code [level, turn, reward, labelIndex]}, packed as integers because there are thousands of
+ * small numbers. Messages are pooled: the simulation acts on none of the text, and the same few
+ * hundred strings recur across thousands of ads.
  *
  * @param games      games the recording played
  * @param boards     boards seen across them

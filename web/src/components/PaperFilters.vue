@@ -1,18 +1,11 @@
 <template>
-  <!--
-    The tear itself: fractal noise pushing a sheet's outline around, three seeds so a column of
-    cards does not repeat. Mounted once at the root because `filter: url(#…)` resolves against the
-    document, not against the element's own tree.
+  <!-- The tear: fractal noise pushing a sheet's outline around, three seeds so a column does not
+       repeat. Mounted at the root because `filter: url(#…)` resolves against the document.
 
-    Sized to nothing and hidden by `overflow` rather than by `display: none`. A display-none SVG
-    still serves its filters in Chrome and Firefox, and has historically not in WebKit — the cost
-    of not relying on that is one line.
-
-    Two frequencies per filter. The low one gives the slow wave of a sheet pulled apart; the
-    octaves above it give the fibre chatter that stops the wave reading as a wobble. `sRGB`
-    interpolation because the noise is being used as a coordinate offset rather than as colour,
-    and linear light would skew the distribution towards one side.
-  -->
+       Hidden by `overflow`, not `display: none` — a display-none SVG has historically not served
+       its filters in WebKit. Two frequencies per filter: the low one is the slow wave of a sheet
+       pulled apart, the octaves the fibre chatter that stops it reading as a wobble. `sRGB`
+       because the noise is a coordinate offset, and linear light would skew the distribution. -->
   <svg
     class="pointer-events-none absolute size-0 overflow-hidden"
     aria-hidden="true"
