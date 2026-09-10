@@ -80,6 +80,13 @@ const filteredOut = computed(() => props.total > 0 && props.entries.length === 0
       }}
     </p>
 
+    <!--
+      Always in the tree, with the sentence written into it rather than mounted with it. A live
+      region inserted at the same moment as its content is not reliably announced — the assistive
+      technology has to be watching the node before the text lands in it.
+    -->
+    <p class="sr-only" role="status">{{ loading ? 'Loading the message board.' : '' }}</p>
+
     <ul v-if="loading" class="flex flex-col gap-3" aria-hidden="true">
       <li
         v-for="n in 3"
@@ -87,8 +94,6 @@ const filteredOut = computed(() => props.total > 0 && props.entries.length === 0
         class="h-40 rounded-lg bg-surface-raised motion-safe:animate-pulse sm:h-32"
       />
     </ul>
-    <p v-if="loading" class="sr-only" role="status">Loading the message board.</p>
-
     <div v-else-if="failed" class="panel panel-danger p-4" role="alert">
       <p class="font-semibold">The message board could not be loaded.</p>
       <button

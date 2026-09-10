@@ -42,6 +42,20 @@ describe('AdList', () => {
     expect(list.find('ul[aria-hidden="true"]').exists()).toBe(true)
   })
 
+  /**
+   * The region has to be watched before the sentence lands in it, so it is mounted with the
+   * component and empty rather than inserted alongside its own text.
+   */
+  it('keeps the live region in the tree when there is nothing to announce', () => {
+    const list = render({
+      status: 'ready',
+      entries: plain([anAd({ message: 'Rescue the cat' })]),
+    })
+
+    expect(list.find('[role="status"]').exists()).toBe(true)
+    expect(list.find('[role="status"]').text()).toBe('')
+  })
+
   it('keeps the board on screen while a refetch is in flight', () => {
     const list = render({
       status: 'pending',
