@@ -16,6 +16,9 @@ import org.springframework.stereotype.Service;
  * already attempted — so the player gets a specific reason instead of a generic upstream
  * rejection. They never refuse an action that is merely unwise: which ads are worth solving is the
  * player's call, and the scoring exists to inform it, not to overrule it.
+ *
+ * <p>Anything that spends a turn is checked and carried out inside the session's turn lock, so a
+ * guard cannot be satisfied by a state that another action has already moved on from.
  */
 @Service
 public class GameService {
@@ -47,19 +50,22 @@ public class GameService {
 
     public SolveOutcome solve(String gameId, String adId) {
         GameSession session = sessions.require(gameId);
-        GameState state = session.requireRunning();
-        if (!session.isKnownSolvable(adId)) {
-            throw new AdNotAvailableException(adId);
-        }
+        return session.takeTurn(() -> {
+            GameState state = session.requireRunning();
+            if (!session.isKnownSolvable(adId)) {
+                throw new AdNotAvailableException(adId);
+            }
 
-        // Recorded before the call, not after: a solve is never retried because a request that
-        // timed out may already have landed, and the same reasoning forbids a second attempt here.
-        session.recordAttempt(adId);
-        SolveResponse solved = client.solve(gameId, adId);
-        GameState updated = state.afterSolve(solved);
-        session.setState(updated);
+            // Recorded before the call, not after: a solve is never retried because a request that
+            // timed out may already have landed, and the same reasoning forbids a second attempt
+            // here.
+            session.recordAttempt(adId);
+            SolveResponse solved = client.solve(gameId, adId);
+            GameState updated = state.afterSolve(solved);
+            session.setState(updated);
 
-        return new SolveOutcome(updated, adId, solved.success(), solved.message());
+            return new SolveOutcome(updated, adId, solved.success(), solved.message());
+        });
     }
 
     /**
@@ -73,11 +79,13 @@ public class GameService {
      */
     public PassOutcome passTurn(String gameId) {
         GameSession session = sessions.require(gameId);
-        GameState state = session.requireRunning();
+        return session.takeTurn(() -> {
+            GameState state = session.requireRunning();
 
-        ReputationResponse standing = client.investigateReputation(gameId);
-        GameState updated = state.afterTurnSpent();
-        session.setState(updated);
-        return new PassOutcome(updated, Reputation.from(standing));
+            ReputationResponse standing = client.investigateReputation(gameId);
+            GameState updated = state.afterTurnSpent();
+            session.setState(updated);
+            return new PassOutcome(updated, Reputation.from(standing));
+        });
     }
 }

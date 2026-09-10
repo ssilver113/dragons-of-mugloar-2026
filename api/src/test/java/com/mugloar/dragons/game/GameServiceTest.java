@@ -13,12 +13,18 @@ import com.mugloar.dragons.mugloar.exception.MugloarUnavailableException;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -213,5 +219,36 @@ class GameServiceTest {
 
         assertThat(service.passTurn(GAME_ID).reputation())
                 .isEqualTo(new Reputation(12.5, -3.25, 40.0));
+    }
+
+    /**
+     * The auto-play loop and the UI can act on one game at once, and a turn is a read of the
+     * state, an upstream call and a write back. Asserted as mutual exclusion rather than as a
+     * surviving figure: a lost update shows up as two turns inside the client at the same moment,
+     * and this cannot pass by luck the way a race on the final state could.
+     */
+    @Test
+    void takesOneTurnAtATimeOnAGame() throws Exception {
+        startGame();
+        AtomicInteger inFlight = new AtomicInteger();
+        AtomicInteger mostAtOnce = new AtomicInteger();
+        when(client.solve(eq(GAME_ID), anyString())).thenAnswer(invocation -> {
+            mostAtOnce.accumulateAndGet(inFlight.incrementAndGet(), Math::max);
+            Thread.sleep(20);
+            inFlight.decrementAndGet();
+            return new SolveResponse(true, 3, 40, 60, 1, "Success!");
+        });
+
+        List<String> adIds = List.of("LTyNBlYB", "MTyNBlYC", "NTyNBlYD", "OTyNBlYE");
+        try (ExecutorService pool = Executors.newFixedThreadPool(adIds.size())) {
+            List<Future<SolveOutcome>> solves = pool.invokeAll(
+                    adIds.stream().map(adId -> (Callable<SolveOutcome>) () -> service.solve(GAME_ID, adId)).toList());
+            for (Future<SolveOutcome> solve : solves) {
+                solve.get();
+            }
+        }
+
+        assertThat(mostAtOnce.get()).isEqualTo(1);
+        verify(client, times(adIds.size())).solve(eq(GAME_ID), anyString());
     }
 }

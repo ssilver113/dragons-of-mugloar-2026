@@ -18,6 +18,9 @@ import org.springframework.stereotype.Service;
  * caught here is a turn the player keeps. Prices come from the session's ledger, refreshed on
  * every browse and fetched on demand if the player has not browsed — listing the shop is free,
  * verified against the live API.
+ *
+ * <p>Buying spends a turn, so the affordability check and the purchase it authorises happen inside
+ * the session's turn lock. The gold a purchase is measured against cannot be spent underneath it.
  */
 @Service
 public class ShopService {
@@ -38,22 +41,24 @@ public class ShopService {
 
     public PurchaseOutcome buy(String gameId, String itemId) {
         GameSession session = sessions.require(gameId);
-        GameState state = session.requireRunning();
-        if (!session.knowsShop()) {
-            fetchItems(gameId, session);
-        }
+        return session.takeTurn(() -> {
+            GameState state = session.requireRunning();
+            if (!session.knowsShop()) {
+                fetchItems(gameId, session);
+            }
 
-        int cost = session.itemCost(itemId)
-                .orElseThrow(() -> new ItemNotAvailableException(itemId));
-        if (cost > state.gold()) {
-            throw new InsufficientGoldException(itemId, cost, state.gold());
-        }
+            int cost = session.itemCost(itemId)
+                    .orElseThrow(() -> new ItemNotAvailableException(itemId));
+            if (cost > state.gold()) {
+                throw new InsufficientGoldException(itemId, cost, state.gold());
+            }
 
-        PurchaseResponse bought = client.buy(gameId, itemId);
-        GameState updated = state.afterPurchase(bought);
-        session.setState(updated);
+            PurchaseResponse bought = client.buy(gameId, itemId);
+            GameState updated = state.afterPurchase(bought);
+            session.setState(updated);
 
-        return new PurchaseOutcome(updated, itemId, bought.shoppingSuccess());
+            return new PurchaseOutcome(updated, itemId, bought.shoppingSuccess());
+        });
     }
 
     private List<ShopItem> fetchItems(String gameId, GameSession session) {
