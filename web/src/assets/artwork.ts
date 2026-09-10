@@ -4,6 +4,10 @@
  * The chrome is hand-authored SVG; the dragon, the backdrop and the wordmark are painted rasters.
  * Either can replace the other in place — a file with the same stem wins on format, best first —
  * without touching a component or this list, which is why nothing here is imported by name.
+ *
+ * A stem may be drawn at several widths, declared in the filename as `wordmark@800.webp`. They
+ * belong to the same stem: the widest is what `art` returns, and the whole set is the `srcset`.
+ * So a responsive set is added or dropped by adding or dropping files, exactly like a format is.
  */
 const FILES = import.meta.glob('./art/**/*.{svg,png,webp,avif}', {
   eager: true,
@@ -14,22 +18,41 @@ const FILES = import.meta.glob('./art/**/*.{svg,png,webp,avif}', {
 /** Best first. A format later in this list never displaces one earlier. */
 const PRECEDENCE = ['avif', 'webp', 'png', 'svg']
 
-const ART = ((): Record<string, string> => {
-  const best: Record<string, { rank: number; url: string }> = {}
+/** A width of 0 is a file that declared none, which is every stem drawn only once. */
+type Drawing = { rank: number; width: number; url: string }
+
+const DRAWINGS = ((): Record<string, Drawing[]> => {
+  const found: Record<string, Drawing[]> = {}
   for (const [path, url] of Object.entries(FILES)) {
-    const match = /\.\/art\/([^/]+)\/(.+)\.([^.]+)$/.exec(path)
+    const match = /\.\/art\/([^/]+)\/(.+?)(?:@(\d+))?\.([^.]+)$/.exec(path)
     if (!match) {
       continue
     }
-    const [, folder, stem, extension] = match
+    const [, folder, stem, width, extension] = match
     const rank = PRECEDENCE.indexOf(extension)
-    const key = `${folder}/${stem}`
-    if (rank >= 0 && (best[key] === undefined || rank < best[key].rank)) {
-      best[key] = { rank, url }
+    if (rank < 0) {
+      continue
     }
+    const key = `${folder}/${stem}`
+    found[key] = [...(found[key] ?? []), { rank, width: Number(width ?? 0), url }]
   }
-  return Object.fromEntries(Object.entries(best).map(([key, { url }]) => [key, url]))
+
+  // One format per stem, widest first: mixing formats inside a set would let the precedence
+  // above be decided by whichever width the browser happened to want.
+  return Object.fromEntries(
+    Object.entries(found).map(([key, drawings]) => {
+      const best = Math.min(...drawings.map((drawing) => drawing.rank))
+      return [
+        key,
+        drawings.filter((drawing) => drawing.rank === best).sort((a, b) => b.width - a.width),
+      ]
+    }),
+  )
 })()
+
+const ART: Record<string, string> = Object.fromEntries(
+  Object.entries(DRAWINGS).map(([key, drawings]) => [key, drawings[0].url]),
+)
 
 const art = (key: string): string => {
   const url = ART[key]
@@ -37,6 +60,17 @@ const art = (key: string): string => {
     throw new Error(`No artwork for ${key}`)
   }
   return url
+}
+
+/**
+ * Undefined rather than an empty string when a stem was drawn once, so the attribute is absent
+ * instead of present and empty.
+ */
+const artSrcset = (key: string): string | undefined => {
+  const set = (DRAWINGS[key] ?? [])
+    .filter((drawing) => drawing.width > 0)
+    .map((drawing) => `${drawing.url} ${drawing.width}w`)
+  return set.length > 1 ? set.join(', ') : undefined
 }
 
 export type DragonMood = 'idle' | 'victorious' | 'defeated'
@@ -97,4 +131,8 @@ export const iconArt = (name: IconName): string => art(`icons/${name}`)
 
 export const backdropArt = art('scene/backdrop')
 
+export const backdropSrcset = artSrcset('scene/backdrop')
+
 export const wordmarkArt = art('title/wordmark')
+
+export const wordmarkSrcset = artSrcset('title/wordmark')

@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { backdropArt, crestArt, dragonArt, itemArt, wordmarkArt } from './artwork'
+import {
+  backdropArt,
+  backdropSrcset,
+  crestArt,
+  dragonArt,
+  itemArt,
+  wordmarkArt,
+  wordmarkSrcset,
+} from './artwork'
 import ch from './art/items/ch.svg?url'
 import cs from './art/items/cs.svg?url'
 import gas from './art/items/gas.svg?url'
@@ -15,8 +23,10 @@ import wingpotmax from './art/items/wingpotmax.svg?url'
 import defeated from './art/dragon/defeated.webp?url'
 import idle from './art/dragon/idle.webp?url'
 import victorious from './art/dragon/victorious.webp?url'
-import backdrop from './art/scene/backdrop.webp?url'
-import wordmark from './art/title/wordmark.webp?url'
+import backdrop from './art/scene/backdrop@1920.webp?url'
+import backdropNarrow from './art/scene/backdrop@960.webp?url'
+import wordmark from './art/title/wordmark@1580.webp?url'
+import wordmarkNarrow from './art/title/wordmark@800.webp?url'
 
 /**
  * Every id recon measured. The shop offers a subset of these and never anything else, so this
@@ -81,5 +91,16 @@ describe('the artwork registry', () => {
 
   it('has the wordmark the heading is drawn with', () => {
     expect(wordmarkArt).toBe(wordmark)
+  })
+
+  /**
+   * The widths are declared by filename, so this asserts the parse as much as the set: a stem
+   * drawn at several widths is still one stem, and the widest of them is what `src` resolves to.
+   * A stem drawn once has no set at all — a single-format drop-in replacement must not leave an
+   * empty `srcset` behind it.
+   */
+  it('offers every width it was drawn at, widest first', () => {
+    expect(wordmarkSrcset).toBe(`${wordmark} 1580w, ${wordmarkNarrow} 800w`)
+    expect(backdropSrcset).toBe(`${backdrop} 1920w, ${backdropNarrow} 960w`)
   })
 })

@@ -15,7 +15,7 @@ import MessageBanner from './components/MessageBanner.vue'
 import MissionResult from './components/MissionResult.vue'
 import ReputationPanel from './components/ReputationPanel.vue'
 import ShopPanel from './components/ShopPanel.vue'
-import { wordmarkArt, type IconName } from './assets/artwork'
+import { wordmarkArt, wordmarkSrcset, type IconName } from './assets/artwork'
 import { useBoardView } from './advisor/boardView'
 import type { PendingKind } from './components/MissionResult.vue'
 import { present } from './api/errorPresentation'
@@ -179,10 +179,14 @@ const banner = computed(() => {
         <h1>
           <img
             :src="wordmarkArt"
+            :srcset="wordmarkSrcset"
+            sizes="(min-width: 44rem) 42rem, calc(100vw - 2rem)"
             alt=""
             aria-hidden="true"
             width="1344"
             height="394"
+            fetchpriority="high"
+            decoding="async"
             class="h-auto w-full max-w-2xl drop-shadow-sm"
           />
           <span class="sr-only">Dragons of Mugloar</span>
