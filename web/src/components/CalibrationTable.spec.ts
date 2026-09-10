@@ -23,8 +23,8 @@ function render(rows: CalibrationRow[], attempts = 10, games = 1) {
 }
 
 describe('CalibrationTable', () => {
-  it('says what it has and has not seen before anyone opens it', () => {
-    expect(render([], 0, 0).text()).toContain('nothing attempted yet')
+  it('says how much it has seen before it says anything about the model', () => {
+    expect(render([], 0, 0).text()).toContain('Nothing attempted yet')
     expect(render([aRow()], 24, 3).text()).toContain('24 jobs across 3 games')
   })
 

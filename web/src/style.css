@@ -60,6 +60,22 @@
   --color-oak-deep: oklch(62% 0.026 70);
   --color-brass: oklch(76% 0.1 86);
 
+  /* The advisor's table. Baize is the fourth material and the only cloth: timber is the world's
+     furniture, leather is the app's own machine, paper is what the world posts, and wool is the
+     table a counsellor lays a board out on. It never carries text — the working sheet laid on it
+     does — so `baize` itself is outside the measured palette, exactly as the timber is.
+
+     `advisor` is its ink, and it is bounded rather than exempt: it rules the sheet, heads the
+     tally and rims the read on every card, all of which are cream grounds. Measured on both,
+     7.04:1 on `surface` and 8.34:1 on `surface-raised`.
+
+     Its chroma is the load-bearing number. Hue cannot separate it from `success`, which sits two
+     degrees away and is the word "Yes" inside the very box this colour rims — so the separation is
+     the one the accent already makes against danger: a little over two fifths of the chroma, and
+     six points darker. Muted ink beside a plainly chromatic verdict. */
+  --color-baize: oklch(43% 0.05 152);
+  --color-advisor: oklch(38% 0.04 152);
+
   /* The binding. Leather is the ledger's spine and the bed the mechanism is bolted to, and it is
      the second colour in the app that never carries text — everything laid on it brings its own
      ground, exactly as the timber's does. It was a literal in the log's spine until the auto-play
@@ -195,6 +211,41 @@ body {
   box-shadow:
     inset 0 0 0 1px oklch(20% 0.02 50 / 0.6),
     inset 0 0 26px oklch(18% 0.025 50 / 0.45),
+    0 2px 6px oklch(30% 0.028 52 / 0.4);
+}
+
+/**
+ * The counsellor's table: wool baize with a nap, the fourth and last material.
+ *
+ * Cloth rather than a fifth kind of wood, and that is the whole reason it is here. The advisor is
+ * not part of the world the way the message board and the shopfront are — it is an opinion the app
+ * offers about them — so it had to read as furniture in the room rather than as another surface on
+ * the street. Nothing else in the app is woven, so it separates from timber, leather and paper
+ * without spending a loud colour on the job.
+ *
+ * The nap is the fibre tile at two pitches, one fine and one coarse, and it is the only figure
+ * there is: baize has no grain to draw. A milled or ruled figure would have made it wood again.
+ *
+ * Nothing is ever read against it. The working sheet laid on it brings its own ground, and the
+ * header's own words are cream — measured against this surface, since here there is no sheet under
+ * them.
+ */
+@utility baize {
+  border-radius: 0.5rem;
+  background-color: var(--color-baize);
+  background-image:
+    radial-gradient(75% 60% at 25% 20%, oklch(50% 0.055 150 / 0.6), transparent 72%),
+    radial-gradient(60% 70% at 82% 84%, oklch(33% 0.04 152 / 0.55), transparent 70%),
+    var(--parchment-grain), var(--parchment-grain);
+  background-size:
+    auto,
+    auto,
+    40px 40px,
+    7px 7px;
+  background-blend-mode: normal, normal, multiply, multiply;
+  box-shadow:
+    inset 0 0 0 1px oklch(24% 0.03 150 / 0.7),
+    inset 0 0 22px oklch(20% 0.03 150 / 0.4),
     0 2px 6px oklch(30% 0.028 52 / 0.4);
 }
 

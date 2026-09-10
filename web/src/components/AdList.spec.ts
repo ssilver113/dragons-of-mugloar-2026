@@ -2,25 +2,30 @@ import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import AdList from './AdList.vue'
 import { anAd } from '../test/fixtures'
+import type { BoardEntry } from '../advisor/boardView'
 import type { AdView } from '../api/types'
 import type { RequestStatus } from '../stores/game'
 
+/**
+ * The list is handed a ranked board now; who ranked it and how is `useBoardView`'s business and is
+ * tested there. What is left here is the states the section can be in and the events it raises.
+ */
+const plain = (ads: AdView[]): BoardEntry[] => ads.map((ad) => ({ ad, read: null }))
+
 function render(props: {
-  ads?: AdView[]
+  entries?: BoardEntry[]
+  total?: number
   status: RequestStatus
   advisor?: boolean
-  lives?: number
   disabled?: boolean
-  holding?: boolean
 }) {
   return mount(AdList, {
     props: {
-      ads: [],
+      entries: [],
+      total: props.entries?.length ?? 0,
       solvingAdId: null,
       advisor: false,
-      lives: 3,
       disabled: false,
-      holding: false,
       ...props,
     },
   })
@@ -28,23 +33,6 @@ function render(props: {
 
 const messages = (list: ReturnType<typeof render>) =>
   list.findAll('[aria-label^="Solve:"]').map((button) => button.attributes('aria-label'))
-
-/** Three ads that rank differently under every sort the toolbar offers. */
-const RICH = anAd({
-  adId: 'rich',
-  message: 'Rich',
-  reward: 400,
-  successProbability: 0.15,
-  expiresIn: 2,
-})
-const SAFE = anAd({
-  adId: 'safe',
-  message: 'Safe',
-  reward: 50,
-  successProbability: 0.86,
-  expiresIn: 5,
-})
-const MID = anAd({ adId: 'mid', message: 'Mid', reward: 30, successProbability: 0.8, expiresIn: 9 })
 
 describe('AdList', () => {
   it('shows a skeleton and announces the wait while the first board loads', () => {
@@ -55,13 +43,16 @@ describe('AdList', () => {
   })
 
   it('keeps the board on screen while a refetch is in flight', () => {
-    const list = render({ status: 'pending', ads: [anAd({ message: 'Rescue the cat' })] })
+    const list = render({
+      status: 'pending',
+      entries: plain([anAd({ message: 'Rescue the cat' })]),
+    })
 
     expect(list.text()).toContain('Rescue the cat')
     expect(list.find('ul[aria-hidden="true"]').exists()).toBe(false)
   })
 
-  it('offers a way out when the board could not be loaded', async () => {
+  it('offers a way back when the board could not be loaded at all', async () => {
     const list = render({ status: 'error' })
 
     expect(list.find('[role="alert"]').text()).toContain('could not be loaded')
@@ -69,163 +60,46 @@ describe('AdList', () => {
     expect(list.emitted('refresh')).toHaveLength(1)
   })
 
-  it('says so plainly when the board is empty', () => {
-    const list = render({ status: 'ready' })
-
-    expect(list.text()).toContain('No ads on the board right now')
+  it('says an empty board is empty rather than still loading', () => {
+    expect(render({ status: 'ready' }).text()).toContain('No ads on the board right now')
   })
 
-  it('renders one card per ad and reports which one was picked', async () => {
+  it('tells the player the board is filtered rather than empty', () => {
+    const list = render({ status: 'ready', entries: [], total: 3, advisor: true })
+
+    expect(list.text()).toContain('Every job on the board is filtered out')
+    expect(list.text()).not.toContain('No ads on the board')
+  })
+
+  it('draws the board in the order it is handed, and asks for a job by id', async () => {
     const list = render({
       status: 'ready',
-      ads: [anAd({ adId: 'a1', message: 'Steal the gold' }), anAd({ adId: 'a2' })],
+      entries: plain([
+        anAd({ adId: 'a1', message: 'Steal the gold' }),
+        anAd({ adId: 'a2', message: 'Rescue the cat' }),
+      ]),
     })
 
-    expect(list.findAll('li')).toHaveLength(2)
+    expect(messages(list)).toEqual(['Solve: Steal the gold', 'Solve: Rescue the cat'])
+
     await list.get('[aria-label="Solve: Steal the gold"]').trigger('click')
     expect(list.emitted('solve')).toEqual([['a1']])
   })
 
-  it('locks every control that spends a turn, and leaves the advisor alone', () => {
-    const list = render({ status: 'ready', ads: [anAd()], disabled: true })
+  it('locks every control that spends a turn', () => {
+    const list = render({ status: 'ready', entries: plain([anAd()]), disabled: true })
 
-    const spending = list.findAll('button').filter((b) => b.attributes('role') !== 'switch')
-    expect(spending.length).toBeGreaterThan(0)
-    expect(spending.every((button) => button.attributes('disabled') !== undefined)).toBe(true)
-
-    // The advisor costs nothing upstream. Turning it on to reconsider the board is exactly what a
-    // player wants to do while the dragon is out, so it is the one control that stays live.
-    expect(list.get('[role="switch"]').attributes('disabled')).toBeUndefined()
+    const buttons = list.findAll('button')
+    expect(buttons.length).toBeGreaterThan(0)
+    expect(buttons.every((button) => button.attributes('disabled') !== undefined)).toBe(true)
   })
 
-  it('holds the board still for the length of a turn, then changes it once', async () => {
-    const list = render({
-      status: 'ready',
-      ads: [anAd({ adId: 'a1', message: 'Steal the gold' })],
-      advisor: true,
-      lives: 3,
-    })
-
-    // A turn starts: the optimistic board and the figures the response brings both land while
-    // this is true, and neither may move a card.
-    await list.setProps({
-      holding: true,
-      ads: [anAd({ adId: 'a2', message: 'Rescue the cat' })],
-      lives: 2,
-    })
-    expect(messages(list)).toEqual(['Solve: Steal the gold'])
-
-    // The turn's own board arrives, and that is the one change the player sees.
-    await list.setProps({ holding: false })
-    expect(messages(list)).toEqual(['Solve: Rescue the cat'])
-  })
-
-  it('offers the advisor as an opt-in and says what the current order means', async () => {
-    const list = render({ status: 'ready', ads: [anAd()] })
-
-    const toggle = list.get('[role="switch"]')
-    expect(toggle.attributes('aria-checked')).toBe('false')
-    expect(list.text()).toContain('as the board posted them')
-
-    await toggle.trigger('click')
-    expect(list.emitted('toggle-advisor')).toHaveLength(1)
-
-    expect(
-      render({ status: 'ready', ads: [anAd()], advisor: true })
-        .get('[role="switch"]')
-        .attributes('aria-checked'),
-    ).toBe('true')
-  })
-
-  it('says the ranking is the advisor’s once it is on', () => {
-    const list = render({ status: 'ready', ads: [anAd()], advisor: true })
-
-    expect(list.text()).toContain('ranked by what the advisor thinks')
-  })
-
-  it('keeps the toolbar behind the advisor toggle, like the rest of the advice', () => {
-    expect(
-      render({ status: 'ready', ads: [anAd()] })
-        .find('#ad-sort')
-        .exists(),
-    ).toBe(false)
-    expect(
-      render({ status: 'ready', ads: [anAd()], advisor: true })
-        .find('#ad-sort')
-        .exists(),
-    ).toBe(true)
-  })
-})
-
-describe('AdList ranking', () => {
-  const board = { status: 'ready' as const, ads: [RICH, SAFE, MID], advisor: true }
-
-  it('leaves the board as the game posted it while the advisor is off', () => {
-    expect(messages(render({ ...board, advisor: false }))).toEqual([
-      'Solve: Rich',
-      'Solve: Safe',
-      'Solve: Mid',
-    ])
-  })
-
-  it('ranks by what an ad is worth once the risk is priced in, by default', () => {
-    expect(messages(render(board))).toEqual(['Solve: Safe', 'Solve: Mid', 'Solve: Rich'])
-  })
-
-  it('re-ranks on the sort the player picks', async () => {
-    const list = render(board)
-
-    await list.get('#ad-sort').setValue('reward')
-
-    expect(messages(list)).toEqual(['Solve: Rich', 'Solve: Safe', 'Solve: Mid'])
-  })
-
-  it('re-orders as turns age the board, so the ad about to vanish rises on its own', async () => {
-    const list = render(board)
-    await list.get('#ad-sort').setValue('expiry')
-    expect(messages(list)).toEqual(['Solve: Rich', 'Solve: Safe', 'Solve: Mid'])
-
-    // A turn has passed: the board comes back a turn older, and MID is now the urgent one.
-    await list.setProps({
-      ads: [
-        { ...RICH, expiresIn: 8 },
-        { ...SAFE, expiresIn: 4 },
-        { ...MID, expiresIn: 1 },
-      ],
-    })
-
-    expect(messages(list)).toEqual(['Solve: Mid', 'Solve: Safe', 'Solve: Rich'])
-  })
-
-  it('re-ranks under a different risk posture without asking the server anything', async () => {
-    const list = render({ ...board, ads: [SAFE, MID], lives: 1 })
-    // The advisor's red "No": one job here does not cover its own risk while a life costs 300g.
-    expect(list.findAll('dd.text-danger')).toHaveLength(1)
-
-    await list.get('input[name="posture"][value="bold"]').setValue()
-
-    expect(list.findAll('dd.text-danger')).toHaveLength(0)
-  })
-
-  it('filters the board down and offers the way back', async () => {
-    const list = render(board)
-
-    await list.get('input[type="checkbox"][value="expiring"]').setValue(true)
-
-    expect(messages(list)).toEqual(['Solve: Rich'])
-    expect(list.text()).toContain('Showing 1 of 3 jobs, 2 filtered out')
-
-    await list.get('[role="status"] button').trigger('click')
-
-    expect(messages(list)).toHaveLength(3)
-  })
-
-  it('tells the player the board is filtered rather than empty', async () => {
-    const list = render({ ...board, ads: [RICH] })
-
-    await list.get('input[type="checkbox"][value="worthwhile"]').setValue(true)
-
-    expect(list.text()).toContain('Every job on the board is filtered out')
-    expect(list.text()).not.toContain('No ads on the board')
+  it('says whose order the board is in', () => {
+    expect(render({ status: 'ready', entries: plain([anAd()]) }).text()).toContain(
+      'as the board posted them',
+    )
+    expect(render({ status: 'ready', entries: plain([anAd()]), advisor: true }).text()).toContain(
+      'ranked by what the advisor thinks',
+    )
   })
 })

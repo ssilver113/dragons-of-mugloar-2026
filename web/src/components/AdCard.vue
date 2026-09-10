@@ -109,21 +109,37 @@ const hoverable = computed(() => !unsendable.value && !props.disabled)
       </div>
     </dl>
 
-    <!-- Everything below is our reading of the board, not the game's. It says so. -->
-    <div v-if="read && band" class="rounded-md border border-accent/40 bg-surface/70 p-3">
-      <p class="text-xs font-semibold uppercase tracking-wide text-accent">Advisor's read</p>
-      <dl class="mt-1.5 grid grid-cols-2 gap-x-4 gap-y-1 text-sm sm:grid-cols-3">
-        <div>
+    <!--
+      Everything below is our reading of the board, not the game's. It says so, and it is the
+      advisor's own green rather than the accent every action on the page uses — the same ink as
+      the box at the foot of the board, so a player can see at a glance which marks on a card come
+      from the advisor and which come from the game.
+
+      Three rows rather than three columns. Across, each label sat over its own figure in a column
+      barely wider than the words, so `Payout on average` wrapped to two lines on most cards and the
+      three readings never lined up between one card and the next. Down, the labels are one column,
+      the figures are another, and the three are read as a list of answers to the same question.
+    -->
+    <div v-if="read && band" class="advisor-read">
+      <!--
+        No mark beside it. The icon set carries its own baked palette, as the crests and the item
+        drawings do, so the eye is drawn in the world's warm brown — a small russet blob against a
+        green label, on a card too small to make an argument for it. The colour is the tie to the
+        box at the foot of the board; the words are the rest.
+      -->
+      <p class="text-xs font-semibold uppercase tracking-wide text-advisor">Advisor's read</p>
+      <dl class="mt-1.5 text-sm">
+        <div class="row">
           <dt class="text-xs text-ink-muted">Chance</dt>
           <dd class="tabular-nums">{{ chance }}</dd>
         </div>
-        <div>
+        <div class="row">
           <dt class="text-xs text-ink-muted">Payout on average</dt>
           <dd class="tabular-nums">{{ payout }}</dd>
         </div>
-        <div>
+        <div class="row">
           <dt class="text-xs text-ink-muted">Worth the risk</dt>
-          <dd class="flex items-baseline gap-1.5" :class="band.class">
+          <dd class="flex items-baseline justify-end gap-1.5" :class="band.class">
             <span class="font-semibold">{{ band.text }}</span>
             <span class="text-xs tabular-nums">{{ value }}</span>
           </dd>
@@ -172,6 +188,45 @@ const hoverable = computed(() => !unsendable.value && !props.disabled)
 </template>
 
 <style scoped>
+/**
+ * The advisor's slip on the sheet. Its rim and its rules are the advisor's ink, so what belongs to
+ * the advisor is one colour across the whole page: this box, the table it heads, and the cloth the
+ * controls sit on at the foot of the board.
+ *
+ * A wash of the same ink rather than a flat fill, so the paper's own blotches and fibre still show
+ * through it. Ads are never tinted — what the advisor thinks is said in words, not in the colour of
+ * the sheet — and this is not the sheet: it is a slip laid on it.
+ */
+.advisor-read {
+  border: 1px solid color-mix(in oklab, var(--color-advisor) 42%, transparent);
+  border-radius: 4px;
+  background-image: linear-gradient(
+    color-mix(in oklab, var(--color-advisor) 9%, transparent),
+    color-mix(in oklab, var(--color-advisor) 4%, transparent)
+  );
+  padding: 0.625rem 0.6875rem;
+}
+
+/**
+ * Label left, figure right, ruled between. The rule is the advisor's ink at a fifth, which is what
+ * keeps three readings legible as a table without drawing a grid on a scrap of paper.
+ */
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 0.75rem;
+  padding: 0.1875rem 0;
+}
+
+.row + .row {
+  border-top: 1px solid color-mix(in oklab, var(--color-advisor) 20%, transparent);
+}
+
+.row dd {
+  text-align: right;
+}
+
 /**
  * Pinned rather than stacked. The tilt and the tack are one idea: paper hangs from a single point,
  * so it hangs slightly crooked, and the crookedness is what stops ten sheets reading as ten boxes.

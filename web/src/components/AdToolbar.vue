@@ -23,13 +23,21 @@ const lifeCostGold = computed(() => Math.round(props.lifeCost))
 </script>
 
 <template>
-  <div class="panel flex flex-col gap-3 p-3">
+  <!--
+    No surface of its own. This used to be a panel above the first card; it is now the top half of
+    the advisor's working sheet, and a panel inside a panel is a box drawn twice.
+  -->
+  <div class="flex flex-col gap-3">
     <div class="flex flex-wrap items-end gap-x-6 gap-y-3">
       <div class="flex flex-col gap-1">
         <label for="ad-sort" class="text-xs font-medium text-ink-muted">Sort by</label>
+        <!--
+          `pr-7` rather than an even `px-2`: the chevron the browser draws for a select sits inside
+          the padding box, so with equal padding it had its nose against the rim.
+        -->
         <select
           id="ad-sort"
-          class="relief rounded-md border border-ink-muted/40 bg-surface px-2 py-1.5 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          class="relief rounded-md border border-ink-muted/40 bg-surface py-1.5 pr-7 pl-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-advisor"
           :value="sort"
           @change="$emit('update:sort', ($event.target as HTMLSelectElement).value as SortKey)"
         >
@@ -49,12 +57,12 @@ const lifeCostGold = computed(() => Math.round(props.lifeCost))
           <label
             v-for="(option, index) in POSTURES"
             :key="option.id"
-            class="cursor-pointer px-3 py-1.5 text-sm focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-accent"
+            class="cursor-pointer px-3 py-1.5 text-sm focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-advisor"
             :class="[
               index === 0 ? 'rounded-l-md' : '',
               index === POSTURES.length - 1 ? 'rounded-r-md' : 'border-r border-ink-muted/40',
               posture === option.id
-                ? 'relief-pressed bg-accent font-semibold text-surface'
+                ? 'relief-pressed bg-advisor font-semibold text-surface'
                 : 'text-ink-muted',
             ]"
           >
@@ -88,7 +96,7 @@ const lifeCostGold = computed(() => Math.round(props.lifeCost))
         >
           <input
             type="checkbox"
-            class="size-4 accent-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+            class="size-4 accent-advisor focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-advisor"
             :value="filter.id"
             :checked="filters.includes(filter.id)"
             @change="$emit('toggle-filter', filter.id)"
@@ -102,7 +110,7 @@ const lifeCostGold = computed(() => Math.round(props.lifeCost))
       <span>Showing {{ shown }} of {{ total }} jobs, {{ hidden }} filtered out.</span>
       <button
         type="button"
-        class="relief rounded border border-ink-muted/40 bg-surface-raised/60 px-2 py-0.5 hover:border-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        class="relief rounded border border-ink-muted/40 bg-surface-raised/60 px-2 py-0.5 hover:border-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-advisor"
         @click="$emit('clear-filters')"
       >
         Clear filters

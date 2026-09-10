@@ -266,7 +266,11 @@ function onSpeed(event: Event): void {
   position: relative;
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
+  /* Centred, not on the baseline. The heading is itself a flex row with the cog in it, and a flex
+     container takes its baseline from its first item — the cog, whose baseline is its bottom edge.
+     So aligning on baselines lined the reading up with the bottom of a picture rather than with
+     the word beside it, and the two sat a couple of pixels apart. */
+  align-items: center;
   gap: 0.25rem 0.625rem;
   padding: 0.4rem 0.9rem 0.45rem;
   border-radius: 2px;

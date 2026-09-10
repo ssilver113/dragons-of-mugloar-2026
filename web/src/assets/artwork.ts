@@ -85,6 +85,12 @@ export function itemArt(itemId: string, livesGained: number, levelsGained: numbe
 
 export const dragonArt = (mood: DragonMood): string => art(`dragon/${mood}`)
 
+/**
+ * The advisor. A second dragon rather than a person: the only character the game has is a dragon,
+ * and an old one at a writing desk says "this is your dragon's counsel" without a caption.
+ */
+export const advisorArt = art('advisor/scribe')
+
 export const crestArt = (faction: Faction): string => art(`crests/${faction}`)
 
 export const iconArt = (name: IconName): string => art(`icons/${name}`)

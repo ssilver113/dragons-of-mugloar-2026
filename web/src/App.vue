@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
 import AdList from './components/AdList.vue'
+import AdvisorPanel from './components/AdvisorPanel.vue'
 import AppBackdrop from './components/AppBackdrop.vue'
 import PaperFilters from './components/PaperFilters.vue'
 import AppIcon from './components/AppIcon.vue'
@@ -14,6 +15,7 @@ import MissionResult from './components/MissionResult.vue'
 import ReputationPanel from './components/ReputationPanel.vue'
 import ShopPanel from './components/ShopPanel.vue'
 import { wordmarkArt, type IconName } from './assets/artwork'
+import { useBoardView } from './advisor/boardView'
 import type { PendingKind } from './components/MissionResult.vue'
 import { present } from './api/errorPresentation'
 import { useGameStore } from './stores/game'
@@ -26,6 +28,17 @@ const calibration = useCalibrationStore()
 
 const starting = computed(() => store.startStatus === 'pending')
 const outcome = computed(() => store.lastOutcome)
+
+/**
+ * How the board is ranked, held here because two siblings need it: the advisor's table, which sets
+ * it, and the list, which is drawn from it. Neither owns it any more.
+ */
+const boardView = useBoardView({
+  ads: computed(() => store.ads),
+  lives: computed(() => store.game?.lives ?? 1),
+  advisor: computed(() => store.advisorEnabled),
+  holding: computed(() => store.acting),
+})
 
 /**
  * A reload is not a new game. The id of the one in progress outlives the page, and neither
@@ -328,17 +341,46 @@ const banner = computed(() => {
         @retry="autoPlay.run()"
       />
 
-      <CalibrationTable
-        v-if="calibration.attempts"
-        :rows="calibration.rows"
-        :attempts="calibration.attempts"
-        :games="calibration.games"
-        @reset="calibration.reset()"
-      />
+      <!--
+        The advisor's box goes with the board, so on the end screen the tally is on its own. It
+        carries no surface of its own any more, which is why the panel is here rather than in it.
+      -->
+      <section v-if="calibration.attempts" class="panel p-4">
+        <CalibrationTable
+          :rows="calibration.rows"
+          :attempts="calibration.attempts"
+          :games="calibration.games"
+          @reset="calibration.reset()"
+        />
+      </section>
     </template>
 
     <template v-else>
       <MissionResult :pending="pending" :solver-running="autoPlay.running" :outcome="banner" />
+
+      <!--
+        Above both columns, because it governs both and because opening it must not shove one of
+        them down while the other stands still. It is on every tab of the mobile switch for the
+        same reason: the ranking it sets is what the board below is drawn in.
+      -->
+      <AdvisorPanel
+        :advisor="store.advisorEnabled"
+        :sort="boardView.sort.value"
+        :posture="boardView.posture.value"
+        :filters="boardView.filters.value"
+        :shown="boardView.shown.value"
+        :total="boardView.total.value"
+        :life-cost="boardView.lifeCost.value"
+        :rows="calibration.rows"
+        :attempts="calibration.attempts"
+        :games="calibration.games"
+        @toggle-advisor="store.toggleAdvisor()"
+        @update:sort="boardView.sort.value = $event"
+        @update:posture="boardView.posture.value = $event"
+        @toggle-filter="boardView.toggleFilter($event)"
+        @clear-filters="boardView.clearFilters()"
+        @reset-calibration="calibration.reset()"
+      />
 
       <div class="panel flex gap-1 p-1 lg:hidden" role="group" aria-label="Choose what to show">
         <button
@@ -389,27 +431,16 @@ const banner = computed(() => {
         :class="view === 'solver' ? 'hidden lg:grid' : 'grid'"
       >
         <div :class="onlyOnMobile('board')" class="min-w-0">
-          <div class="flex flex-col gap-4">
-            <AdList
-              :ads="store.ads"
-              :status="store.boardStatus"
-              :solving-ad-id="store.solvingAdId"
-              :advisor="store.advisorEnabled"
-              :lives="store.game?.lives ?? 1"
-              :disabled="store.busy || autoPlay.active"
-              :holding="store.acting"
-              @solve="store.solve($event)"
-              @refresh="store.refreshAds()"
-              @toggle-advisor="store.toggleAdvisor()"
-            />
-            <CalibrationTable
-              v-if="store.advisorEnabled"
-              :rows="calibration.rows"
-              :attempts="calibration.attempts"
-              :games="calibration.games"
-              @reset="calibration.reset()"
-            />
-          </div>
+          <AdList
+            :entries="boardView.entries.value"
+            :total="boardView.total.value"
+            :status="store.boardStatus"
+            :solving-ad-id="store.solvingAdId"
+            :advisor="store.advisorEnabled"
+            :disabled="store.busy || autoPlay.active"
+            @solve="store.solve($event)"
+            @refresh="store.refreshAds()"
+          />
         </div>
         <!--
           The stack is a level in, as it is in the board column: `lg:block` and `flex` are both
