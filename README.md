@@ -29,7 +29,7 @@ to publish on a different host port.
 
 ### Without Docker
 
-Java 21 and Node 24. Gradle is not required; the wrapper is committed.
+Java 21 and Node 24 (`.nvmrc` pins it). Gradle is not required; the wrapper is committed.
 
 ```bash
 cd api && ./gradlew bootRun
@@ -170,3 +170,7 @@ Underneath, the advisor's calibration — what it predicted against how those jo
 and the decision log, each turn expandable into the whole board as the solver ranked it.
 
 ![Advisor calibration and the solver's decision log](docs/images/calibration-and-decision-log.jpg)
+
+## Licence
+
+MIT. See [LICENSE](LICENSE).
