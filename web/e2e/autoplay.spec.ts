@@ -43,7 +43,11 @@ test('a run can be stopped between turns', async ({ page }) => {
   await page.getByRole('button', { name: 'Run' }).click()
   await expect(page.getByText('Running. The solver is taking every turn.')).toBeVisible()
 
-  await page.getByRole('button', { name: 'Pause' }).click()
+  // Forced, because the button is never still enough for the actionability check on WebKit: the
+  // drive sits below the board, every turn's new ads change the height above it, and WebKit paints
+  // this page at roughly one and a half frames a second while a run is on. Playwright wants two
+  // consecutive frames with an unchanged box and there is no such pair inside a turn.
+  await page.getByRole('button', { name: 'Pause' }).click({ force: true })
 
   await expect(
     page.getByText('Idle. The solver takes a turn only when you ask it to.'),
