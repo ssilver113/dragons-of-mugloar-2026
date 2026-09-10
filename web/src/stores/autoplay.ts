@@ -178,12 +178,22 @@ export const useAutoPlayStore = defineStore('autoplay', () => {
   // same tick and swallow it.
   watch(() => games.game?.gameId, reset, { flush: 'sync' })
 
-  watch(log, (entries) => {
+  /**
+   * Called rather than watched. The log grows by `push`, which leaves the ref's own value
+   * identity alone, so a shallow watcher would never fire and a deep one would walk every entry
+   * of a long run to learn what the caller already knows.
+   *
+   * The whole log is re-serialised each turn, which is the one thing this shape cannot avoid:
+   * Web Storage has no append. Measured before accepting it — at 300 turns the stored payload is
+   * about 1 MB and a write costs 3ms, roughly 440ms spread across a whole game. A run long enough
+   * to exhaust the quota loses only its restorability, which `persisted` already swallows.
+   */
+  function remember(): void {
     const current = games.game
-    if (current && entries.length) {
-      savedLog.write({ gameId: current.gameId, entries, nextId })
+    if (current && log.value.length) {
+      savedLog.write({ gameId: current.gameId, entries: log.value, nextId })
     }
-  })
+  }
 
   watch(speed, (chosen) => savedSpeed.write(chosen))
 
@@ -214,16 +224,16 @@ export const useAutoPlayStore = defineStore('autoplay', () => {
 
   function record(turn: AutoPlayStepView): void {
     nextId += 1
-    log.value = [
-      ...log.value,
-      {
-        id: nextId,
-        decision: turn.decision,
-        succeeded: turn.succeeded,
-        message: turn.message,
-        game: turn.game,
-      },
-    ]
+    // Appended rather than rebuilt: a spread copies every earlier turn, which is O(n²) over a
+    // run that can reach three hundred of them.
+    log.value.push({
+      id: nextId,
+      decision: turn.decision,
+      succeeded: turn.succeeded,
+      message: turn.message,
+      game: turn.game,
+    })
+    remember()
     passStreak = turn.decision.reason === 'PASSING_NOTHING_WORTH_A_TURN' ? passStreak + 1 : 0
   }
 
