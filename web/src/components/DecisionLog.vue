@@ -39,59 +39,66 @@ const hidden = computed(() => props.entries.length - shown.value.length)
 </script>
 
 <template>
-  <section aria-labelledby="log-heading" class="flex flex-col gap-3">
-    <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-      <h2
-        id="log-heading"
-        class="flex items-center gap-1.5 text-base font-semibold sm:gap-2 sm:text-lg"
-      >
-        <AppIcon name="log" :size="20" class="size-4 sm:size-5" />
-        Decision log
-      </h2>
-      <p v-if="entries.length" class="text-xs text-ink-muted">
-        {{ entries.length }} turn{{ entries.length === 1 ? '' : 's' }}, newest first
-      </p>
-    </div>
-
-    <MessageBanner
-      v-if="halt?.kind === 'stalled'"
-      tone="info"
-      title="The solver has stopped to check in"
-    >
-      It passed {{ halt.passes }} turns in a row — nothing on the board was worth a life and nothing
-      in the shop was affordable. Passing is safe, so the game will not end on its own.
-      <button
-        type="button"
-        class="ml-1 rounded font-semibold text-accent underline hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-        @click="$emit('keep-going')"
-      >
-        Keep going anyway
-      </button>
-    </MessageBanner>
-
-    <MessageBanner v-else-if="halt?.kind === 'error'" tone="error" title="The run stopped">
-      {{ halt.error.message }}
-      <button
-        v-if="resumable"
-        type="button"
-        class="ml-1 rounded font-semibold text-accent underline hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-        @click="$emit('retry')"
-      >
-        Try again
-      </button>
-    </MessageBanner>
-
+  <section aria-labelledby="log-heading">
     <!--
       The binding says nothing and is out of the tree for the same reason the shop's rail is: to a
       screen reader this section is a heading, a list of turns and a button.
     -->
     <div class="volume ledger">
-      <div class="spine" aria-hidden="true">
+      <div class="spine leather" aria-hidden="true">
         <span class="band band-head" /><span class="band band-tail" />
       </div>
 
+      <!--
+        The running head, printed on the page rather than floating above the book. It was outside
+        the volume until the volume was laid on timber, where nothing is ever read against the wood
+        and a heading above the book would have needed a ground of its own. A ledger carries its
+        title on its first page in any case.
+      -->
+      <div class="running-head">
+        <h2 id="log-heading" class="flex items-center gap-1.5 text-base font-semibold sm:gap-2">
+          <AppIcon name="log" :size="20" class="size-4 sm:size-5" />
+          Decision log
+        </h2>
+        <p v-if="entries.length" class="text-xs text-ink-muted">
+          {{ entries.length }} turn{{ entries.length === 1 ? '' : 's' }}, newest first
+        </p>
+      </div>
+
+      <!-- Laid on the page, for the same reason, and because a halt is answered from here: the
+           way out belongs with the record of what stopped. -->
+      <div v-if="halt && halt.kind !== 'finished'" class="p-3">
+        <MessageBanner
+          v-if="halt.kind === 'stalled'"
+          tone="info"
+          title="The solver has stopped to check in"
+        >
+          It passed {{ halt.passes }} turns in a row — nothing on the board was worth a life and
+          nothing in the shop was affordable. Passing is safe, so the game will not end on its own.
+          <button
+            type="button"
+            class="ml-1 rounded font-semibold text-accent underline hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+            @click="$emit('keep-going')"
+          >
+            Keep going anyway
+          </button>
+        </MessageBanner>
+
+        <MessageBanner v-else-if="halt.kind === 'error'" tone="error" title="The run stopped">
+          {{ halt.error.message }}
+          <button
+            v-if="resumable"
+            type="button"
+            class="ml-1 rounded font-semibold text-accent underline hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+            @click="$emit('retry')"
+          >
+            Try again
+          </button>
+        </MessageBanner>
+      </div>
+
       <p v-if="!entries.length" class="p-6 text-center text-ink-muted">
-        No automatic turns taken yet. Open Auto-Play and press Run to hand the game over, or Step to
+        No automatic turns taken yet. Press Run on the drive above to hand the game over, or Step to
         watch one turn at a time.
       </p>
 
@@ -147,21 +154,25 @@ const hidden = computed(() => props.entries.length - shown.value.length)
   inset: 0 auto 0 0;
   width: 2.4rem;
   border-radius: 3px 0 0 3px;
-  background-color: oklch(38% 0.045 40);
-  background-image:
-    repeating-linear-gradient(180deg, oklch(100% 0 0 / 0.05) 0 2px, transparent 2px 7px),
-    radial-gradient(80% 40% at 30% 20%, oklch(48% 0.05 40 / 0.6), transparent 70%),
-    var(--parchment-grain);
-  background-size:
-    auto,
-    auto,
-    70px 70px;
-  background-blend-mode: normal, normal, multiply;
-  /* Leather is the only thing here that never carries text, so it is outside the measured palette
-     exactly as the timber is. */
+  /* The hide itself is the `leather` utility. Leather never carries text, so it is outside the
+     measured palette exactly as the timber the book now lies on is. */
   box-shadow:
     inset -6px 0 8px oklch(20% 0.03 40 / 0.45),
     inset 1px 0 0 oklch(100% 0 0 / 0.12);
+}
+
+/**
+ * The running head. Ruled off from the entries below it, which is the one rule on this page that is
+ * not a column: everything under it is the record, and this line is what the record is called.
+ */
+.running-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.25rem 1rem;
+  padding: 0.6rem 0.7rem 0.5rem;
+  border-bottom: 1px solid color-mix(in oklab, var(--color-ink-muted) 25%, transparent);
 }
 
 /**
@@ -213,6 +224,11 @@ const hidden = computed(() => props.entries.length - shown.value.length)
 
   display: none;
   border-top: 1px solid color-mix(in oklab, var(--color-ink-muted) 35%, transparent);
+  /* Unless the running head has already ruled off above it, where the two rules meet with nothing
+     between them and read as one thick line rather than as two. */
+  &:where(.running-head + *) {
+    border-top: none;
+  }
   border-bottom: 3px double color-mix(in oklab, var(--color-ink-muted) 35%, transparent);
   font-size: 0.64rem;
   letter-spacing: 0.09em;

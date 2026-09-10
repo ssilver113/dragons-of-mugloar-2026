@@ -75,31 +75,30 @@ describe('AutoPlayControls', () => {
     expect(buttonLabelled(controls, 'Pause')?.element).toBe(before)
   })
 
-  /** A player opening the game is here to play it, not to hand it straight over to the solver. */
-  it('starts folded away', () => {
-    expect(render().get('details').attributes('open')).toBeUndefined()
-  })
+  /**
+   * The plate is what stays on screen when the machine is pinned to the top of a wide window and
+   * the sentence below it has scrolled away, so it has to distinguish working from waiting from
+   * stopped on its own.
+   */
+  it('says enough on the faceplate to tell working from waiting from stopped', () => {
+    const plate = (props: Parameters<typeof render>[0]) => render(props).get('.faceplate').text()
 
-  it('says enough while folded to tell working from waiting from stopped', () => {
-    const summary = (props: Parameters<typeof render>[0]) => render(props).get('summary').text()
-
-    expect(summary({})).toContain('idle')
-    expect(summary({ running: true, turns: 12 })).toContain('running, 12 turns')
-    expect(summary({ running: true, waiting: true })).toContain('rate limited, waiting')
-    expect(summary({ halt: { kind: 'stalled', passes: 10 } })).toContain('stopped to check in')
+    expect(plate({})).toContain('idle')
+    expect(plate({ running: true, turns: 12 })).toContain('running, 12 turns')
+    expect(plate({ running: true, waiting: true })).toContain('rate limited, waiting')
+    expect(plate({ halt: { kind: 'stalled', passes: 10 } })).toContain('stopped to check in')
   })
 
   /**
-   * The buttons that answer a halt — keep going, try again — are in here, so a run that stops on
-   * its own opens the panel rather than leaving the way out behind a twisty.
+   * The machine is always open. It was a disclosure while it sat above the board, where a player
+   * arriving to play the game would have met it first; it now sits with the log it fills, out of
+   * the way of everything the player does by hand, and a twisty over the controls that answer a
+   * halt buys nothing.
    */
-  it('opens itself when the run stops, and never closes itself', async () => {
+  it('keeps the controls in the document with nothing to open', () => {
     const controls = render()
 
-    await controls.setProps({ halt: { kind: 'stalled', passes: 10 } })
-    expect(controls.get('details').attributes('open')).toBeDefined()
-
-    await controls.setProps({ halt: null })
-    expect(controls.get('details').attributes('open')).toBeDefined()
+    expect(controls.find('details').exists()).toBe(false)
+    expect(buttonLabelled(controls, 'Step')).toBeDefined()
   })
 })

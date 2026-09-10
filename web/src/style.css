@@ -60,6 +60,13 @@
   --color-oak-deep: oklch(62% 0.026 70);
   --color-brass: oklch(76% 0.1 86);
 
+  /* The binding. Leather is the ledger's spine and the bed the mechanism is bolted to, and it is
+     the second colour in the app that never carries text — everything laid on it brings its own
+     ground, exactly as the timber's does. It was a literal in the log's spine until the auto-play
+     machine had to sit on the same hide; two components cannot be trusted to agree on a colour by
+     copying it. */
+  --color-leather: oklch(38% 0.045 40);
+
   /* The log's stock, and the one cool surface in the app. Paper belongs to the world — an ad is
      torn parchment — so the record the app keeps of its own turns had to be a different material
      rather than a paler sheet of the same one: machine-made, cut square, and colder than anything
@@ -220,6 +227,51 @@ body {
     inset 0 1px 0 oklch(100% 0 0 / 0.5),
     inset 0 0 0 1px oklch(52% 0.05 66 / 0.55),
     0 2px 3px oklch(18% 0.02 50 / 0.45);
+}
+
+/**
+ * The board the solver's drive and its log are laid on: the same timber as the message board, the
+ * shopfront and the standing wall, with room left around what sits on it so the wood reads as a
+ * surface rather than as a border.
+ *
+ * The inset is a variable because two things need it. The book is simply inside it; the drive
+ * cancels it with a negative margin so that its own ground, on the one occasion it has one, reaches
+ * the edges of the board and nothing scrolls through the gap. One number, so those two cannot
+ * drift apart.
+ */
+@utility solver-board {
+  --solver-pad: 0.75rem;
+
+  padding: var(--solver-pad);
+}
+
+/**
+ * The hide. One recipe for the log's spine and for the bed the auto-play mechanism is bolted to,
+ * because they are the same binding seen from two sides and the machine now sits where the head
+ * band used to be the only thing there.
+ *
+ * The ruling is a variable rather than a fixed angle: on a spine the fine lines run across the
+ * width, on a head they run along it, and turning the grain by ninety degrees is the whole of the
+ * difference. Everything else — the ground, the worn highlight, the fibre tile — is shared, which
+ * is the point. Position, radius and the way an edge catches the light stay with the wearer.
+ */
+@utility leather {
+  --leather-ruling: 180deg;
+
+  background-color: var(--color-leather);
+  background-image:
+    repeating-linear-gradient(
+      var(--leather-ruling),
+      oklch(100% 0 0 / 0.05) 0 2px,
+      transparent 2px 7px
+    ),
+    radial-gradient(80% 40% at 30% 20%, oklch(48% 0.05 40 / 0.6), transparent 70%),
+    var(--parchment-grain);
+  background-size:
+    auto,
+    auto,
+    70px 70px;
+  background-blend-mode: normal, normal, multiply;
 }
 
 /**

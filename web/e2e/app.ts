@@ -25,16 +25,16 @@ export function jobs(page: Page): Locator {
 }
 
 /**
- * The solver's controls, which the app keeps folded away. A player arriving at the game is there
- * to play it, so the panel that hands it over starts shut and every spec that drives the solver
- * has to open it first — exactly as a player would.
+ * The solver's controls. Nothing has to be opened any more — the drive sits with the log it fills,
+ * below the board and the shop, and is on screen from the moment the game starts. The wait is what
+ * is left of the helper, and it is worth keeping: every spec that drives the solver needs the
+ * machine mounted before it presses anything.
+ *
+ * On a narrow window the drive is behind the third switch instead. These specs run at the default
+ * viewport, which is wide enough that all three columns are up at once.
  */
 export async function openAutoPlay(page: Page): Promise<void> {
-  const step = page.getByRole('button', { name: 'Step' })
-  if (!(await step.isVisible())) {
-    await page.locator('summary', { hasText: 'Auto-play' }).click()
-  }
-  await expect(step).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Step' })).toBeVisible()
 }
 
 /** Serve the API from inside the page, open the app and start a game. */

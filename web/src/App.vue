@@ -78,15 +78,19 @@ function abandon(): void {
 
 /**
  * Which part of the game is on screen — but only where they do not all fit. From `lg` up the
- * board, the shop and the log are all visible and this is inert, which is why the switch is
+ * board, the shop and the solver are all visible and this is inert, which is why the switch is
  * buttons rather than a tablist: a tab that controls nothing on a wide screen would be a lie to a
  * screen reader.
+ *
+ * The third holds the drive and the log together, because they are one thing: the log records the
+ * solver's turns and nothing else's, and a halt used to raise its alarm on this tab while the
+ * buttons that answered it sat on that one.
  */
-type Panel = 'board' | 'shop' | 'log'
+type Panel = 'board' | 'shop' | 'solver'
 const PANELS: { id: Panel; label: string; icon: IconName }[] = [
   { id: 'board', label: 'Board', icon: 'board' },
   { id: 'shop', label: 'Shop', icon: 'shop' },
-  { id: 'log', label: 'Log', icon: 'log' },
+  { id: 'solver', label: 'Auto-play', icon: 'autoplay' },
 ]
 const view = ref<Panel>('board')
 const onlyOnMobile = (panel: Panel) => (view.value === panel ? '' : 'hidden lg:block')
@@ -334,21 +338,6 @@ const banner = computed(() => {
     </template>
 
     <template v-else>
-      <AutoPlayControls
-        :running="autoPlay.running"
-        :stepping="autoPlay.stepping"
-        :waiting="autoPlay.waiting"
-        :speed="autoPlay.speed"
-        :can-play="autoPlay.canPlay"
-        :busy="store.busy"
-        :halt="autoPlay.halt"
-        :turns="autoPlay.log.length"
-        @run="autoPlay.run()"
-        @pause="autoPlay.pause()"
-        @step="autoPlay.step()"
-        @update:speed="autoPlay.speed = $event"
-      />
-
       <MissionResult :pending="pending" :solver-running="autoPlay.running" :outcome="banner" />
 
       <div class="panel flex gap-1 p-1 lg:hidden" role="group" aria-label="Choose what to show">
@@ -356,7 +345,7 @@ const banner = computed(() => {
           v-for="panel in PANELS"
           :key="panel.id"
           type="button"
-          class="flex-1 rounded-md px-3 py-1.5 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          class="relative flex-1 rounded-md px-2 py-1.5 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent sm:px-3"
           :class="
             view === panel.id
               ? 'relief-pressed bg-accent text-surface'
@@ -365,10 +354,28 @@ const banner = computed(() => {
           :aria-pressed="view === panel.id"
           @click="view = panel.id"
         >
-          <span class="flex items-center justify-center gap-1.5">
+          <!--
+            Held on one line. `Auto-play` is the longest label the row has ever carried and it wraps
+            at 375px against the padding three tabs used to be able to afford, which turns a 32px
+            switch into a 52px one.
+          -->
+          <span class="flex items-center justify-center gap-1.5 whitespace-nowrap">
             <AppIcon :name="panel.icon" :size="16" />
             {{ panel.label }}
           </span>
+          <!--
+            A halt is the one state that needs an answer, and the buttons that give it are on the
+            other side of this switch. Out of the flow, because a label already at the width of its
+            tab cannot pay for a dot; said in words as well as drawn, because a colour on its own
+            is not a message.
+          -->
+          <template v-if="panel.id === 'solver' && autoPlay.halt">
+            <span
+              class="absolute top-1 right-1 size-1.5 rounded-full bg-danger"
+              aria-hidden="true"
+            />
+            <span class="sr-only">, stopped</span>
+          </template>
         </button>
       </div>
 
@@ -379,7 +386,7 @@ const banner = computed(() => {
       -->
       <div
         class="items-start gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_20rem]"
-        :class="view === 'log' ? 'hidden lg:grid' : 'grid'"
+        :class="view === 'solver' ? 'hidden lg:grid' : 'grid'"
       >
         <div :class="onlyOnMobile('board')" class="min-w-0">
           <div class="flex flex-col gap-4">
@@ -430,13 +437,35 @@ const banner = computed(() => {
         </div>
       </div>
 
-      <div :class="onlyOnMobile('log')">
-        <DecisionLog
-          :entries="autoPlay.log"
-          :halt="autoPlay.halt"
-          @keep-going="autoPlay.keepGoing()"
-          @retry="autoPlay.run()"
-        />
+      <!--
+        The drive and the record it writes, on one board. Same timber as the message board, the
+        shopfront and the standing wall: the drive is mounted on it and the log lies on it as a
+        book, with wood left showing around both. The board is also what the drive is sticky
+        within, which is what lets Pause stay on screen while the log scrolls past during a run.
+      -->
+      <div :class="onlyOnMobile('solver')">
+        <div class="timber solver-board flex flex-col gap-3">
+          <AutoPlayControls
+            :running="autoPlay.running"
+            :stepping="autoPlay.stepping"
+            :waiting="autoPlay.waiting"
+            :speed="autoPlay.speed"
+            :can-play="autoPlay.canPlay"
+            :busy="store.busy"
+            :halt="autoPlay.halt"
+            :turns="autoPlay.log.length"
+            @run="autoPlay.run()"
+            @pause="autoPlay.pause()"
+            @step="autoPlay.step()"
+            @update:speed="autoPlay.speed = $event"
+          />
+          <DecisionLog
+            :entries="autoPlay.log"
+            :halt="autoPlay.halt"
+            @keep-going="autoPlay.keepGoing()"
+            @retry="autoPlay.run()"
+          />
+        </div>
       </div>
 
       <!--

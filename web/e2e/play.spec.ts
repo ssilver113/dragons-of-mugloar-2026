@@ -88,12 +88,13 @@ test('every control points at itself, and a disabled one does not', async ({ pag
 
   expect(await cursor('button:not(:disabled)')).toBe('pointer')
   expect(await cursor('select')).toBe('pointer')
-  expect(await cursor('summary')).toBe('pointer')
   expect(await cursor('[role="switch"]')).toBe('pointer')
   expect(await cursor('button:disabled')).toBe('not-allowed')
 
-  // The filter checkboxes and the posture radios only exist once the advisor is on.
+  // The filter checkboxes and the posture radios only exist once the advisor is on, and so does
+  // the only twisty on the page now that the solver's controls are never folded away.
   await page.getByRole('switch', { name: 'Advisor' }).click()
+  expect(await cursor('summary')).toBe('pointer')
   expect(await cursor('input[type="checkbox"]')).toBe('pointer')
   expect(await cursor('label:has(input[type="checkbox"])')).toBe('pointer')
   expect(await cursor('label:has(input[type="radio"])')).toBe('pointer')
