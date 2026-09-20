@@ -45,7 +45,7 @@ const reading = (faction: Faction): { sign: string; figure: string } => {
            control with the painting directly behind it, a ground running 0.16 to 0.55. -->
       <button
         type="button"
-        class="relief rounded-md border border-ink-muted/40 bg-surface-raised px-2.5 py-1 text-xs font-semibold text-ink enabled:hover:border-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:text-ink-muted disabled:shadow-none"
+        class="btn btn-quiet btn-opaque rounded-md px-2.5 py-1 text-xs font-semibold text-ink disabled:text-ink-muted"
         :disabled="disabled || scouting"
         @click="$emit('scout')"
       >

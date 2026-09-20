@@ -65,7 +65,7 @@ const shortfall = computed(() => props.item.cost - props.gold)
     </div>
     <button
       type="button"
-      class="relief shrink-0 rounded-md bg-brass px-3 py-1.5 text-sm font-semibold text-ink hover:brightness-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:bg-transparent disabled:bg-none disabled:text-ink disabled:shadow-none"
+      class="btn shrink-0 rounded-md bg-brass px-3 py-1.5 text-sm font-semibold text-ink hover:brightness-105 disabled:bg-transparent disabled:bg-none"
       :disabled="disabled || !affordable"
       :aria-label="
         affordable

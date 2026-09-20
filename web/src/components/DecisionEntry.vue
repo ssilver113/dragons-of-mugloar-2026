@@ -35,9 +35,7 @@ const verdictClass = (ruledOut: boolean) => (ruledOut ? 'text-ink-muted' : 'text
       <p class="text-xs text-ink-muted">{{ REASONS[decision.reason] }}</p>
 
       <details class="mt-2 border-t border-dotted border-ink-muted/35 pt-1.5">
-        <summary
-          class="cursor-pointer text-xs text-ink-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-        >
+        <summary class="focus-ring cursor-pointer text-xs text-ink-muted hover:text-ink">
           {{ weighed }}
         </summary>
 

@@ -146,7 +146,7 @@ const hoverable = computed(() => !unsendable.value && !props.disabled)
       <!-- The accessible name tracks the visible label, which is the only state change to hear. -->
       <button
         type="button"
-        class="relief rounded-md bg-accent px-3 py-1.5 text-sm font-semibold text-surface hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
+        class="btn btn-primary rounded-md px-3 py-1.5 text-sm"
         :disabled="disabled || unsendable"
         :aria-label="solving ? `Solving: ${ad.message}` : `Solve: ${ad.message}`"
         @click="$emit('solve', ad.adId)"

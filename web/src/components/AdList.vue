@@ -64,7 +64,7 @@ const filteredOut = computed(() => props.total > 0 && props.entries.length === 0
       <div class="flex items-center gap-2 sm:gap-3">
         <button
           type="button"
-          class="relief rounded-md border border-ink-muted/40 bg-surface-raised/60 px-2 py-1.5 text-xs hover:border-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none sm:px-3 sm:text-sm"
+          class="btn btn-quiet rounded-md px-2 py-1.5 text-xs disabled:opacity-40 sm:px-3 sm:text-sm"
           :disabled="disabled"
           @click="$emit('refresh')"
         >
@@ -98,7 +98,7 @@ const filteredOut = computed(() => props.total > 0 && props.entries.length === 0
       <p class="font-semibold">The message board could not be loaded.</p>
       <button
         type="button"
-        class="relief mt-2 rounded-md border border-ink-muted/40 bg-surface-raised/60 px-3 py-1.5 text-sm hover:border-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        class="btn btn-quiet mt-2 rounded-md px-3 py-1.5 text-sm"
         @click="$emit('refresh')"
       >
         Try again

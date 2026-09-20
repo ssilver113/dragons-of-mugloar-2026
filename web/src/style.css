@@ -495,6 +495,91 @@ body {
 }
 
 /**
+ * The focus ring, on its own, for the controls that are not buttons: the two `<select>`s, the
+ * filter checkboxes, a `<summary>`, the mobile panel switcher and the ending panel that takes
+ * focus when a game is over. `btn` below applies this rather than carrying a second copy of it.
+ *
+ * The colour is a property because the advisor's controls ring in the advisor's green. That is not
+ * decoration: the accent is the colour of everything that spends a turn, and the sheet the advisor
+ * lays out spends none.
+ */
+@utility focus-ring {
+  --focus-ink: var(--color-accent);
+
+  &:focus-visible {
+    outline: 2px solid var(--focus-ink);
+    outline-offset: 2px;
+  }
+}
+
+@utility focus-ring-advisor {
+  --focus-ink: var(--color-advisor);
+}
+
+/**
+ * The button, as a material — the one the material pass missed.
+ *
+ * Every other surface the app draws is named in this file: parchment, timber, oak, brass, baize,
+ * leather, ledger. The control the player actually presses was assembled by hand at each call site
+ * instead, which is how the same focus ring came to be written out twenty-two times and the same
+ * disabled treatment ten, character for character.
+ *
+ * `btn` is what every pressed control shares: the bevel, the ring, and what disabled looks like.
+ * Radius and padding stay in the markup, because a toolbar's `px-2 py-0.5` and the start screen's
+ * `px-4 py-2` differ on purpose — folding them in would only mean every call site setting a
+ * property to get its own size back.
+ */
+@utility btn {
+  @apply relief focus-ring;
+
+  &:disabled {
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+}
+
+/**
+ * The action the page is steering you towards. The one ground that brightens under the cursor
+ * rather than inking its rim, and the only one that fades when it is refused.
+ */
+@utility btn-primary {
+  background-color: var(--color-accent);
+  color: var(--color-surface);
+  font-weight: 600;
+
+  &:hover:not(:disabled) {
+    filter: brightness(1.1);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+  }
+}
+
+/**
+ * Everything else: a thin inked rim on a raised ground, darkening rather than brightening.
+ *
+ * The ground is a property and not a declaration, for the reason the panel variants are — two
+ * utilities on one element would otherwise be settled by whichever Tailwind emitted second.
+ * `btn-opaque` is the variant Standing's control needs: it is the one button with the painting
+ * directly behind it, a ground running 0.16 to 0.55 in luminance, so sixty percent is not enough.
+ */
+@utility btn-quiet {
+  --btn-ground: color-mix(in oklab, var(--color-surface-raised) 60%, transparent);
+
+  border: 1px solid color-mix(in oklab, var(--color-ink-muted) 40%, transparent);
+  background-color: var(--btn-ground);
+
+  &:hover:not(:disabled) {
+    border-color: var(--color-ink);
+  }
+}
+
+@utility btn-opaque {
+  --btn-ground: var(--color-surface-raised);
+}
+
+/**
  * A `<select>` and the arrow drawn for it.
  *
  * The browser's own arrow cannot be given room. Chrome and Safari lay it out against the right edge

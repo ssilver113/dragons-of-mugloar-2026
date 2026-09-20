@@ -154,7 +154,7 @@ function onSpeed(event: Event): void {
              keyboard focus to the top of the document on every Run. -->
         <button
           type="button"
-          class="relief rounded-md px-3 py-1.5 text-sm font-semibold text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:bg-transparent disabled:bg-none disabled:text-ink-muted disabled:shadow-none"
+          class="btn rounded-md px-3 py-1.5 text-sm font-semibold text-ink disabled:bg-transparent disabled:bg-none disabled:text-ink-muted"
           :class="
             running ? 'bg-surface-raised hover:brightness-105' : 'bg-brass hover:brightness-105'
           "
@@ -166,7 +166,7 @@ function onSpeed(event: Event): void {
 
         <button
           type="button"
-          class="relief rounded-md bg-surface-raised px-3 py-1.5 text-sm text-ink enabled:hover:brightness-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:text-ink-muted disabled:shadow-none"
+          class="btn rounded-md bg-surface-raised px-3 py-1.5 text-sm text-ink enabled:hover:brightness-105 disabled:text-ink-muted"
           :disabled="blocked"
           @click="emit('step')"
         >
@@ -179,7 +179,7 @@ function onSpeed(event: Event): void {
                `padding-right`. `pr-7` reserves the space it is drawn in. -->
           <span class="select-shell">
             <select
-              class="setting relief rounded-md py-1.5 pr-7 pl-2 text-sm text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+              class="focus-ring setting relief rounded-md py-1.5 pr-7 pl-2 text-sm text-ink"
               :value="speed"
               @change="onSpeed"
             >

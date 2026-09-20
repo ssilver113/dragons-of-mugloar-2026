@@ -66,7 +66,7 @@ const hidden = computed(() => props.entries.length - shown.value.length)
           nothing in the shop was affordable. Passing is safe, so the game will not end on its own.
           <button
             type="button"
-            class="ml-1 rounded font-semibold text-accent underline hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+            class="focus-ring ml-1 rounded font-semibold text-accent underline hover:brightness-110"
             @click="$emit('keep-going')"
           >
             Keep going anyway
@@ -78,7 +78,7 @@ const hidden = computed(() => props.entries.length - shown.value.length)
           <button
             v-if="resumable"
             type="button"
-            class="ml-1 rounded font-semibold text-accent underline hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+            class="focus-ring ml-1 rounded font-semibold text-accent underline hover:brightness-110"
             @click="$emit('retry')"
           >
             Try again
@@ -112,7 +112,7 @@ const hidden = computed(() => props.entries.length - shown.value.length)
         <div v-if="hidden > 0 || expanded" class="flex justify-center p-3">
           <button
             type="button"
-            class="relief rounded-md border border-ink-muted/40 bg-surface-raised px-3 py-1.5 text-sm text-ink-muted hover:border-ink hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+            class="btn btn-quiet btn-opaque rounded-md px-3 py-1.5 text-sm text-ink-muted hover:text-ink"
             @click="expanded = !expanded"
           >
             {{ expanded ? `Show the newest ${VISIBLE}` : `Show all ${entries.length} turns` }}

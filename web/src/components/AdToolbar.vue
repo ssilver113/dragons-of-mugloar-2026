@@ -38,7 +38,7 @@ const lifeCostGold = computed(() => Math.round(props.lifeCost))
         <span class="select-shell">
           <select
             id="ad-sort"
-            class="relief rounded-md border border-ink-muted/40 bg-surface py-1.5 pr-7 pl-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-advisor"
+            class="focus-ring focus-ring-advisor relief rounded-md border border-ink-muted/40 bg-surface py-1.5 pr-7 pl-2 text-sm"
             :value="sort"
             @change="$emit('update:sort', ($event.target as HTMLSelectElement).value as SortKey)"
           >
@@ -52,6 +52,10 @@ const lifeCostGold = computed(() => Math.round(props.lifeCost))
       <!--
         Radios, not a slider: three named stances read better than a number, and the group tells a
         screen reader what it is choosing between.
+
+        The one ring in the app not drawn by `focus-ring`: it belongs to the label and the focus
+        belongs to the `sr-only` radio inside it, so the rule has to read a descendant rather than
+        the element itself. `:focus-within` and `:focus-visible` are not the same test.
       -->
       <fieldset class="flex flex-col gap-1">
         <legend class="text-xs font-medium text-ink-muted">Risk posture</legend>
@@ -98,7 +102,7 @@ const lifeCostGold = computed(() => Math.round(props.lifeCost))
         >
           <input
             type="checkbox"
-            class="size-4 accent-advisor focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-advisor"
+            class="focus-ring focus-ring-advisor size-4 accent-advisor"
             :value="filter.id"
             :checked="filters.includes(filter.id)"
             @change="$emit('toggle-filter', filter.id)"
@@ -112,7 +116,7 @@ const lifeCostGold = computed(() => Math.round(props.lifeCost))
       <span>Showing {{ shown }} of {{ total }} jobs, {{ hidden }} filtered out.</span>
       <button
         type="button"
-        class="relief rounded border border-ink-muted/40 bg-surface-raised/60 px-2 py-0.5 hover:border-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-advisor"
+        class="btn btn-quiet focus-ring-advisor rounded px-2 py-0.5"
         @click="$emit('clear-filters')"
       >
         Clear filters

@@ -28,7 +28,7 @@ const role = computed(() => (props.tone === 'error' ? 'alert' : 'status'))
     <button
       v-if="dismissible"
       type="button"
-      class="rounded px-2 py-1 text-sm text-ink-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+      class="focus-ring rounded px-2 py-1 text-sm text-ink-muted hover:text-ink"
       @click="$emit('dismiss')"
     >
       Dismiss

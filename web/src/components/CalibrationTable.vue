@@ -124,7 +124,7 @@ const summary = computed(() =>
     <div v-if="rows.length" class="flex justify-end">
       <button
         type="button"
-        class="relief rounded-md border border-ink-muted/40 bg-surface-raised/60 px-3 py-1.5 text-xs hover:border-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-advisor"
+        class="btn btn-quiet focus-ring-advisor rounded-md px-3 py-1.5 text-xs"
         @click="$emit('reset')"
       >
         Clear the tally
