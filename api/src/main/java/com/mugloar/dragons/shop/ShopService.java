@@ -37,11 +37,8 @@ public class ShopService {
     }
 
     public ShopCatalogue listItems(String gameId) {
-        GameSession session = sessions.require(gameId);
-        return session.exclusively(() -> {
-            GameState state = session.requireRunning();
-            return new ShopCatalogue(state, fetchItems(gameId, session));
-        });
+        return sessions.exclusively(
+                gameId, (session, state) -> new ShopCatalogue(state, fetchItems(gameId, session)));
     }
 
     /**
@@ -53,21 +50,15 @@ public class ShopService {
      * looking at the shop should see what is there, not what was there.
      */
     public ShopCatalogue knownCatalogue(String gameId) {
-        GameSession session = sessions.require(gameId);
-        return session.exclusively(() -> {
-            GameState state = session.requireRunning();
-            return new ShopCatalogue(
-                    state,
-                    session.catalogue()
-                            .map(ShopService::rebuild)
-                            .orElseGet(() -> fetchItems(gameId, session)));
-        });
+        return sessions.exclusively(gameId, (session, state) -> new ShopCatalogue(
+                state,
+                session.catalogue()
+                        .map(ShopService::rebuild)
+                        .orElseGet(() -> fetchItems(gameId, session))));
     }
 
     public PurchaseOutcome buy(String gameId, String itemId) {
-        GameSession session = sessions.require(gameId);
-        return session.takeTurn(() -> {
-            GameState state = session.requireRunning();
+        return sessions.takeTurn(gameId, (session, state) -> {
             if (!session.knowsShop()) {
                 fetchItems(gameId, session);
             }

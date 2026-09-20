@@ -47,10 +47,7 @@ public class GameService {
      * one game, or auto-play racing a manual refresh, can reach that.
      */
     public AdBoard listAds(String gameId) {
-        GameSession session = sessions.require(gameId);
-        return session.exclusively(() -> {
-            GameState state = session.requireRunning();
-
+        return sessions.exclusively(gameId, (session, state) -> {
             List<EnrichedAd> ads = enricher.enrich(client.listAds(gameId), state.level());
             session.recordBoard(ads.stream().map(EnrichedAd::adId).toList());
             return new AdBoard(state, ads);
@@ -58,9 +55,7 @@ public class GameService {
     }
 
     public SolveOutcome solve(String gameId, String adId) {
-        GameSession session = sessions.require(gameId);
-        return session.takeTurn(() -> {
-            GameState state = session.requireRunning();
+        return sessions.takeTurn(gameId, (session, state) -> {
             if (!session.isKnownSolvable(adId)) {
                 throw new AdNotAvailableException(adId);
             }
@@ -87,10 +82,7 @@ public class GameService {
      * carried out only because the player paid for it and may as well see it.
      */
     public PassOutcome passTurn(String gameId) {
-        GameSession session = sessions.require(gameId);
-        return session.takeTurn(() -> {
-            GameState state = session.requireRunning();
-
+        return sessions.takeTurn(gameId, (session, state) -> {
             ReputationResponse standing = client.investigateReputation(gameId);
             GameState updated = state.afterTurnSpent();
             session.setState(updated);

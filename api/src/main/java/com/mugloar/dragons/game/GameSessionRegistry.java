@@ -5,6 +5,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiFunction;
 import org.springframework.stereotype.Component;
 
 /**
@@ -13,6 +14,12 @@ import org.springframework.stereotype.Component;
  *
  * <p>Eviction is lazy — checked on lookup, swept on registration — rather than scheduled. It costs
  * no background thread, and the only thing an unswept entry occupies is a little memory.
+ *
+ * <p>It is also how a service reaches a session at all. {@link #exclusively} and {@link #takeTurn}
+ * look the game up, take its lock and read its state inside it, in that order, so there is no
+ * expression in a service that yields a session without the lock already held. Read outside it,
+ * the state is a snapshot from before an upstream round trip, and the same omission has been
+ * found twice.
  */
 @Component
 public class GameSessionRegistry {
@@ -45,6 +52,23 @@ public class GameSessionRegistry {
         }
         session.touch(now);
         return session;
+    }
+
+    /**
+     * Run an action against a running game, holding its lock and reading its state inside it.
+     *
+     * <p>Free of a turn, not free of the lock: a listing writes the ledger a turn's guards read,
+     * and it publishes the state alongside its own answer.
+     */
+    public <T> T exclusively(String gameId, BiFunction<GameSession, GameState, T> action) {
+        GameSession session = require(gameId);
+        return session.exclusively(() -> action.apply(session, session.requireRunning()));
+    }
+
+    /** The same exclusion, named for the case that pays for it. See {@link GameSession#takeTurn}. */
+    public <T> T takeTurn(String gameId, BiFunction<GameSession, GameState, T> action) {
+        GameSession session = require(gameId);
+        return session.takeTurn(() -> action.apply(session, session.requireRunning()));
     }
 
     private void evictExpired() {

@@ -43,8 +43,11 @@ public class GameSession {
      * <p>A lock rather than the monitor above: this one is held across a network call, and the
      * client's own connect and read timeouts are what bound it. Reentrant, so a service holding
      * it may call another that wants it.
+     *
+     * <p>Package-private: a service takes it through {@link GameSessionRegistry#exclusively},
+     * which is what pairs it with the state read it exists to guard.
      */
-    public <T> T exclusively(Supplier<T> action) {
+    <T> T exclusively(Supplier<T> action) {
         turn.lock();
         try {
             return action.get();
@@ -59,7 +62,7 @@ public class GameSession {
      * rules describe — so serialising them here costs nothing real. Two interleaved would lose one
      * update, and the player would have been charged a turn that left no trace.
      */
-    public <T> T takeTurn(Supplier<T> action) {
+    <T> T takeTurn(Supplier<T> action) {
         return exclusively(action);
     }
 
