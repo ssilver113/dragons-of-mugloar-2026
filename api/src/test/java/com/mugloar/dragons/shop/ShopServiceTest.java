@@ -75,7 +75,7 @@ class ShopServiceTest {
 
         assertThat(outcome.success()).isTrue();
         assertThat(outcome.game()).isEqualTo(new GameState(GAME_ID, 3, 20, 3, 400, 10));
-        assertThat(sessions.require(GAME_ID).state().level()).isEqualTo(3);
+        assertThat(sessions.require(GAME_ID).requireRunning().level()).isEqualTo(3);
     }
 
     @Test

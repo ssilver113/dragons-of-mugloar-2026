@@ -52,7 +52,8 @@ public class GameSessionRegistry {
         sessions.values().removeIf(session -> isExpired(session, now));
     }
 
-    public int size() {
+    /** How many sessions are held. Nothing in the app asks; the eviction tests do. */
+    int size() {
         return sessions.size();
     }
 

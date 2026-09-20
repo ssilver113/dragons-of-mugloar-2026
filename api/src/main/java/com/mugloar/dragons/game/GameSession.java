@@ -63,7 +63,11 @@ public class GameSession {
         return exclusively(action);
     }
 
-    public synchronized GameState state() {
+    /**
+     * The state as it stands, finished or not. Package-private because everything that acts on a
+     * game wants {@link #requireRunning} instead; this is for asserting on one that has ended.
+     */
+    synchronized GameState state() {
         return state;
     }
 

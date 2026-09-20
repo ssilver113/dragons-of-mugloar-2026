@@ -23,7 +23,14 @@ public class MugloarException extends RuntimeException {
         this.status = status;
     }
 
-    /** The upstream HTTP status, or {@code null} when the failure happened before a response. */
+    /**
+     * The upstream HTTP status, or {@code null} when the failure happened before a response.
+     *
+     * <p>Public although nothing above reads it: the mapping to an {@code ErrorCode} is by type,
+     * and the one caller is the client's own test, which lives a package above this one. What it
+     * asserts is worth keeping — the base type is thrown for every status we do not name, so the
+     * status is the only thing separating a Cloudflare 403 from anything else that lands here.
+     */
     public @Nullable Integer status() {
         return status;
     }
