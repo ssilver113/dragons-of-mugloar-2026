@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
+import AbandonFooter from './components/AbandonFooter.vue'
 import AdList from './components/AdList.vue'
 import AdvisorPanel from './components/AdvisorPanel.vue'
 import AppBackdrop from './components/AppBackdrop.vue'
@@ -9,7 +10,7 @@ import AppIcon from './components/AppIcon.vue'
 import AutoPlayControls from './components/AutoPlayControls.vue'
 import CalibrationTable from './components/CalibrationTable.vue'
 import DecisionLog from './components/DecisionLog.vue'
-import DragonSigil from './components/DragonSigil.vue'
+import GameEnding from './components/GameEnding.vue'
 import GameStats from './components/GameStats.vue'
 import MessageBanner from './components/MessageBanner.vue'
 import MissionResult from './components/MissionResult.vue'
@@ -50,30 +51,8 @@ async function resumeInterrupted(): Promise<void> {
   }
 }
 
-/** Abandoning takes two clicks: the run it replaces is gone for good. */
-const abandoning = ref(false)
-const confirmAbandon = ref<HTMLButtonElement | null>(null)
-const startNew = ref<HTMLButtonElement | null>(null)
-
 /** Never mid-turn: one already sent would land on the game that replaced it. */
 const canAbandon = computed(() => !store.acting && !autoPlay.active)
-
-async function askToAbandon(): Promise<void> {
-  abandoning.value = true
-  await nextTick()
-  confirmAbandon.value?.focus()
-}
-
-async function keepPlaying(): Promise<void> {
-  abandoning.value = false
-  await nextTick()
-  startNew.value?.focus()
-}
-
-function abandon(): void {
-  abandoning.value = false
-  void store.startGame()
-}
 
 /**
  * Which part of the game is on screen, and inert from `lg` up where all three fit. Buttons rather
@@ -92,34 +71,6 @@ const onlyOnMobile = (panel: Panel) => (view.value === panel ? '' : 'hidden lg:b
 const failure = computed(() => {
   const e = store.error
   return e === null ? null : { ...present(e.code), message: e.message }
-})
-
-/** A lost session is not a defeat — the dragon was fine, the server stopped tracking it. */
-const ENDINGS = {
-  finished: {
-    heading: 'The dragon has fallen',
-    action: 'Play again',
-  },
-  lost: {
-    heading: 'This game was lost',
-    action: 'Start a new game',
-  },
-} as const
-
-const ended = computed(() => (store.ending === null ? null : ENDINGS[store.ending]))
-
-/** The button that ended the run has unmounted, so focus would otherwise fall to the document. */
-const endPanel = ref<HTMLElement | null>(null)
-// A game ending answers the confirmation, so the next one does not inherit a half-pressed button.
-watch(
-  () => store.playable,
-  () => (abandoning.value = false),
-)
-watch(ended, async (now, before) => {
-  if (now && !before) {
-    await nextTick()
-    endPanel.value?.focus()
-  }
 })
 
 /** The player's own moves only: the solver's arrive several a second and would strobe. */
@@ -220,7 +171,7 @@ const banner = computed(() => {
         <button
           v-if="failure.offerRefresh && store.playable"
           type="button"
-          class="ml-1 rounded font-semibold text-accent underline hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          class="focus-ring ml-1 rounded font-semibold text-accent underline hover:brightness-110"
           @click="store.refreshAds()"
         >
           Refresh the board
@@ -245,7 +196,7 @@ const banner = computed(() => {
           </p>
           <button
             type="button"
-            class="relief rounded-md bg-accent px-4 py-2 font-semibold text-surface hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
+            class="btn btn-primary rounded-md px-4 py-2"
             :disabled="starting"
             @click="store.startGame()"
           >
@@ -254,39 +205,15 @@ const banner = computed(() => {
         </section>
       </template>
 
-      <template v-else-if="ended">
-        <section
-          ref="endPanel"
-          tabindex="-1"
-          class="panel flex flex-col items-start gap-4 p-6 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-          role="status"
-        >
-          <DragonSigil
-            v-if="store.ending === 'finished'"
-            mood="defeated"
-            :size="256"
-            class="size-40 self-center sm:size-64"
-          />
-          <div class="flex flex-col gap-1">
-            <h2 class="text-lg font-semibold">{{ ended.heading }}</h2>
-            <p v-if="store.ending === 'lost'" class="text-ink-muted">
-              The server is no longer tracking this game — it aged out, or the API restarted. A
-              session is never picked back up, so the run ends here.
-            </p>
-            <p class="text-ink-muted">
-              {{ store.ending === 'lost' ? 'It was worth' : 'Final score' }}
-              {{ store.game?.score }} points after {{ store.game?.turn }} turns.
-            </p>
-          </div>
-          <button
-            type="button"
-            class="relief rounded-md bg-accent px-4 py-2 font-semibold text-surface hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
-            :disabled="starting"
-            @click="store.startGame()"
-          >
-            {{ starting ? 'Starting…' : ended.action }}
-          </button>
-        </section>
+      <!-- `store.game` is never null once there is an ending — the store derives one from the
+           other — so the second test is only what narrows the type. -->
+      <template v-else-if="store.ending && store.game">
+        <GameEnding
+          :ending="store.ending"
+          :game="store.game"
+          :starting="starting"
+          @restart="store.startGame()"
+        />
 
         <!-- The board is gone but the run is still worth reading, so the log outlives the game. -->
         <DecisionLog
@@ -338,7 +265,7 @@ const banner = computed(() => {
             v-for="panel in PANELS"
             :key="panel.id"
             type="button"
-            class="relative flex-1 rounded-md px-2 py-1.5 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent sm:px-3"
+            class="focus-ring relative flex-1 rounded-md px-2 py-1.5 text-sm font-medium sm:px-3"
             :class="
               view === panel.id
                 ? 'relief-pressed bg-accent text-surface'
@@ -433,58 +360,14 @@ const banner = computed(() => {
           </div>
         </div>
 
-        <!-- Last on the page and nowhere near the buttons that spend turns. On a sheet rather
-             than the backdrop, which runs 0.16 to 0.55 in luminance and took muted ink to 1.5:1;
-             even an 85% scrim only reaches 4.0:1. -->
-        <footer
-          class="panel mt-auto flex flex-col items-start gap-2 p-4"
-          @keydown.esc="keepPlaying()"
-        >
-          <template v-if="!abandoning">
-            <button
-              ref="startNew"
-              type="button"
-              class="relief rounded-md border border-ink-muted/40 bg-surface-raised/60 px-3 py-1.5 text-sm font-semibold text-ink-muted hover:border-ink hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
-              :disabled="!canAbandon"
-              @click="askToAbandon()"
-            >
-              Start a new game
-            </button>
-            <p class="text-sm text-ink-muted">
-              {{
-                autoPlay.active
-                  ? 'Pause the solver first — a turn already in flight would land on the new game.'
-                  : 'Ends this run and deals a fresh board. The game itself costs nothing to start.'
-              }}
-            </p>
-          </template>
-
-          <template v-else>
-            <p id="abandon-question" class="text-sm">
-              Abandon this run? It is worth {{ store.game?.score }} points after
-              {{ store.game?.turn }} turns, and cannot be picked back up.
-            </p>
-            <div class="flex flex-wrap gap-2">
-              <button
-                ref="confirmAbandon"
-                type="button"
-                class="relief rounded-md bg-accent px-3 py-1.5 text-sm font-semibold text-surface hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
-                aria-describedby="abandon-question"
-                :disabled="!canAbandon || starting"
-                @click="abandon()"
-              >
-                {{ starting ? 'Starting…' : 'Yes, start a new game' }}
-              </button>
-              <button
-                type="button"
-                class="relief rounded-md border border-ink-muted/40 bg-surface-raised/60 px-3 py-1.5 text-sm font-semibold text-ink-muted hover:border-ink hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-                @click="keepPlaying()"
-              >
-                Keep playing
-              </button>
-            </div>
-          </template>
-        </footer>
+        <AbandonFooter
+          v-if="store.game"
+          :game="store.game"
+          :can-abandon="canAbandon"
+          :starting="starting"
+          :solver-active="autoPlay.active"
+          @abandon="store.startGame()"
+        />
       </template>
     </main>
 

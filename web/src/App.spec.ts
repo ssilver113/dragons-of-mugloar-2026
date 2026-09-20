@@ -447,6 +447,43 @@ describe('abandoning a run', () => {
     expect(app.get('[aria-label="Dragon status"]').text()).toContain('615')
   })
 
+  /**
+   * The confirmation used to be reset by a watcher on the root component. It is state inside the
+   * footer now, and the footer is only rendered while a game is playable — so this asserts the
+   * thing that replaced the watcher, not the watcher.
+   */
+  it('does not carry a half-pressed question into the game that follows', async () => {
+    const dying = aGame({ lives: 1, turn: 40, score: 615 })
+    server.use(
+      http.post('/api/games', () => HttpResponse.json(dying)),
+      http.get('/api/games/:gameId/ads', () =>
+        HttpResponse.json({ game: dying, ads: [anAd({ adId: 'last' })] }),
+      ),
+      http.get('/api/games/:gameId/shop', () => HttpResponse.json({ game: dying, items: [] })),
+      http.post('/api/games/:gameId/ads/:adId/solve', () =>
+        HttpResponse.json({
+          game: aGame({ lives: 0, turn: 41, score: 615, finished: true }),
+          adId: 'last',
+          success: false,
+          message: 'You failed on the mission!',
+        }),
+      ),
+    )
+    const app = render()
+    await app.get('button').trigger('click')
+    await flushPromises()
+
+    await buttonLabelled(app, 'Start a new game')?.trigger('click')
+    expect(app.text()).toContain('Abandon this run?')
+
+    await app.get('[aria-label^="Solve:"]').trigger('click')
+    await flushPromises()
+
+    expect(app.text()).toContain('The dragon has fallen')
+    expect(app.text()).not.toContain('Abandon this run?')
+    expect(buttonLabelled(app, 'Yes, start a new game')).toBeUndefined()
+  })
+
   it('deals a fresh board once the answer is yes', async () => {
     const app = await playing()
     const fresh = aGame({ gameId: 'newGameId', turn: 0, score: 0 })
