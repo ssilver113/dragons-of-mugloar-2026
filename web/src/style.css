@@ -517,6 +517,43 @@ body {
 }
 
 /**
+ * The keyboard's own way past the board.
+ *
+ * From `lg` up the board, the shop and the drive are all on screen together, so reaching the shop
+ * means tabbing the board's ten Solve buttons first. Below `lg` there is nothing to skip: the
+ * switcher shows one panel and hides the rest, and a hidden panel is not in the tab order — which
+ * is why the bar is gated in the markup rather than here.
+ *
+ * The bar is what moves, not the links. Tabbing between the three then happens inside something
+ * already on screen, instead of one link at a time flashing in and out. `translate` is what parks
+ * it out of sight: it stays in the tree the whole time, because being reachable is the point, and
+ * an element moved this way cannot be scrolled back into view by accident.
+ */
+@utility skip-links {
+  position: absolute;
+  top: 0.5rem;
+  left: 1rem;
+  z-index: 50;
+  gap: 0.375rem;
+  translate: 0 -150%;
+
+  &:focus-within {
+    translate: 0 0;
+  }
+}
+
+/* A button in everything but the element: it sits over the painting, so it takes the opaque one. */
+@utility skip-link {
+  @apply btn btn-quiet btn-opaque;
+
+  border-radius: 0.375rem;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/**
  * The button, as a material — the one the material pass missed.
  *
  * Every other surface the app draws is named in this file: parchment, timber, oak, brass, baize,

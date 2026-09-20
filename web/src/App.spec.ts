@@ -147,6 +147,72 @@ describe('App', () => {
     expect(shop?.attributes('aria-pressed')).toBe('true')
   })
 
+  /**
+   * The links and the targets are asserted together on purpose: a skip link is the one control
+   * that fails silently, because a target that has been renamed or unmounted still leaves a link
+   * that looks and reads exactly right.
+   */
+  it('offers the keyboard a way past the board, to targets that are really there', async () => {
+    server.use(
+      http.post('/api/games', () => HttpResponse.json(aGame())),
+      http.get('/api/games/:gameId/ads', () => HttpResponse.json({ game: aGame(), ads: [anAd()] })),
+      http.get('/api/games/:gameId/shop', () =>
+        HttpResponse.json({ game: aGame(), items: [anItem()] }),
+      ),
+    )
+    const app = render()
+
+    await app.get('button').trigger('click')
+    await flushPromises()
+
+    const links = app.findAll('nav[aria-label="Skip to"] a')
+    // The switcher's own three names, so the keyboard and the phone are told the same thing.
+    expect(links.map((link) => link.text())).toEqual(['Board', 'Shop', 'Auto-play'])
+
+    for (const link of links) {
+      const target = app.find(`#${link.attributes('href')?.slice(1)}`)
+      expect(target.exists()).toBe(true)
+      // Without this the link would scroll the column into view and leave focus behind it.
+      expect(target.attributes('tabindex')).toBe('-1')
+    }
+  })
+
+  it('has nothing to skip to before a game is dealt', async () => {
+    const app = render()
+    await flushPromises()
+
+    expect(app.find('nav[aria-label="Skip to"]').exists()).toBe(false)
+  })
+
+  it('takes the skip links away with the board they pointed at', async () => {
+    const dying = aGame({ lives: 1 })
+    server.use(
+      http.post('/api/games', () => HttpResponse.json(dying)),
+      http.get('/api/games/:gameId/ads', () =>
+        HttpResponse.json({ game: dying, ads: [anAd({ adId: 'last', message: 'One last job' })] }),
+      ),
+      http.get('/api/games/:gameId/shop', () => HttpResponse.json({ game: dying, items: [] })),
+      http.post('/api/games/:gameId/ads/:adId/solve', () =>
+        HttpResponse.json({
+          game: aGame({ lives: 0, finished: true }),
+          adId: 'last',
+          success: false,
+          message: 'You failed on the mission!',
+        }),
+      ),
+    )
+    const app = render()
+
+    await app.get('button').trigger('click')
+    await flushPromises()
+    expect(app.find('nav[aria-label="Skip to"]').exists()).toBe(true)
+
+    await app.get('[aria-label="Solve: One last job"]').trigger('click')
+    await flushPromises()
+
+    expect(app.find('nav[aria-label="Skip to"]').exists()).toBe(false)
+  })
+
   it('buys an item and shows the dragon getting stronger', async () => {
     // One mutable state, so the board refetch that follows a purchase reports the new purse
     // rather than handing back the one the game started with.

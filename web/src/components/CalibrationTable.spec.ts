@@ -52,6 +52,39 @@ describe('CalibrationTable', () => {
     expect(table.text()).not.toContain('too cautious')
   })
 
+  /**
+   * The table was 400px wide inside a 290px sheet, so on a phone it scrolled sideways instead of
+   * fitting. Asserted as intent per column rather than as a width, because the width is the
+   * browser's answer and this is the question put to it.
+   */
+  it('stands three columns down below `sm` rather than scrolling six of them sideways', () => {
+    const table = render([aRow()])
+
+    const headers = table
+      .findAll('thead th')
+      .map((th) => ({ column: th.text(), onAPhone: !th.classes('hidden') }))
+
+    expect(headers).toEqual([
+      { column: 'Odds', onAPhone: true },
+      { column: 'Tier', onAPhone: false },
+      { column: 'Tried', onAPhone: false },
+      { column: 'Model said', onAPhone: true },
+      { column: 'Actually', onAPhone: true },
+      { column: 'Verdict', onAPhone: true },
+    ])
+
+    // The floor that forced the scroll, now applied from `sm` up only.
+    expect(table.get('table').classes()).toContain('sm:min-w-100')
+    expect(table.get('table').classes()).not.toContain('min-w-100')
+
+    // Nothing was actually lost with `Tried`: it is the denominator the next column prints.
+    expect(table.get('tbody tr').text()).toContain('9/10')
+  })
+
+  it('lets a keyboard scroll the table for the widths where it still overflows', () => {
+    expect(render([aRow()]).get('.overflow-x-auto').attributes('tabindex')).toBe('0')
+  })
+
   it('offers a way to start the tally over, but only once there is one', () => {
     expect(render([], 0, 0).text()).not.toContain('Clear the tally')
 

@@ -123,7 +123,18 @@ const banner = computed(() => {
 
   <!-- Owns the page height, so the footer lands under the board on a long page and at the bottom
        of the window on a short one. -->
-  <div class="mx-auto flex min-h-dvh max-w-6xl flex-col gap-6 px-4 py-8">
+  <div class="relative mx-auto flex min-h-dvh max-w-6xl flex-col gap-6 px-4 py-8">
+    <!-- The same three names the switcher below uses, for the input the switcher does not serve:
+         from `lg` up all three panels are on screen, so a keyboard reaches the shop only after the
+         board's ten Solve buttons. Below `lg` the switcher hides the other two, and a hidden panel
+         is not in the tab order, so there is nothing to skip. Each target carries `tabindex="-1"`
+         so the link lands focus in the column rather than only scrolling to it. -->
+    <nav v-if="store.playable" class="skip-links hidden lg:flex" aria-label="Skip to">
+      <a v-for="panel in PANELS" :key="panel.id" :href="`#${panel.id}`" class="skip-link">
+        {{ panel.label }}
+      </a>
+    </nav>
+
     <main class="flex flex-1 flex-col gap-6">
       <header class="flex flex-col items-center gap-1 text-center">
         <!-- The name is a drawing, not type, so the words stay for the accessibility tree. -->
@@ -298,7 +309,12 @@ const banner = computed(() => {
           class="items-start gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_20rem]"
           :class="view === 'solver' ? 'hidden lg:grid' : 'grid'"
         >
-          <div :class="onlyOnMobile('board')" class="min-w-0">
+          <div
+            id="board"
+            tabindex="-1"
+            :class="onlyOnMobile('board')"
+            class="focus-ring min-w-0 rounded-md"
+          >
             <AdList
               :entries="boardView.entries.value"
               :total="boardView.total.value"
@@ -312,7 +328,12 @@ const banner = computed(() => {
           </div>
           <!-- The stack is a level in: `lg:block` and `flex` are both display utilities and the
                variant is emitted later, so one element could not carry both. -->
-          <div :class="onlyOnMobile('shop')" class="min-w-0">
+          <div
+            id="shop"
+            tabindex="-1"
+            :class="onlyOnMobile('shop')"
+            class="focus-ring min-w-0 rounded-md"
+          >
             <div class="flex flex-col gap-4">
               <ShopPanel
                 :items="store.shopItems"
@@ -335,7 +356,12 @@ const banner = computed(() => {
 
         <!-- The drive and the record it writes, on one board — which is also the box the drive
              is sticky within, so Pause stays on screen while the log scrolls past. -->
-        <div :class="onlyOnMobile('solver')">
+        <div
+          id="solver"
+          tabindex="-1"
+          :class="onlyOnMobile('solver')"
+          class="focus-ring rounded-md"
+        >
           <div class="timber solver-board flex flex-col gap-3">
             <AutoPlayControls
               :running="autoPlay.running"

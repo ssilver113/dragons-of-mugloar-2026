@@ -65,16 +65,24 @@ const summary = computed(() =>
       Solve a job and the first row appears here.
     </p>
 
-    <div v-else class="overflow-x-auto">
-      <table class="w-full min-w-100 border-collapse text-sm">
+    <!-- The scroller stays after the reduction below, because a large root type size can still
+         overflow it, and it is focusable so a keyboard can reach what scrolled out of view. -->
+    <div v-else tabindex="0" class="focus-ring focus-ring-advisor overflow-x-auto rounded">
+      <!-- Three columns stand down below `sm`, where the sheet leaves the table about 290px and
+           six will not fit in it: the tier (each label belongs to exactly one, so the label
+           already says it), the attempt count (already the denominator of the column beside it)
+           and the bar, which is decoration the two percentages carry the meaning of. -->
+      <table class="w-full border-collapse text-sm sm:min-w-100">
         <caption class="sr-only">
           Predicted against observed success rate, by probability label
         </caption>
         <thead>
           <tr class="border-b border-advisor/30 text-left text-xs text-ink-muted">
             <th scope="col" class="py-1.5 pr-3 font-medium">Odds</th>
-            <th scope="col" class="py-1.5 pr-3 font-medium">Tier</th>
-            <th scope="col" class="py-1.5 pr-3 text-right font-medium">Tried</th>
+            <th scope="col" class="hidden py-1.5 pr-3 font-medium sm:table-cell">Tier</th>
+            <th scope="col" class="hidden py-1.5 pr-3 text-right font-medium sm:table-cell">
+              Tried
+            </th>
             <th scope="col" class="py-1.5 pr-3 text-right font-medium">Model said</th>
             <th scope="col" class="py-1.5 pr-3 text-right font-medium">Actually</th>
             <th scope="col" class="py-1.5 font-medium">Verdict</th>
@@ -88,10 +96,14 @@ const summary = computed(() =>
             :class="{ 'text-ink-muted': !row.enough }"
           >
             <th scope="row" class="py-1.5 pr-3 text-left font-normal">{{ row.label }}</th>
-            <td class="py-1.5 pr-3 text-xs uppercase tracking-wide text-ink-muted">
+            <td
+              class="hidden py-1.5 pr-3 text-xs uppercase tracking-wide text-ink-muted sm:table-cell"
+            >
               {{ row.tier }}
             </td>
-            <td class="py-1.5 pr-3 text-right tabular-nums">{{ row.attempts }}</td>
+            <td class="hidden py-1.5 pr-3 text-right tabular-nums sm:table-cell">
+              {{ row.attempts }}
+            </td>
             <td class="py-1.5 pr-3 text-right tabular-nums">{{ percent(row.predicted) }}</td>
             <td class="py-1.5 pr-3 text-right tabular-nums">
               {{ row.successes }}/{{ row.attempts }} · {{ percent(row.observed) }}
@@ -102,7 +114,7 @@ const summary = computed(() =>
                 <!-- The bar is decoration; the two percentage columns are the accessible truth. -->
                 <span
                   aria-hidden="true"
-                  class="relative h-1.5 w-16 shrink-0 rounded-full bg-ink-muted/20"
+                  class="relative hidden h-1.5 w-16 shrink-0 rounded-full bg-ink-muted/20 sm:block"
                 >
                   <span
                     class="absolute inset-y-0 left-0 rounded-full bg-advisor"
