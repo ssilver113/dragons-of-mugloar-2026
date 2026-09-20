@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import AdCard from './AdCard.vue'
 import AppIcon from './AppIcon.vue'
+import PanelStatus from './PanelStatus.vue'
 import type { BoardEntry } from '../advisor/boardView'
 import type { RequestStatus } from '../stores/game'
 
@@ -71,63 +72,56 @@ const filteredOut = computed(() => props.total > 0 && props.entries.length === 0
         </button>
       </div>
     </div>
-    <!--
-      Always in the tree, with the sentence written into it rather than mounted with it. A live
-      region inserted at the same moment as its content is not reliably announced — the assistive
-      technology has to be watching the node before the text lands in it.
-    -->
-    <p class="sr-only" role="status">{{ loading ? 'Loading the message board.' : '' }}</p>
+    <PanelStatus
+      :loading="loading"
+      :failed="failed"
+      loading-message="Loading the message board."
+      failure-message="The message board could not be loaded."
+      @retry="$emit('refresh')"
+    >
+      <template #skeleton>
+        <ul class="flex flex-col gap-3" aria-hidden="true">
+          <li
+            v-for="n in 3"
+            :key="n"
+            class="h-40 rounded-lg bg-surface-raised motion-safe:animate-pulse sm:h-32"
+          />
+        </ul>
+      </template>
 
-    <ul v-if="loading" class="flex flex-col gap-3" aria-hidden="true">
-      <li
-        v-for="n in 3"
-        :key="n"
-        class="h-40 rounded-lg bg-surface-raised motion-safe:animate-pulse sm:h-32"
-      />
-    </ul>
-    <div v-else-if="failed" class="panel panel-danger p-4" role="alert">
-      <p class="font-semibold">The message board could not be loaded.</p>
-      <button
-        type="button"
-        class="btn btn-quiet mt-2 rounded-md px-3 py-1.5 text-sm"
-        @click="$emit('refresh')"
-      >
-        Try again
-      </button>
-    </div>
-
-    <!--
-      One change a turn, and it is a movement rather than a cut: the cards that survive glide to
-      where the new board puts them, and the ones that arrive fade in behind them. A card that
-      leaves goes at once — the job was taken, and its Solve button has been saying so.
-    -->
-    <div v-else class="board timber">
       <!--
-        A board with nothing on it is still a board, so the notice is laid on the timber rather
-        than beside it. On a sheet, because nothing is ever read against this surface — and on the
-        world's own paper, because what is missing here is paper: the sheet the board would be
-        carrying if it had one.
+        One change a turn, and it is a movement rather than a cut: the cards that survive glide to
+        where the new board puts them, and the ones that arrive fade in behind them. A card that
+        leaves goes at once — the job was taken, and its Solve button has been saying so.
       -->
-      <p v-if="empty" class="parchment torn p-6 text-center text-ink-muted">
-        No ads on the board right now. Refresh to see what comes in.
-      </p>
+      <div class="board timber">
+        <!--
+          A board with nothing on it is still a board, so the notice is laid on the timber rather
+          than beside it. On a sheet, because nothing is ever read against this surface — and on
+          the world's own paper, because what is missing here is paper: the sheet the board would
+          be carrying if it had one.
+        -->
+        <p v-if="empty" class="parchment torn p-6 text-center text-ink-muted">
+          No ads on the board right now. Refresh to see what comes in.
+        </p>
 
-      <p v-else-if="filteredOut" class="parchment torn p-6 text-center text-ink-muted">
-        Every job on the board is filtered out. Loosen the filters to see them.
-      </p>
+        <p v-else-if="filteredOut" class="parchment torn p-6 text-center text-ink-muted">
+          Every job on the board is filtered out. Loosen the filters to see them.
+        </p>
 
-      <TransitionGroup v-else tag="ul" name="card" class="grid gap-3 sm:grid-cols-2">
-        <AdCard
-          v-for="entry in entries"
-          :key="entry.ad.adId"
-          :ad="entry.ad"
-          :read="entry.read"
-          :solving="entry.ad.adId === solvingAdId"
-          :disabled="disabled"
-          @solve="$emit('solve', $event)"
-        />
-      </TransitionGroup>
-    </div>
+        <TransitionGroup v-else tag="ul" name="card" class="grid gap-3 sm:grid-cols-2">
+          <AdCard
+            v-for="entry in entries"
+            :key="entry.ad.adId"
+            :ad="entry.ad"
+            :read="entry.read"
+            :solving="entry.ad.adId === solvingAdId"
+            :disabled="disabled"
+            @solve="$emit('solve', $event)"
+          />
+        </TransitionGroup>
+      </div>
+    </PanelStatus>
   </section>
 </template>
 

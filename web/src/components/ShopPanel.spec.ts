@@ -25,6 +25,18 @@ describe('ShopPanel', () => {
     expect(shop.find('[aria-hidden="true"]').exists()).toBe(true)
   })
 
+  /**
+   * The board has always done this and the shop did not: its live region was mounted alongside
+   * its own sentence, which is the one arrangement that is not reliably announced. Both panels
+   * share `PanelStatus` now, so this is the assertion that keeps them sharing it.
+   */
+  it('keeps the live region in the tree when there is nothing to announce', () => {
+    const shop = render({ status: 'ready', gold: 500, items: [anItem()] })
+
+    expect(shop.find('[role="status"]').exists()).toBe(true)
+    expect(shop.find('[role="status"]').text()).toBe('')
+  })
+
   it('offers a way out when the catalogue could not be loaded', async () => {
     const shop = render({ status: 'error' })
 
