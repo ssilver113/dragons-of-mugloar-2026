@@ -77,3 +77,38 @@ jobs:
           name: playwright-report
           path: web/playwright-report
           retention-days: 7
+
+  container:
+    name: container (Docker, boot and smoke)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # The command the README leads with, run as written rather than reassembled out of buildx
+      # and a cache, so what CI proves is what a reviewer will type. --wait holds until the image's
+      # own healthcheck reports UP, which makes a green step mean the jar started.
+      - run: docker compose up --build --detach --wait --wait-timeout 300
+      # What a healthy boot cannot tell you: the healthcheck runs inside the container against
+      # localhost, and an image whose web stage copied nothing still passes it. These go through
+      # the published port, and through the parts of the image only a request reaches.
+      - name: Smoke the published port
+        run: |
+          set -euo pipefail
+          page="$RUNNER_TEMP/index.html"
+          curl -fsS http://localhost:8081/actuator/health | grep -q '"status":"UP"'
+          # The bundle crosses a stage boundary as a directory copy, so serve the page and one
+          # hashed asset off it — the copy is the glue most able to rot without anything noticing.
+          curl -fsS http://localhost:8081/ -o "$page"
+          grep -q '<div id="app">' "$page"
+          # Held in a variable rather than substituted inline: an unmatched grep would otherwise
+          # leave the bare origin, which serves the page again and answers 200 either way.
+          asset=$(grep -m1 -o '/assets/index-[A-Za-z0-9_-]*\.js' "$page")
+          curl -fsS "http://localhost:8081$asset" -o /dev/null
+          # The API answers from inside the fat jar, and the shipped default still plays the real
+          # game — an image that quietly shipped the simulation would look identical until scored.
+          curl -fsS http://localhost:8081/api/meta | grep -q '"offline":false'
+          curl -fsS http://localhost:8081/v3/api-docs | grep -q '/api/games'
+      - name: Container logs
+        if: failure()
+        run: docker compose logs --no-color
+      - if: always()
+        run: docker compose down
