@@ -47,6 +47,19 @@ describe('persisted values', () => {
     expect(persisted<Kept>('session', 'test.kept').read()).toBeNull()
   })
 
+  // The read's mirror of the write below: the guard has to be as wide as this file's opening
+  // sentence says it is, which means the `getItem` call itself, not only the parse after it.
+  it('carries on when the browser refuses the read', () => {
+    const getItem = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new DOMException('denied', 'SecurityError')
+    })
+    const slot = persisted<Kept>('local', 'test.kept')
+
+    expect(slot.read()).toBeNull()
+    expect(getItem).toHaveBeenCalled()
+    getItem.mockRestore()
+  })
+
   it('carries on when the browser refuses the write', () => {
     const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new DOMException('quota', 'QuotaExceededError')

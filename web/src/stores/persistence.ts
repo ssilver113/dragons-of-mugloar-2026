@@ -24,11 +24,11 @@ export type StorageArea = 'session' | 'local'
 export function persisted<T>(area: StorageArea, key: string): Persisted<T> {
   return {
     read: () => {
-      const raw = storage(area)?.getItem(key)
-      if (!raw) {
-        return null
-      }
       try {
+        const raw = storage(area)?.getItem(key)
+        if (!raw) {
+          return null
+        }
         const envelope = JSON.parse(raw) as Envelope<T>
         return envelope?.version === VERSION ? envelope.value : null
       } catch {

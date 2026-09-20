@@ -69,7 +69,8 @@ python api/tools/build-board-corpus.py
 
 **An offline score is not evidence about the real game.** Solves are drawn against the same
 estimator the solver scores with, so it is right by construction — the distribution behind the
-1000-point claim comes from live play. Medians do track (4,332 offline against 4,830 live), but
+1000-point claim comes from live play. Medians do track (4,332 offline against 4,830 live, both on
+the 40-game recording run above — a separate sample from the 50 games behind the claim below), but
 offline games starve at low level far more often. `mugloar.offline.seed` makes a game reproducible.
 
 ## Architecture
@@ -134,7 +135,9 @@ a life and nothing in the shop is affordable, the solver scouts instead.
 
 The brief asks for "at least 1000 points". Across **50 games played end to end against the live
 API at the configuration this repository ships, none finished below 1000** — the lowest was 2700
-and the median 4329. To reproduce a distribution yourself:
+and the median 4329, pooled across all fifty. That pool is a different, larger sample than the
+40-game recording run quoted under Playing offline, which is why the live median there differs. To
+reproduce a distribution yourself:
 
 ```bash
 cd api && ./gradlew bench -Pgames=50

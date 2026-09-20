@@ -41,6 +41,8 @@ const badges = computed(() =>
 const warnings = computed(() => props.ad.flags.flatMap((flag) => ADVISOR_FLAGS[flag] ?? []))
 
 // Deliberately imprecise: the estimate is a fit, and a bare "85%" would claim more than we know.
+// The decision log is the deliberate exception: it prints the bare percent because it is a record
+// of what the solver ranked, and banding would make two ads it separated look identical.
 const chance = computed(() => `~${Math.round(props.ad.successProbability * 20) * 5}%`)
 const payout = computed(() => `~${Math.round(props.ad.expectedValue)}g`)
 const turns = computed(() => `${props.ad.expiresIn} ${props.ad.expiresIn === 1 ? 'turn' : 'turns'}`)

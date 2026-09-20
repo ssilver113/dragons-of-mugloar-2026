@@ -67,8 +67,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   try {
     response = await fetch(path, {
       headers: { Accept: 'application/json' },
-      signal: AbortSignal.timeout(DEADLINE_MS),
       ...init,
+      // Last on purpose: a caller's own `init` must not be able to replace the deadline.
+      signal: AbortSignal.timeout(DEADLINE_MS),
     })
   } catch (cause) {
     throw timedOut(cause)
