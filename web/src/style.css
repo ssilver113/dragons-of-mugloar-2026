@@ -474,6 +474,42 @@ body {
 }
 
 /**
+ * The collar — paper brought to the glyph, instead of the glyph moved onto paper.
+ *
+ * The painting runs 0.16 to 0.55 in luminance and takes muted ink to 1.5:1, which no scrim fixes:
+ * swept over the whole plate, 45% gives 1.5, 70% gives 2.8, and 85% — which would erase the
+ * painting — reaches only 4.0. The alternative was a sheet under every line, which is three more
+ * stacked surfaces and a heading separated from the description it heads. So the ground travels
+ * with the letterform instead: a stroke of the app's own paper, against which the text measures
+ * what it would measure on a panel. Over the pale mist the stroke is invisible, which is the point
+ * — it does nothing at all until the treeline arrives underneath it.
+ *
+ * `paint-order` is what makes it a collar rather than a hollowing-out. Without it the stroke paints
+ * over the fill and eats the letterform from both sides, which is worse than no stroke at all —
+ * hence the `@supports` gate. The fallback is the same idea built from eight offset shadows, which
+ * paint behind the glyph by definition. The soft pass does no contrast work; it only stops the
+ * collar reading as a cut-out where the backdrop goes dark.
+ */
+@utility collar {
+  text-shadow:
+    1px 0 0 var(--color-surface),
+    -1px 0 0 var(--color-surface),
+    0 1px 0 var(--color-surface),
+    0 -1px 0 var(--color-surface),
+    1px 1px 0 var(--color-surface),
+    -1px 1px 0 var(--color-surface),
+    1px -1px 0 var(--color-surface),
+    -1px -1px 0 var(--color-surface),
+    0 0 8px color-mix(in oklab, var(--color-surface) 70%, transparent);
+
+  @supports (paint-order: stroke) {
+    paint-order: stroke fill;
+    -webkit-text-stroke: var(--collar-width, 4px) var(--color-surface);
+    text-shadow: 0 0 8px color-mix(in oklab, var(--color-surface) 70%, transparent);
+  }
+}
+
+/**
  * The relief a control had before flat design: a light top edge, a dark bottom one, and a shadow
  * beneath it. Applied to the control's own background rather than replacing it, so a button keeps
  * whatever token it was given and gains the bevel on top.

@@ -16,7 +16,6 @@ function render(props: {
   entries?: BoardEntry[]
   total?: number
   status: RequestStatus
-  advisor?: boolean
   disabled?: boolean
 }) {
   return mount(AdList, {
@@ -24,7 +23,6 @@ function render(props: {
       entries: [],
       total: props.entries?.length ?? 0,
       solvingAdId: null,
-      advisor: false,
       disabled: false,
       ...props,
     },
@@ -79,7 +77,7 @@ describe('AdList', () => {
   })
 
   it('tells the player the board is filtered rather than empty', () => {
-    const list = render({ status: 'ready', entries: [], total: 3, advisor: true })
+    const list = render({ status: 'ready', entries: [], total: 3 })
 
     expect(list.text()).toContain('Every job on the board is filtered out')
     expect(list.text()).not.toContain('No ads on the board')
@@ -108,12 +106,27 @@ describe('AdList', () => {
     expect(buttons.every((button) => button.attributes('disabled') !== undefined)).toBe(true)
   })
 
-  it('says whose order the board is in', () => {
-    expect(render({ status: 'ready', entries: plain([anAd()]) }).text()).toContain(
-      'as the board posted them',
-    )
-    expect(render({ status: 'ready', entries: plain([anAd()]), advisor: true }).text()).toContain(
-      'ranked by what the advisor thinks',
-    )
+  /**
+   * The board used to repeat the advisor's subtitle underneath its own heading — the same sentence,
+   * switched on the same flag, eighty pixels below where the advisor already said it. It is the
+   * advisor's line and `AdvisorPanel.spec` is where both of its states are now asserted.
+   */
+  it('leaves the advisor to say whose order the board is in', () => {
+    const list = render({ status: 'ready', entries: plain([anAd()]) })
+
+    expect(list.text()).not.toContain('as the board posted them')
+    expect(list.text()).not.toContain('ranked by what the advisor thinks')
+  })
+
+  /**
+   * The heading is the only thing this section leaves on the painting once the intro is gone. It
+   * cleared the 3:1 large-text threshold on the average ground and not on the darkest pixels, where
+   * it was 2.59, so it wears the collar with everything else that is printed on the picture.
+   */
+  it('collars the heading, the one thing it leaves on the painting', () => {
+    const list = render({ status: 'ready', entries: plain([anAd()]) })
+
+    expect(list.get('#board-heading').classes()).toContain('collar')
+    expect(list.findAll('.collar')).toHaveLength(1)
   })
 })

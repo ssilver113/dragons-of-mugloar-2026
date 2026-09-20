@@ -80,4 +80,15 @@ describe('ReputationPanel', () => {
     expect(render({ scouting: true }).get('button').attributes('disabled')).toBeDefined()
     expect(render({ disabled: true }).get('button').attributes('disabled')).toBeDefined()
   })
+
+  /**
+   * The worst of the four: 14px semibold accent on the treeline is 2.11:1, and it is the one that
+   * recolouring could not have saved — even near-black ink only reaches 3.51 there. The heading is
+   * the only thing this section puts on the painting; the wall below carries its own plates.
+   */
+  it('collars the heading, which is the only thing here on the painting', () => {
+    const panel = render({ reputation: null })
+
+    expect(panel.get('#standing-heading').classes()).toContain('collar')
+  })
 })

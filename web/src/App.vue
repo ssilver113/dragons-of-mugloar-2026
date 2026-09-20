@@ -154,14 +154,14 @@ const banner = computed(() => {
           <span class="sr-only">Dragons of Mugloar</span>
         </h1>
         <!-- Balanced because a centred line that wraps looks accidental when the second line is short. -->
-        <p class="text-sm text-balance text-ink-muted">
+        <p class="collar text-sm text-balance text-ink-muted">
           Take the jobs your dragon can survive. Every action costs a turn.
         </p>
         <!-- Stated wherever a score is: nothing won against a simulated board is a claim about
              the real game. -->
         <p
           v-if="store.offline"
-          class="rounded border border-warning/50 px-1.5 py-0.5 text-xs text-warning"
+          class="collar rounded border border-warning/50 px-1.5 py-0.5 text-xs text-warning"
         >
           Simulated world — no live game behind this one
         </p>
@@ -320,7 +320,6 @@ const banner = computed(() => {
               :total="boardView.total.value"
               :status="store.boardStatus"
               :solving-ad-id="store.solvingAdId"
-              :advisor="store.advisorEnabled"
               :disabled="store.busy || autoPlay.active"
               @solve="store.solve($event)"
               @refresh="store.refreshAds()"

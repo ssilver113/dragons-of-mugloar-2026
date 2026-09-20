@@ -108,4 +108,21 @@ describe('ShopPanel', () => {
     expect(buttons[1]?.text()).toBe('Buy')
     expect(buttons.every((button) => button.attributes('disabled') !== undefined)).toBe(true)
   })
+
+  /**
+   * Everything above the shopfront sits directly on the painted backdrop, where muted ink measures
+   * 2.26:1 and 2.29:1 against the treeline and no scrim reaches 4.5. The collar is what makes them
+   * readable there, so losing it is a contrast regression nothing else in the suite would catch.
+   * The plaques below are on oak and need none of it, which is what the count is guarding.
+   */
+  it('collars everything it puts on the painting, and nothing on the shopfront', () => {
+    const shop = render({ status: 'ready', gold: 500, items: [anItem()] })
+
+    const collared = shop.findAll('.collar').map((el) => el.text())
+
+    expect(collared).toHaveLength(3)
+    expect(collared[0]).toContain('Shop')
+    expect(collared[1]).toContain('gold')
+    expect(collared[2]).toContain('Buying costs a turn')
+  })
 })

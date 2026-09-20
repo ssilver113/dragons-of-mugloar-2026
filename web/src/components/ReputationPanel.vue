@@ -36,7 +36,7 @@ const reading = (faction: Faction): { sign: string; figure: string } => {
     <div class="flex items-baseline justify-between gap-3">
       <h2
         id="standing-heading"
-        class="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-accent"
+        class="collar flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-accent"
       >
         <AppIcon name="standing" :size="16" />
         Standing

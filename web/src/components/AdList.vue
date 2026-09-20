@@ -16,7 +16,6 @@ const props = defineProps<{
   total: number
   status: RequestStatus
   solvingAdId: string | null
-  advisor: boolean
   disabled: boolean
 }>()
 defineEmits<{ solve: [adId: string]; refresh: [] }>()
@@ -51,7 +50,7 @@ const filteredOut = computed(() => props.total > 0 && props.entries.length === 0
     <div class="flex min-h-8.5 flex-wrap items-center justify-between gap-x-2 gap-y-2 sm:gap-x-4">
       <h2
         id="board-heading"
-        class="flex items-center gap-1.5 text-base font-semibold sm:gap-2 sm:text-lg"
+        class="collar flex items-center gap-1.5 text-base font-semibold sm:gap-2 sm:text-lg"
       >
         <AppIcon name="board" :size="20" class="size-4 sm:size-5" />
         Message board
@@ -72,14 +71,6 @@ const filteredOut = computed(() => props.total > 0 && props.entries.length === 0
         </button>
       </div>
     </div>
-    <p class="-mt-1 text-sm text-ink-muted">
-      {{
-        advisor
-          ? 'Jobs are ranked by what the advisor thinks they are worth.'
-          : 'Listed as the board posted them.'
-      }}
-    </p>
-
     <!--
       Always in the tree, with the sentence written into it rather than mounted with it. A live
       region inserted at the same moment as its content is not reliably announced — the assistive

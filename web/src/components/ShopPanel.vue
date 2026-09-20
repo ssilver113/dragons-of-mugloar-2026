@@ -26,17 +26,19 @@ const failed = computed(() => props.status === 'error' && props.items.length ===
     <div class="flex min-h-8.5 items-center justify-between gap-4">
       <h2
         id="shop-heading"
-        class="flex items-center gap-1.5 text-base font-semibold sm:gap-2 sm:text-lg"
+        class="collar flex items-center gap-1.5 text-base font-semibold sm:gap-2 sm:text-lg"
       >
         <AppIcon name="shop" :size="20" class="size-4 sm:size-5" />
         Shop
       </h2>
-      <p class="flex items-center gap-1.5 text-sm text-ink-muted">
+      <p class="collar flex items-center gap-1.5 text-sm text-ink-muted">
         <AppIcon name="gold" :size="14" />
         <span class="tabular-nums">{{ gold }}</span> gold
       </p>
     </div>
-    <p class="-mt-1 text-sm text-ink-muted">Buying costs a turn, and ages every ad by one.</p>
+    <p class="collar -mt-1 text-sm text-ink-muted">
+      Buying costs a turn, and ages every ad by one.
+    </p>
 
     <ul v-if="loading" class="flex flex-col gap-2" aria-hidden="true">
       <li
