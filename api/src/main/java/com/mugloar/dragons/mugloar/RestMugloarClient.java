@@ -44,6 +44,11 @@ public class RestMugloarClient implements MugloarClient {
     /** Upstream error bodies are full HTML pages; only the first line is worth carrying. */
     private static final int BODY_SNIPPET_LIMIT = 200;
 
+    // Upstream sends HTML error pages, and nothing bounds their size. Read a prefix rather than
+    // the page: collapsing whitespace only ever shortens what we keep, so this is far more than
+    // BODY_SNIPPET_LIMIT characters can come from.
+    private static final int BODY_READ_LIMIT = 8 * 1024;
+
     private static final ParameterizedTypeReference<List<AdResponse>> AD_LIST =
             new ParameterizedTypeReference<>() {};
     private static final ParameterizedTypeReference<List<ShopItemResponse>> SHOP_ITEM_LIST =
@@ -193,7 +198,7 @@ public class RestMugloarClient implements MugloarClient {
 
     static String readBodySafely(InputStream body) {
         try {
-            return snippet(body.readAllBytes());
+            return snippet(body.readNBytes(BODY_READ_LIMIT));
         } catch (IOException e) {
             return "<unreadable body>";
         }

@@ -16,7 +16,8 @@ import org.springframework.stereotype.Service;
  *
  * <p>Through the existing services rather than the upstream client, so the bot gets no private
  * path to the game. One turn per call and no loop of its own, which is what keeps a run abortable
- * and lets the UI show every turn. Reading the board and the shop is free, so both are refreshed.
+ * and lets the UI show every turn. Reading the board and the shop costs no turn, but it does cost
+ * an upstream call against something that rate-limits on burst, so only the board is re-read.
  */
 @Service
 public class AutoPlayService {
@@ -31,18 +32,19 @@ public class AutoPlayService {
         this.strategy = strategy;
     }
 
+    /**
+     * One turn, reading the shop from the session's ledger once the game has seen it. The board is
+     * still refreshed every turn: unlike prices, it moves.
+     */
     public AutoPlayStep step(String gameId) {
         AdBoard board = games.listAds(gameId);
-        ShopCatalogue catalogue = shop.listItems(gameId);
+        ShopCatalogue catalogue = shop.knownCatalogue(gameId);
         return act(gameId, board, catalogue.items());
     }
 
     /**
-     * One turn against a catalogue the caller already holds.
-     *
-     * <p>Prices do not change for the life of a game, so something playing hundreds of them can
-     * read the shop once instead of once a turn and spend a third fewer upstream calls. The board
-     * is still refreshed every turn: unlike prices, it moves.
+     * One turn against a catalogue the caller already holds, for a run that plays hundreds of them
+     * and would rather not ask the server for the same list each time.
      */
     public AutoPlayStep step(String gameId, List<ShopItem> catalogue) {
         return act(gameId, games.listAds(gameId), catalogue);

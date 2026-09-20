@@ -251,4 +251,42 @@ class GameServiceTest {
         assertThat(mostAtOnce.get()).isEqualTo(1);
         verify(client, times(adIds.size())).solve(eq(GAME_ID), anyString());
     }
+
+    /**
+     * Listing the board spends no turn, but it writes the ledger a solve's guard reads. Left
+     * outside the lock, a fetch that started before a solve and landed after it would record the
+     * older board and the next legitimate solve would be refused as unavailable. Asserted as
+     * mutual exclusion for the same reason the turn test is: a surviving ledger could be luck.
+     */
+    @Test
+    void listingTheBoardTakesTheSameLockAsATurn() throws Exception {
+        startGame();
+        AtomicInteger inFlight = new AtomicInteger();
+        AtomicInteger mostAtOnce = new AtomicInteger();
+        when(client.listAds(GAME_ID)).thenAnswer(invocation -> {
+            mostAtOnce.accumulateAndGet(inFlight.incrementAndGet(), Math::max);
+            Thread.sleep(20);
+            inFlight.decrementAndGet();
+            return List.of(ad("LTyNBlYB", 60, "Piece of cake"));
+        });
+        when(client.solve(eq(GAME_ID), anyString())).thenAnswer(invocation -> {
+            mostAtOnce.accumulateAndGet(inFlight.incrementAndGet(), Math::max);
+            Thread.sleep(20);
+            inFlight.decrementAndGet();
+            return new SolveResponse(true, 3, 40, 60, 1, "Success!");
+        });
+
+        try (ExecutorService pool = Executors.newFixedThreadPool(4)) {
+            List<Future<Object>> work = pool.invokeAll(List.<Callable<Object>>of(
+                    () -> service.listAds(GAME_ID),
+                    () -> service.solve(GAME_ID, "LTyNBlYB"),
+                    () -> service.listAds(GAME_ID),
+                    () -> service.listAds(GAME_ID)));
+            for (Future<Object> each : work) {
+                each.get();
+            }
+        }
+
+        assertThat(mostAtOnce.get()).isEqualTo(1);
+    }
 }

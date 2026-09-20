@@ -1,13 +1,12 @@
 package com.mugloar.dragons.shop;
 
+import com.mugloar.dragons.game.CatalogueEntry;
 import com.mugloar.dragons.game.GameSession;
 import com.mugloar.dragons.game.GameSessionRegistry;
 import com.mugloar.dragons.game.GameState;
 import com.mugloar.dragons.mugloar.MugloarClient;
 import com.mugloar.dragons.mugloar.dto.PurchaseResponse;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 /**
@@ -39,6 +38,24 @@ public class ShopService {
         return new ShopCatalogue(state, fetchItems(gameId, session));
     }
 
+    /**
+     * The catalogue, fetched once per game and then rebuilt from the session's ledger.
+     *
+     * <p>For the bot, which asks every turn and would otherwise spend a third of its upstream
+     * calls re-reading prices that do not move. A human browsing still gets {@link #listItems},
+     * which always asks: that price stability is measured rather than promised, and a player
+     * looking at the shop should see what is there, not what was there.
+     */
+    public ShopCatalogue knownCatalogue(String gameId) {
+        GameSession session = sessions.require(gameId);
+        GameState state = session.requireRunning();
+        return new ShopCatalogue(
+                state,
+                session.catalogue()
+                        .map(ShopService::rebuild)
+                        .orElseGet(() -> fetchItems(gameId, session)));
+    }
+
     public PurchaseOutcome buy(String gameId, String itemId) {
         GameSession session = sessions.require(gameId);
         return session.takeTurn(() -> {
@@ -63,15 +80,21 @@ public class ShopService {
 
     private List<ShopItem> fetchItems(String gameId, GameSession session) {
         List<ShopItem> items = client.listShopItems(gameId).stream()
-                .map(item -> new ShopItem(
-                        item.id(), item.name(), item.cost(), ItemEffect.forCost(item.cost())))
+                .map(item -> item(item.id(), item.name(), item.cost()))
                 .toList();
-        session.recordShop(prices(items));
+        session.recordShop(items.stream()
+                .map(item -> new CatalogueEntry(item.id(), item.name(), item.cost()))
+                .toList());
         return items;
     }
 
-    private static Map<String, Integer> prices(List<ShopItem> items) {
-        return items.stream()
-                .collect(Collectors.toMap(ShopItem::id, ShopItem::cost, (first, second) -> first));
+    private static List<ShopItem> rebuild(List<CatalogueEntry> catalogue) {
+        return catalogue.stream()
+                .map(entry -> item(entry.id(), entry.name(), entry.cost()))
+                .toList();
+    }
+
+    private static ShopItem item(String id, String name, int cost) {
+        return new ShopItem(id, name, cost, ItemEffect.forCost(cost));
     }
 }

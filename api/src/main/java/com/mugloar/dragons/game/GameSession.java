@@ -3,7 +3,8 @@ package com.mugloar.dragons.game;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Map;
+import java.util.List;
+import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
@@ -18,8 +19,9 @@ import java.util.function.Supplier;
  * {@link #takeTurn} exists to hold the whole of one against the others.
  *
  * <p>Its ledgers let an impossible action be refused without an upstream call: the last board's
- * ids, every id already attempted, and the shop's prices. Ids and prices rather than the objects,
- * because an ad's remaining life changes every turn and a stale copy would be worse than none.
+ * ids, every id already attempted, and the shop's catalogue. Ids rather than the ads themselves,
+ * because an ad's remaining life changes every turn and a stale copy would be worse than none; the
+ * catalogue is kept whole, because prices and names do not move for the life of a game.
  */
 public class GameSession {
 
@@ -27,7 +29,7 @@ public class GameSession {
     private final Set<String> attemptedAdIds = new HashSet<>();
     private GameState state;
     private Set<String> boardAdIds;
-    private Map<String, Integer> itemCosts;
+    private List<CatalogueEntry> catalogue;
     private Instant lastAccessed;
 
     GameSession(GameState state, Instant now) {
@@ -36,23 +38,29 @@ public class GameSession {
     }
 
     /**
-     * Runs a whole turn against this game with no other turn on it in flight, upstream call
-     * included. Turns are strictly sequential in the game itself — a turn is the scarce resource,
-     * and two of them at once is not a thing the rules describe — so serialising them here costs
-     * nothing real. Two interleaved would lose one update, and the player would have been charged
-     * a turn that left no trace.
+     * Runs an action against this game with no other on it in flight, upstream call included.
      *
      * <p>A lock rather than the monitor above: this one is held across a network call, and the
-     * client's own connect and read timeouts are what bound it. Reentrant, so a service taking a
-     * turn may call another that does the same.
+     * client's own connect and read timeouts are what bound it. Reentrant, so a service holding
+     * it may call another that wants it.
      */
-    public <T> T takeTurn(Supplier<T> action) {
+    public <T> T exclusively(Supplier<T> action) {
         turn.lock();
         try {
             return action.get();
         } finally {
             turn.unlock();
         }
+    }
+
+    /**
+     * The same exclusion, named for the case that pays for it. Turns are strictly sequential in
+     * the game itself — a turn is the scarce resource, and two of them at once is not a thing the
+     * rules describe — so serialising them here costs nothing real. Two interleaved would lose one
+     * update, and the player would have been charged a turn that left no trace.
+     */
+    public <T> T takeTurn(Supplier<T> action) {
+        return exclusively(action);
     }
 
     public synchronized GameState state() {
@@ -90,17 +98,32 @@ public class GameSession {
         attemptedAdIds.add(adId);
     }
 
-    public synchronized void recordShop(Map<String, Integer> costs) {
-        this.itemCosts = Map.copyOf(costs);
+    public synchronized void recordShop(List<CatalogueEntry> items) {
+        this.catalogue = List.copyOf(items);
     }
 
     public synchronized boolean knowsShop() {
-        return itemCosts != null;
+        return catalogue != null;
+    }
+
+    /**
+     * The remembered catalogue, or empty before the first browse. Prices do not change for the
+     * life of a game, so something playing hundreds of turns can read the shop once instead of
+     * once a turn — which is a third of its upstream calls, against an upstream that rate-limits
+     * on burst.
+     */
+    public synchronized Optional<List<CatalogueEntry>> catalogue() {
+        return Optional.ofNullable(catalogue);
     }
 
     public synchronized OptionalInt itemCost(String itemId) {
-        Integer cost = itemCosts == null ? null : itemCosts.get(itemId);
-        return cost == null ? OptionalInt.empty() : OptionalInt.of(cost);
+        if (catalogue == null) {
+            return OptionalInt.empty();
+        }
+        return catalogue.stream()
+                .filter(entry -> entry.id().equals(itemId))
+                .mapToInt(CatalogueEntry::cost)
+                .findFirst();
     }
 
     synchronized Instant lastAccessed() {

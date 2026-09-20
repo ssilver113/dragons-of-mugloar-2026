@@ -27,8 +27,10 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -73,6 +75,37 @@ class AutoPlayServiceTest {
 
     private static AdResponse ad(String adId, int reward, String probability) {
         return new AdResponse(adId, "Help someone", reward, 5, null, probability);
+    }
+
+    /**
+     * Prices do not change for the life of a game, and the upstream rate-limits on burst, so a run
+     * that reads the shop every turn spends a third of its calls on an unchanging list. The board
+     * is still re-read each turn, which is what separates this from caching everything.
+     */
+    @Test
+    void readsTheShopOnceAndTheBoardEveryTurn() {
+        gameIs(3, 0, 5, 0);
+        boardIs();
+        when(client.investigateReputation(GAME_ID)).thenReturn(new ReputationResponse(0, 0, 0));
+
+        autoPlay.step(GAME_ID);
+        autoPlay.step(GAME_ID);
+        autoPlay.step(GAME_ID);
+
+        verify(client, times(1)).listShopItems(GAME_ID);
+        verify(client, times(3)).listAds(GAME_ID);
+    }
+
+    /** A human browsing still asks: price stability is measured, not promised. */
+    @Test
+    void browsingTheShopStillAsksUpstream() {
+        gameIs(3, 120, 0, 0);
+        ShopService shop = new ShopService(client, sessions);
+
+        shop.listItems(GAME_ID);
+        shop.listItems(GAME_ID);
+
+        verify(client, times(2)).listShopItems(GAME_ID);
     }
 
     @Test

@@ -28,6 +28,13 @@ public record EnrichedAd(
         double expectedValue,
         Set<AdFlag> flags) {
 
+    // Copied here rather than at the call site: the enricher builds its flags in a mutable
+    // EnumSet, and a record that hands out a caller's collection is only as immutable as the
+    // caller chose to be.
+    public EnrichedAd {
+        flags = Set.copyOf(flags);
+    }
+
     public boolean worthAttempting() {
         return !flags.contains(AdFlag.NEVER_ATTEMPT) && !flags.contains(AdFlag.UNREADABLE);
     }

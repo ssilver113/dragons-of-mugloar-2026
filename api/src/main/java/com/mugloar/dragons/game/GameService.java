@@ -17,8 +17,9 @@ import org.springframework.stereotype.Service;
  * rejection. They never refuse an action that is merely unwise: which ads are worth solving is the
  * player's call, and the scoring exists to inform it, not to overrule it.
  *
- * <p>Anything that spends a turn is checked and carried out inside the session's turn lock, so a
- * guard cannot be satisfied by a state that another action has already moved on from.
+ * <p>Anything that spends a turn is checked and carried out inside the session's lock, so a guard
+ * cannot be satisfied by a state that another action has already moved on from. Listing the board
+ * takes the same lock without spending a turn, because it writes the ledger those guards read.
  */
 @Service
 public class GameService {
@@ -39,13 +40,21 @@ public class GameService {
         return state;
     }
 
+    /**
+     * Free of a turn, but not free of the lock. The ledger this writes is what a solve's guard
+     * reads, so a fetch that starts before a solve and lands after it would leave the older board
+     * recorded and the next legitimate solve would be refused as an unavailable ad. Two tabs on
+     * one game, or auto-play racing a manual refresh, can reach that.
+     */
     public AdBoard listAds(String gameId) {
         GameSession session = sessions.require(gameId);
-        GameState state = session.requireRunning();
+        return session.exclusively(() -> {
+            GameState state = session.requireRunning();
 
-        List<EnrichedAd> ads = enricher.enrich(client.listAds(gameId), state.level());
-        session.recordBoard(ads.stream().map(EnrichedAd::adId).toList());
-        return new AdBoard(state, ads);
+            List<EnrichedAd> ads = enricher.enrich(client.listAds(gameId), state.level());
+            session.recordBoard(ads.stream().map(EnrichedAd::adId).toList());
+            return new AdBoard(state, ads);
+        });
     }
 
     public SolveOutcome solve(String gameId, String adId) {

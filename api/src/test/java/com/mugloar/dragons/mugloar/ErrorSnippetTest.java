@@ -2,6 +2,8 @@ package com.mugloar.dragons.mugloar;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -40,5 +42,22 @@ class ErrorSnippetTest {
         String snippet = RestMugloarClient.snippet("error code: 1010".getBytes(StandardCharsets.UTF_8));
 
         assertThat(snippet).isEqualTo("error code: 1010");
+    }
+
+    /**
+     * Nothing bounds the size of an upstream error page, and only 200 characters of it are ever
+     * kept. Reading a prefix rather than the whole body is the difference between a truncated log
+     * line and holding a page in memory to throw it away.
+     */
+    @Test
+    @DisplayName("reads a prefix of a large error body rather than all of it")
+    void readsOnlyAPrefixOfALargeBody() throws Exception {
+        byte[] page = "x".repeat(2_000_000).getBytes(StandardCharsets.UTF_8);
+        InputStream body = new ByteArrayInputStream(page);
+
+        String snippet = RestMugloarClient.readBodySafely(body);
+
+        assertThat(snippet).hasSize(201).endsWith("…");
+        assertThat(body.available()).isGreaterThan(page.length / 2);
     }
 }

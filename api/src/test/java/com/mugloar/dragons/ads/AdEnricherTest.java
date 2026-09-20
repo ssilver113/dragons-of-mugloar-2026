@@ -1,12 +1,15 @@
 package com.mugloar.dragons.ads;
 
 import com.mugloar.dragons.mugloar.dto.AdResponse;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.within;
 
 class AdEnricherTest {
@@ -103,5 +106,24 @@ class AdEnricherTest {
                 List.of(ad(10, 5, "Impossible"), ad(90, 5, "Sure thing"), ad(30, 5, "Risky")), 0);
 
         assertThat(board).extracting(EnrichedAd::reward).containsExactly(10, 90, 30);
+    }
+
+    /**
+     * The enricher builds its flags in a mutable EnumSet. The record copies rather than trusting
+     * the caller to have finished with it, which is where the copy belongs: every construction
+     * gets it, not only the one path that was being looked at.
+     */
+    @Test
+    void anAdsFlagsCannotBeChangedAfterItIsBuilt() {
+        Set<AdFlag> mutable = EnumSet.of(AdFlag.EXPIRING_NEXT_TURN);
+
+        EnrichedAd ad = new EnrichedAd(
+                "LTyNBlYB", "Help someone", 60, 1, false, "Piece of cake",
+                Probability.PIECE_OF_CAKE, 0.9, 54.0, mutable);
+        mutable.add(AdFlag.NEVER_ATTEMPT);
+
+        assertThat(ad.flags()).containsExactly(AdFlag.EXPIRING_NEXT_TURN);
+        assertThatThrownBy(() -> ad.flags().add(AdFlag.OUT_OF_LEAGUE))
+                .isInstanceOf(UnsupportedOperationException.class);
     }
 }
