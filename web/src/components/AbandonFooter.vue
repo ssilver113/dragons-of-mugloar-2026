@@ -41,10 +41,13 @@ function abandon(): void {
 </script>
 
 <template>
-  <!-- Last on the page and nowhere near the buttons that spend turns. On a sheet rather than the
+  <!-- Last on the page and nowhere near the buttons that spend turns. On a plate rather than the
        backdrop, which runs 0.16 to 0.55 in luminance and took muted ink to 1.5:1; even an 85%
        scrim only reaches 4.0:1. -->
-  <footer class="panel mt-auto flex flex-col items-start gap-2 p-4" @keydown.esc="keepPlaying()">
+  <footer
+    class="oak-plate mt-auto flex flex-col items-start gap-2 p-4"
+    @keydown.esc="keepPlaying()"
+  >
     <template v-if="!abandoning">
       <button
         ref="startNew"

@@ -96,21 +96,27 @@ const filteredOut = computed(() => props.total > 0 && props.entries.length === 0
       </button>
     </div>
 
-    <p v-else-if="empty" class="panel p-6 text-center text-ink-muted">
-      No ads on the board right now. Refresh to see what comes in.
-    </p>
-
-    <p v-else-if="filteredOut" class="panel p-6 text-center text-ink-muted">
-      Every job on the board is filtered out. Loosen the filters to see them.
-    </p>
-
     <!--
       One change a turn, and it is a movement rather than a cut: the cards that survive glide to
       where the new board puts them, and the ones that arrive fade in behind them. A card that
       leaves goes at once — the job was taken, and its Solve button has been saying so.
     -->
     <div v-else class="board timber">
-      <TransitionGroup tag="ul" name="card" class="grid gap-3 sm:grid-cols-2">
+      <!--
+        A board with nothing on it is still a board, so the notice is laid on the timber rather
+        than beside it. On a sheet, because nothing is ever read against this surface — and on the
+        world's own paper, because what is missing here is paper: the sheet the board would be
+        carrying if it had one.
+      -->
+      <p v-if="empty" class="parchment torn p-6 text-center text-ink-muted">
+        No ads on the board right now. Refresh to see what comes in.
+      </p>
+
+      <p v-else-if="filteredOut" class="parchment torn p-6 text-center text-ink-muted">
+        Every job on the board is filtered out. Loosen the filters to see them.
+      </p>
+
+      <TransitionGroup v-else tag="ul" name="card" class="grid gap-3 sm:grid-cols-2">
         <AdCard
           v-for="entry in entries"
           :key="entry.ad.adId"
@@ -128,8 +134,9 @@ const filteredOut = computed(() => props.total > 0 && props.entries.length === 0
 <style scoped>
 /**
  * The board the jobs are pinned to. `timber` is the surface, shared with the shopfront; this sets
- * what is particular to a board full of cards. Nothing but cards is laid on it, so no text is ever
- * measured against this surface — the heading and the intro stay above it on the page.
+ * what is particular to a board full of cards. Nothing is read against this surface: the cards
+ * bring their own ground, the two empty notices are laid on a sheet of the same paper, and the
+ * heading stays above the board on the page.
  */
 .board {
   padding: 1rem;

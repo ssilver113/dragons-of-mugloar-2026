@@ -202,7 +202,7 @@ const banner = computed(() => {
           is never picked back up, so this one starts fresh.
         </MessageBanner>
 
-        <section class="panel flex flex-col items-start gap-4 p-6">
+        <section class="oak-plate flex flex-col items-start gap-4 p-6">
           <p class="text-ink-muted">
             Start a game to draw a board of ten jobs, each scored for your dragon's level.
           </p>

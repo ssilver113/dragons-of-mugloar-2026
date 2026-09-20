@@ -35,7 +35,7 @@ onMounted(() => panel.value?.focus())
   <section
     ref="panel"
     tabindex="-1"
-    class="panel focus-ring flex flex-col items-start gap-4 p-6"
+    class="oak-plate focus-ring flex flex-col items-start gap-4 p-6"
     role="status"
   >
     <DragonSigil

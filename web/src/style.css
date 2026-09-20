@@ -267,6 +267,12 @@ body {
  *
  * So the two are different stock on purpose: a plaque is milled and hung on ropes, a plate is planed
  * and fixed flat. The shop keeps its own rule and is not a consumer here.
+ *
+ * It also carries the three screens the app speaks on for itself — the invitation to start, the
+ * ending, and the abandon footer. Those were the last plain panels in the app, and a plate is what
+ * they had in common with the drive's deck: a surface that exists to hold a sentence and a control.
+ * The `panel` utility is not gone; it is what the app says *inside* the game, where a plate would
+ * be a fourth wooden thing among the board, the shopfront and the wall.
  */
 @utility oak-plate {
   border-radius: 2px;

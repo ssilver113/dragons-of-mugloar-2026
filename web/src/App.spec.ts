@@ -22,6 +22,20 @@ describe('App', () => {
     expect(app.find('[aria-label="Dragon status"]').exists()).toBe(false)
   })
 
+  /**
+   * The last of the plain panels. The start screen, the ending and the abandon footer are the
+   * three places the app speaks on its own behalf rather than showing the world, and all three are
+   * plates now — so nothing on the page is left as an undressed box.
+   */
+  it('invites you to start from a plate rather than a plain panel', () => {
+    const app = render()
+
+    const invitation = app.get('section')
+    expect(invitation.classes()).toContain('oak-plate')
+    expect(invitation.text()).toContain('board of ten jobs')
+    expect(app.find('.panel').exists()).toBe(false)
+  })
+
   it('says nothing about the world when the server plays the real one', async () => {
     const app = render()
     await flushPromises()

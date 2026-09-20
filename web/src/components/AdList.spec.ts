@@ -83,6 +83,23 @@ describe('AdList', () => {
     expect(list.text()).not.toContain('No ads on the board')
   })
 
+  /**
+   * Both notices used to sit beside the board rather than on it, so "there is nothing here" was
+   * said next to an object that was not drawn at all. The board is the thing being reported on, so
+   * it stays on screen and the notice is laid on it — on a sheet, because nothing is ever read
+   * against the timber.
+   */
+  it.each([
+    ['an empty board', { status: 'ready' as const, total: 0 }],
+    ['a board filtered to nothing', { status: 'ready' as const, entries: [], total: 3 }],
+  ])('lays the notice for %s on the board rather than beside it', (_name, props) => {
+    const list = render(props)
+
+    const notice = list.get('.board p')
+    expect(notice.classes()).toEqual(expect.arrayContaining(['parchment', 'torn']))
+    expect(notice.text()).toMatch(/No ads on the board|Every job on the board/)
+  })
+
   it('draws the board in the order it is handed, and asks for a job by id', async () => {
     const list = render({
       status: 'ready',

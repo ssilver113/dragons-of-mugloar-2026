@@ -58,4 +58,15 @@ describe('GameEnding', () => {
     expect(render({ starting: true }).get('button').attributes('disabled')).toBeDefined()
     expect(render({ starting: true }).get('button').text()).toBe('Starting…')
   })
+
+  /**
+   * The three screens the app speaks on for itself — this one, the start screen and the abandon
+   * footer — are plates rather than panels, so the last plain surfaces in the app are furniture
+   * like everything around them. The ring is kept: the panel takes focus when it replaces the
+   * board, and a plate has no focus treatment of its own.
+   */
+  it('is a plate, and keeps the ring it takes focus with', () => {
+    expect(render().classes()).toEqual(expect.arrayContaining(['oak-plate', 'focus-ring']))
+    expect(render().classes()).not.toContain('panel')
+  })
 })

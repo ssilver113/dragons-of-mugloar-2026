@@ -83,4 +83,10 @@ describe('AbandonFooter', () => {
 
     expect(buttonLabelled(footer, 'Yes, start a new game')?.attributes('disabled')).toBeDefined()
   })
+
+  /** A plate, like the other two screens the app speaks on for itself. */
+  it('is a plate rather than the app’s plain panel', () => {
+    expect(render().get('footer').classes()).toContain('oak-plate')
+    expect(render().get('footer').classes()).not.toContain('panel')
+  })
 })
