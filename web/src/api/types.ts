@@ -94,8 +94,9 @@ export interface SolveResultView {
 
 /**
  * The `code` of an RFC 9457 problem body. The UI branches on this, never on the status, because
- * several situations share one. `NETWORK_ERROR` is the one the server never sends — it is what a
- * failed `fetch` becomes, so one vocabulary covers every way a request can fail.
+ * several situations share one. `NETWORK_ERROR` and `REQUEST_TIMEOUT` are the two the server never
+ * sends — they are what a failed and an abandoned `fetch` become, so one vocabulary covers every
+ * way a request can fail.
  */
 export const ERROR_CODES = [
   'VALIDATION_FAILED',
@@ -112,6 +113,7 @@ export const ERROR_CODES = [
   'UPSTREAM_ERROR',
   'INTERNAL_ERROR',
   'NETWORK_ERROR',
+  'REQUEST_TIMEOUT',
 ] as const
 
 export type ErrorCode = (typeof ERROR_CODES)[number]

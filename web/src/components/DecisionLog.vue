@@ -21,12 +21,16 @@ const resumable = computed(
   () => props.halt?.kind === 'error' && present(props.halt.error.code).severity !== 'terminal',
 )
 
-// Newest first: a run at max speed outpaces reading, and chasing a growing list is worse.
-const newestFirst = computed(() => [...props.entries].reverse())
-
-const shown = computed(() =>
-  expanded.value ? newestFirst.value : newestFirst.value.slice(0, VISIBLE),
-)
+/**
+ * Newest first: a run at max speed outpaces reading, and chasing a growing list is worse. Sliced
+ * before it is reversed, so the collapsed case copies ten entries a turn rather than the whole
+ * record — the quadratic cost the store appends with `push` to avoid.
+ */
+const shown = computed(() => {
+  const entries = props.entries
+  const from = expanded.value ? 0 : Math.max(0, entries.length - VISIBLE)
+  return entries.slice(from).reverse()
+})
 const hidden = computed(() => props.entries.length - shown.value.length)
 </script>
 

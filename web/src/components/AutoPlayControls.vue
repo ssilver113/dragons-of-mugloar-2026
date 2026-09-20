@@ -68,6 +68,22 @@ const COG_PERIOD: Record<SpeedId, string> = {
 const cogPeriod = computed(() => COG_PERIOD[props.speed])
 
 /**
+ * How far below the top the drive pins, clearing the stats rail measured at 86px wherever the rule
+ * applies. In rem so it grows with the type the rail is sized by — which is why it is one number
+ * here rather than two: the rule reads it as a custom property and the observer resolves it
+ * against the root's own type size. Kept by hand in both units, they had already drifted apart,
+ * and a reader whose default is not 16px got the timber lifting at the wrong scroll position.
+ */
+const RAIL_CLEARANCE_REM = 5.375
+const railClearance = `${RAIL_CLEARANCE_REM}rem`
+
+/** The root's type size, which is the reader's setting rather than ours. */
+function rootFontSizePx(): number {
+  const declared = Number.parseFloat(getComputedStyle(document.documentElement).fontSize)
+  return Number.isFinite(declared) && declared > 0 ? declared : 16
+}
+
+/**
  * Whether the drive has left the board it is mounted on, which decides whether it carries its own
  * timber. Observed on the drive itself — a snug wrapper would give sticky a pixel of travel and it
  * would scroll away. The root margin is the pin offset plus one pixel.
@@ -80,9 +96,10 @@ onMounted(() => {
   if (drive.value === null || typeof IntersectionObserver === 'undefined') {
     return
   }
+  const inset = Math.round(RAIL_CLEARANCE_REM * rootFontSizePx()) + 1
   observer = new IntersectionObserver(([entry]) => (stuck.value = entry.intersectionRatio < 1), {
     threshold: [1],
-    rootMargin: '-83px 0px 0px 0px',
+    rootMargin: `-${inset}px 0px 0px 0px`,
   })
   observer.observe(drive.value)
 })
@@ -108,6 +125,7 @@ function onSpeed(event: Event): void {
     aria-labelledby="autoplay-heading"
     class="machine"
     :class="{ pinned: running, 'timber lifted': running && stuck }"
+    :style="{ '--rail-clearance': railClearance }"
   >
     <!-- Brass carries `ink` at 6.37:1 and nothing else: `ink-muted` falls to 3.48, which is why
          the sentence lives on the deck below and only the short reading sits up here. -->
@@ -199,10 +217,9 @@ function onSpeed(event: Event): void {
 @media (width >= 64rem) {
   .machine.pinned {
     position: sticky;
-    /* Clears the stats rail, measured at 86px wherever this rule applies. In rem so it grows with
-       the type the rail is sized by, and below the rail in stacking order so that being wrong
-       hides the machine rather than the score. */
-    top: 5.375rem;
+    /* Set on the element, because the observer that watches this pin has to agree with it. Below
+       the rail in stacking order, so that being wrong hides the machine rather than the score. */
+    top: var(--rail-clearance);
     z-index: 1;
   }
 

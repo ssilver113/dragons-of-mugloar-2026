@@ -1,6 +1,6 @@
 import { computed, ref, watch } from 'vue'
 import { defineStore } from 'pinia'
-import { ApiError } from '../api/client'
+import { ApiError, asApiError } from '../api/client'
 import { useGameStore } from './game'
 import { persisted } from './persistence'
 import type { AutoPlayStepView, DecisionView, GameView } from '../api/types'
@@ -290,10 +290,4 @@ function rateLimitGaveUp(): ApiError {
     'The game is still rate limiting us. Give it a minute, then carry on.',
     429,
   )
-}
-
-function asApiError(e: unknown): ApiError {
-  return e instanceof ApiError
-    ? e
-    : new ApiError('INTERNAL_ERROR', 'Something went wrong. Try again.', 0, { cause: e })
 }

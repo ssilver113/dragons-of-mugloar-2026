@@ -1,6 +1,6 @@
 import { computed, ref, watch } from 'vue'
 import { defineStore } from 'pinia'
-import { ApiError, api } from '../api/client'
+import { ApiError, api, asApiError } from '../api/client'
 import { endsTheSession, present } from '../api/errorPresentation'
 import { useCalibrationStore } from './calibration'
 import { persisted } from './persistence'
@@ -462,10 +462,4 @@ function aged(ad: AdView): AdView {
     expiresIn,
     flags: expiring ? [...ad.flags, 'EXPIRING_NEXT_TURN'] : ad.flags,
   }
-}
-
-function asApiError(e: unknown): ApiError {
-  return e instanceof ApiError
-    ? e
-    : new ApiError('INTERNAL_ERROR', 'Something went wrong. Try again.', 0, { cause: e })
 }

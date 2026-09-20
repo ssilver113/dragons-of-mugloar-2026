@@ -137,6 +137,37 @@ describe('DecisionLog', () => {
     expect(log.get('button').text()).not.toBe('Show all 24 turns')
   })
 
+  /**
+   * The record grows for the length of a run, and a collapsed view that copied all of it to draw
+   * ten of it cost more every turn — the quadratic the store went out of its way to avoid by
+   * appending with `push`. Counted rather than timed, and compared at two lengths: what matters
+   * is that the cost of a turn does not follow the length of the record.
+   */
+  it('costs the same to draw a turn whatever the record behind it has grown to', async () => {
+    let reads = 0
+    const counted = (entries: LogEntry[]) =>
+      new Proxy(entries, {
+        get(target, key, receiver) {
+          if (typeof key === 'string' && /^\d+$/.test(key)) {
+            reads += 1
+          }
+          return Reflect.get(target, key, receiver) as unknown
+        },
+      })
+
+    // One more turn lands on a record of the given length, which is what a running solver does.
+    const costOfATurn = async (length: number) => {
+      const record = Array.from({ length }, () => entry(aStep()))
+      const log = render(record)
+      reads = 0
+      await log.setProps({ entries: counted([...record, entry(aStep())]) })
+      expect(log.findAll('li')).toHaveLength(10)
+      return reads
+    }
+
+    expect(await costOfATurn(300)).toBe(await costOfATurn(30))
+  })
+
   it('says nothing about a cap on a run that has not reached it', () => {
     const log = render(Array.from({ length: 4 }, () => entry(aStep())))
 

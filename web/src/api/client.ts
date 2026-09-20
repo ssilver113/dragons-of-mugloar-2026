@@ -28,15 +28,52 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * Every rejection a store has to cope with, narrowed to the one type the UI knows how to render.
+ * Anything that is not already an `ApiError` is a bug on our side rather than a failed request,
+ * so it is attributed to us and carried as the cause.
+ */
+export function asApiError(e: unknown): ApiError {
+  return e instanceof ApiError
+    ? e
+    : new ApiError('INTERNAL_ERROR', 'Something went wrong. Try again.', 0, { cause: e })
+}
+
 const NETWORK_MESSAGE = 'Could not reach the server. Check your connection and try again.'
 const UNREADABLE_MESSAGE = 'The server responded in a way we could not read.'
+const TIMEOUT_MESSAGE =
+  'The server took too long to answer. Refresh the board to see where things stand.'
+
+/**
+ * How long the browser waits before giving up. Set above our own server's worst bounded case —
+ * three attempts at a 3s connect and a 10s read, plus its backoff — so this fires only when
+ * nothing is answering at all, never on a request that was still going to arrive. Without it a
+ * connection that hangs between the browser and the server leaves the store acting for good:
+ * every control disabled, the solver stalled, and a reload the only way out.
+ *
+ * Aborting is not retrying. The request is abandoned, never sent again, so `solve`, `buy` and
+ * `investigate` remain single-shot — and because one that timed out may already have landed
+ * upstream, the failure offers a board refetch and never the action a second time.
+ */
+const DEADLINE_MS = 45_000
+
+/** `AbortSignal.timeout` rejects with a `TimeoutError`; a caller's own abort would be `AbortError`. */
+function timedOut(cause: unknown): boolean {
+  return cause instanceof Error && cause.name === 'TimeoutError'
+}
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   let response: Response
   try {
-    response = await fetch(path, { headers: { Accept: 'application/json' }, ...init })
+    response = await fetch(path, {
+      headers: { Accept: 'application/json' },
+      signal: AbortSignal.timeout(DEADLINE_MS),
+      ...init,
+    })
   } catch (cause) {
-    throw new ApiError('NETWORK_ERROR', NETWORK_MESSAGE, 0, { cause })
+    throw timedOut(cause)
+      ? new ApiError('REQUEST_TIMEOUT', TIMEOUT_MESSAGE, 0, { cause })
+      : new ApiError('NETWORK_ERROR', NETWORK_MESSAGE, 0, { cause })
   }
 
   if (!response.ok) {

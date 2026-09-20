@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import AutoPlayControls from './AutoPlayControls.vue'
 
@@ -87,6 +87,49 @@ describe('AutoPlayControls', () => {
     expect(plate({ running: true, turns: 12 })).toContain('running, 12 turns')
     expect(plate({ running: true, waiting: true })).toContain('rate limited, waiting')
     expect(plate({ halt: { kind: 'stalled', passes: 10 } })).toContain('stopped to check in')
+  })
+
+  /**
+   * The pin is declared in rem so it grows with the type in the rail it clears; the observer that
+   * decides when the timber appears needs the same distance in pixels. Kept by hand in both units
+   * they had already drifted apart, and a reader whose browser default is not 16px got the lift at
+   * a scroll position the pin never reaches.
+   */
+  describe('the pin and the observer that watches it', () => {
+    afterEach(() => {
+      vi.unstubAllGlobals()
+      document.documentElement.style.fontSize = ''
+    })
+
+    /** The one pixel is what turns "on screen" into "pinned"; the rest is the pin offset. */
+    function watchedInsetAt(rootFontSize: string): string | undefined {
+      document.documentElement.style.fontSize = rootFontSize
+      let options: IntersectionObserverInit | undefined
+      vi.stubGlobal(
+        'IntersectionObserver',
+        class {
+          constructor(_callback: IntersectionObserverCallback, init?: IntersectionObserverInit) {
+            options = init
+          }
+          observe() {}
+          disconnect() {}
+        },
+      )
+      render({ running: true })
+      return options?.rootMargin
+    }
+
+    it('reads the pin offset off the element rather than repeating it', () => {
+      expect(render({ running: true }).attributes('style')).toContain('--rail-clearance: 5.375rem')
+    })
+
+    it('watches the distance the drive actually pins at', () => {
+      expect(watchedInsetAt('16px')).toBe('-87px 0px 0px 0px')
+    })
+
+    it("follows the reader's own type size, which is what rem is for", () => {
+      expect(watchedInsetAt('20px')).toBe('-109px 0px 0px 0px')
+    })
   })
 
   /**

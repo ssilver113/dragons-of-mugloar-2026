@@ -52,6 +52,7 @@ const PRESENTATION: Record<ErrorCode, ErrorPresentation> = {
   },
   UPSTREAM_ERROR: { severity: 'fault', title: 'The game service failed', offerRefresh: true },
   NETWORK_ERROR: { severity: 'fault', title: 'No connection to the server', offerRefresh: true },
+  REQUEST_TIMEOUT: { severity: 'fault', title: 'The server did not answer', offerRefresh: true },
   INTERNAL_ERROR: { severity: 'fault', title: 'Something went wrong', offerRefresh: true },
   // Only reachable from a bug on our side, so there is nothing for the player to do about it.
   VALIDATION_FAILED: { severity: 'fault', title: 'That request was refused', offerRefresh: false },

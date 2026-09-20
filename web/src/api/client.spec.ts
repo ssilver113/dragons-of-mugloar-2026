@@ -1,7 +1,7 @@
-import { describe, expect, it } from 'vitest'
-import { http, HttpResponse } from 'msw'
+import { describe, expect, it, vi } from 'vitest'
+import { delay, http, HttpResponse } from 'msw'
 import { server } from '../mocks/server'
-import { ApiError, api } from './client'
+import { ApiError, api, asApiError } from './client'
 import { aGame, problem } from '../test/fixtures'
 
 describe('api client', () => {
@@ -64,6 +64,25 @@ describe('api client', () => {
     await expect(api.startGame()).rejects.toMatchObject({ code: 'NETWORK_ERROR', status: 0 })
   })
 
+  // Without a deadline a connection that hangs between the browser and the server never settles,
+  // and the store that awaited it stays acting for good: every control disabled, no way out but a
+  // reload. The signal is shortened here rather than waited out; the deadline itself is asserted
+  // separately, because a test cannot sit for 45 seconds.
+  it('gives up on a request that never answers', async () => {
+    const shortened = AbortSignal.timeout(10)
+    const deadline = vi.spyOn(AbortSignal, 'timeout').mockReturnValue(shortened)
+    server.use(http.post('/api/games', async () => await delay('infinite')))
+
+    const error = await api.startGame().catch((e: unknown) => e)
+    const declared = deadline.mock.calls[0]?.[0]
+    deadline.mockRestore()
+
+    expect(error).toBeInstanceOf(ApiError)
+    expect(error).toMatchObject({ code: 'REQUEST_TIMEOUT', status: 0 })
+    // Long enough that only a server which has stopped answering can reach it.
+    expect(declared).toBeGreaterThanOrEqual(40_000)
+  })
+
   it('reports an unreadable success body as a protocol failure', async () => {
     server.use(
       http.post(
@@ -91,5 +110,27 @@ describe('api client', () => {
     await api.solve('kZUyeMSK', 'a/../b')
 
     expect(seen).toBe('/api/games/kZUyeMSK/ads/a%2F..%2Fb/solve')
+  })
+})
+
+/**
+ * The narrowing every store does before it can put a failure on state. It lived twice, character
+ * for character, in `game` and in `autoplay`; it belongs with the type it produces.
+ */
+describe('narrowing a rejection to an ApiError', () => {
+  it('passes a failed request through untouched', () => {
+    const failure = new ApiError('INSUFFICIENT_GOLD', 'Not enough gold.', 409)
+
+    expect(asApiError(failure)).toBe(failure)
+  })
+
+  it('attributes anything else to us, keeping what was thrown as the cause', () => {
+    const thrown = new TypeError('cannot read properties of undefined')
+
+    const failure = asApiError(thrown)
+
+    expect(failure).toBeInstanceOf(ApiError)
+    expect(failure).toMatchObject({ code: 'INTERNAL_ERROR', status: 0 })
+    expect(failure.cause).toBe(thrown)
   })
 })
