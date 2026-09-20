@@ -20,6 +20,10 @@ import org.springframework.stereotype.Service;
  *
  * <p>Buying spends a turn, so the affordability check and the purchase it authorises happen inside
  * the session's turn lock. The gold a purchase is measured against cannot be spent underneath it.
+ *
+ * <p>Browsing spends no turn and still takes that lock, because every response here carries the
+ * game state beside the catalogue. Read outside it, that state is a snapshot from before an upstream
+ * round trip, so a turn landing during the browse would be answered with a game one turn stale.
  */
 @Service
 public class ShopService {
@@ -34,8 +38,10 @@ public class ShopService {
 
     public ShopCatalogue listItems(String gameId) {
         GameSession session = sessions.require(gameId);
-        GameState state = session.requireRunning();
-        return new ShopCatalogue(state, fetchItems(gameId, session));
+        return session.exclusively(() -> {
+            GameState state = session.requireRunning();
+            return new ShopCatalogue(state, fetchItems(gameId, session));
+        });
     }
 
     /**
@@ -48,12 +54,14 @@ public class ShopService {
      */
     public ShopCatalogue knownCatalogue(String gameId) {
         GameSession session = sessions.require(gameId);
-        GameState state = session.requireRunning();
-        return new ShopCatalogue(
-                state,
-                session.catalogue()
-                        .map(ShopService::rebuild)
-                        .orElseGet(() -> fetchItems(gameId, session)));
+        return session.exclusively(() -> {
+            GameState state = session.requireRunning();
+            return new ShopCatalogue(
+                    state,
+                    session.catalogue()
+                            .map(ShopService::rebuild)
+                            .orElseGet(() -> fetchItems(gameId, session)));
+        });
     }
 
     public PurchaseOutcome buy(String gameId, String itemId) {

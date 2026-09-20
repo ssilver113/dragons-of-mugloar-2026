@@ -11,6 +11,11 @@ import com.mugloar.dragons.mugloar.dto.ShopItemResponse;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -18,6 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -165,5 +171,44 @@ class ShopServiceTest {
         assertThatThrownBy(() -> service.listItems(GAME_ID)).isInstanceOf(GameNotRunningException.class);
         assertThatThrownBy(() -> service.buy(GAME_ID, "cs")).isInstanceOf(GameNotRunningException.class);
         verify(client, never()).buy(anyString(), anyString());
+    }
+
+    /**
+     * Browsing spends no turn, but every response here carries the game state beside the
+     * catalogue, and that state is read before an upstream round trip. Left outside the lock, a
+     * browse that started before a purchase and landed after it would answer with the gold the
+     * player had a turn ago. Asserted as mutual exclusion rather than as a surviving figure, for
+     * the same reason the board's test is: a correct state could be luck.
+     */
+    @Test
+    void browsingTakesTheSameLockAsATurn() throws Exception {
+        gameWith(120);
+        AtomicInteger inFlight = new AtomicInteger();
+        AtomicInteger mostAtOnce = new AtomicInteger();
+        when(client.listShopItems(GAME_ID)).thenAnswer(invocation -> {
+            mostAtOnce.accumulateAndGet(inFlight.incrementAndGet(), Math::max);
+            Thread.sleep(20);
+            inFlight.decrementAndGet();
+            return CATALOGUE;
+        });
+        when(client.buy(eq(GAME_ID), anyString())).thenAnswer(invocation -> {
+            mostAtOnce.accumulateAndGet(inFlight.incrementAndGet(), Math::max);
+            Thread.sleep(20);
+            inFlight.decrementAndGet();
+            return new PurchaseResponse(true, 70, 4, 2, 10);
+        });
+
+        try (ExecutorService pool = Executors.newFixedThreadPool(4)) {
+            List<Future<Object>> work = pool.invokeAll(List.<Callable<Object>>of(
+                    () -> service.listItems(GAME_ID),
+                    () -> service.buy(GAME_ID, "hpot"),
+                    () -> service.listItems(GAME_ID),
+                    () -> service.knownCatalogue(GAME_ID)));
+            for (Future<Object> each : work) {
+                each.get();
+            }
+        }
+
+        assertThat(mostAtOnce.get()).isEqualTo(1);
     }
 }
