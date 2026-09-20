@@ -157,7 +157,8 @@ replies — turns are spent, ads age off the board, lives run out — which lets
 whole game to its end. Running it on all three engines is where the cross-browser claim is checked.
 
 Coverage: `./gradlew jacocoTestReport` and `npm run test:coverage`. Reported, never gated. All
-three suites run in CI on every push.
+three suites run in CI on every push, alongside a fourth job that builds the container, boots
+it and smokes the published port.
 
 ## Screenshots
 
