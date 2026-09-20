@@ -21,12 +21,22 @@ const SAFE = anAd({
 })
 const MID = anAd({ adId: 'mid', message: 'Mid', reward: 30, successProbability: 0.8, expiresIn: 9 })
 
-function view(options: { ads?: AdView[]; lives?: number; advisor?: boolean } = {}) {
+function view(
+  options: { ads?: AdView[]; lives?: number; advisor?: boolean; lifeValueGold?: number } = {},
+) {
   const ads = ref<AdView[]>(options.ads ?? [RICH, SAFE, MID])
   const lives = ref(options.lives ?? 3)
   const advisor = ref(options.advisor ?? true)
   const holding = ref(false)
-  return { ...useBoardView({ ads, lives, advisor, holding }), ads, lives, advisor, holding }
+  const lifeValueGold = ref(options.lifeValueGold ?? 300)
+  return {
+    ...useBoardView({ ads, lives, advisor, holding, lifeValueGold }),
+    ads,
+    lives,
+    advisor,
+    holding,
+    lifeValueGold,
+  }
 }
 
 const order = (board: ReturnType<typeof view>) =>
@@ -85,6 +95,14 @@ describe('useBoardView', () => {
 
     board.posture.value = 'bold'
     expect(board.lifeCost.value).toBe(100)
+  })
+
+  it('prices it at what the running solver holds, so balanced ranks the board the bot would', () => {
+    const board = view({ lives: 1, lifeValueGold: 555 })
+    expect(board.lifeCost.value).toBe(555)
+
+    board.lifeValueGold.value = 600
+    expect(board.lifeCost.value).toBe(600)
   })
 
   it('filters the board down, counts what it hid, and offers the way back', () => {

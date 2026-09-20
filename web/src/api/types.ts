@@ -15,6 +15,8 @@ export type ProbabilityTier = 'SAFE' | 'FAVOURABLE' | 'EVEN' | 'POOR' | 'DOOMED'
  */
 export interface MetaView {
   offline: boolean
+  /** What the solver holds a life to be worth. The advisor's balanced posture is this figure. */
+  lifeValueGold: number
   version: string | null
   /** ISO-8601 instant. */
   builtAt: string | null

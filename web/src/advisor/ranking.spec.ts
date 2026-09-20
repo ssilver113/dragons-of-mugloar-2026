@@ -16,39 +16,49 @@ const SAFE = anAd({ adId: 'safe', reward: 50, successProbability: 0.86, expiresI
 const MID = anAd({ adId: 'mid', reward: 30, successProbability: 0.8, expiresIn: 9 })
 const BOARD = [RICH, SAFE, MID]
 
+/** What the server says the solver plays with; the advisor is handed it rather than holding it. */
+const SOLVER = 300
+
 const ids = (scored: ScoredAd[]) => scored.map((entry) => entry.ad.adId)
 const of = (scored: ScoredAd[], adId: string) => scored.find((entry) => entry.ad.adId === adId)!
 const only = (...selected: FilterId[]) => new Set(selected)
 
 describe('lifeCost', () => {
   it('makes the last life the dearest, so the same ad is judged differently as lives run out', () => {
-    expect(lifeCost('balanced', 3)).toBeCloseTo(100)
-    expect(lifeCost('balanced', 1)).toBeCloseTo(300)
+    expect(lifeCost('balanced', 3, SOLVER)).toBeCloseTo(100)
+    expect(lifeCost('balanced', 1, SOLVER)).toBeCloseTo(300)
   })
 
   it('treats a dead dragon as having one life rather than dividing by zero', () => {
-    expect(lifeCost('balanced', 0)).toBeCloseTo(300)
+    expect(lifeCost('balanced', 0, SOLVER)).toBeCloseTo(300)
+  })
+
+  it('is the solver at balanced and a what-if either side of it, whatever the server holds', () => {
+    // A tuned solver, so nothing here can be passing on the shipped 300 by coincidence.
+    expect(lifeCost('balanced', 1, 555)).toBeCloseTo(555)
+    expect(lifeCost('cautious', 1, 555)).toBeCloseTo(1665)
+    expect(lifeCost('bold', 1, 555)).toBeCloseTo(185)
   })
 })
 
 describe('riskAdjustedScore', () => {
   it('prices the reward against the risk of losing a life', () => {
     // 50 × 0.86 − 100 × 0.14
-    expect(riskAdjustedScore(SAFE, 'balanced', 3)).toBeCloseTo(29)
+    expect(riskAdjustedScore(SAFE, 'balanced', 3, SOLVER)).toBeCloseTo(29)
   })
 
   it('is the same ad seen through a different nerve, and can change sign', () => {
     const ad = anAd({ reward: 15, successProbability: 0.86 })
 
-    expect(riskAdjustedScore(ad, 'cautious', 3)).toBeLessThan(0)
-    expect(riskAdjustedScore(ad, 'balanced', 3)).toBeLessThan(0)
-    expect(riskAdjustedScore(ad, 'bold', 3)).toBeGreaterThan(0)
+    expect(riskAdjustedScore(ad, 'cautious', 3, SOLVER)).toBeLessThan(0)
+    expect(riskAdjustedScore(ad, 'balanced', 3, SOLVER)).toBeLessThan(0)
+    expect(riskAdjustedScore(ad, 'bold', 3, SOLVER)).toBeGreaterThan(0)
   })
 })
 
 describe('scoreBoard', () => {
   it('bands against the best the board is offering, not an absolute cutoff', () => {
-    const scored = scoreBoard(BOARD, 'balanced', 3)
+    const scored = scoreBoard(BOARD, 'balanced', 3, SOLVER)
 
     expect(of(scored, 'safe').band).toBe('strong')
     expect(of(scored, 'mid').band).toBe('fair')
@@ -56,13 +66,13 @@ describe('scoreBoard', () => {
   })
 
   it('bands everything poor when nothing on the board covers its own risk', () => {
-    const scored = scoreBoard(BOARD, 'cautious', 1)
+    const scored = scoreBoard(BOARD, 'cautious', 1, SOLVER)
 
     expect(scored.every((entry) => entry.band === 'poor')).toBe(true)
   })
 
   it('flags the big reward the odds do not back', () => {
-    const scored = scoreBoard(BOARD, 'balanced', 3)
+    const scored = scoreBoard(BOARD, 'balanced', 3, SOLVER)
 
     expect(of(scored, 'rich').trap).toBe(true)
     expect(of(scored, 'safe').trap).toBe(false)
@@ -70,13 +80,13 @@ describe('scoreBoard', () => {
 
   it('keeps a trap flagged however boldly the player is browsing', () => {
     // The flag describes the board, so a posture that would take the bet must not erase it.
-    expect(of(scoreBoard(BOARD, 'bold', 3), 'rich').trap).toBe(true)
+    expect(of(scoreBoard(BOARD, 'bold', 3, SOLVER), 'rich').trap).toBe(true)
   })
 
   it('does not flag a rich ad the odds do back', () => {
     const board = [anAd({ adId: 'rich', reward: 400, successProbability: 0.9 }), SAFE, MID]
 
-    expect(of(scoreBoard(board, 'balanced', 3), 'rich').trap).toBe(false)
+    expect(of(scoreBoard(board, 'balanced', 3, SOLVER), 'rich').trap).toBe(false)
   })
 
   it('does not brand an ad that merely fails to earn its turn', () => {
@@ -90,18 +100,18 @@ describe('scoreBoard', () => {
       anAd({ adId: 'worst', reward: 8, successProbability: 0.75 }),
     ]
 
-    const scored = scoreBoard(board, 'balanced', 3)
+    const scored = scoreBoard(board, 'balanced', 3, SOLVER)
     expect(of(scored, 'marginal').score).toBeLessThan(0)
     expect(scored.some((entry) => entry.trap)).toBe(false)
   })
 
   it('copes with an empty board', () => {
-    expect(scoreBoard([], 'balanced', 3)).toEqual([])
+    expect(scoreBoard([], 'balanced', 3, SOLVER)).toEqual([])
   })
 })
 
 describe('sortBoard', () => {
-  const scored = scoreBoard(BOARD, 'balanced', 3)
+  const scored = scoreBoard(BOARD, 'balanced', 3, SOLVER)
 
   it('ranks by what each ad is worth once the risk is priced in', () => {
     expect(ids(sortBoard(scored, 'value'))).toEqual(['safe', 'mid', 'rich'])
@@ -128,6 +138,7 @@ describe('sortBoard', () => {
       ],
       'balanced',
       3,
+      SOLVER,
     )
 
     expect(ids(sortBoard(tied, 'reward'))).toEqual(['a-soon', 'c-soon', 'b-late'])
@@ -141,7 +152,7 @@ describe('sortBoard', () => {
 })
 
 describe('filterBoard', () => {
-  const scored = scoreBoard(BOARD, 'balanced', 3)
+  const scored = scoreBoard(BOARD, 'balanced', 3, SOLVER)
   const average = meanReward(BOARD)
 
   it('keeps the whole board when nothing is asked of it', () => {

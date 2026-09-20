@@ -38,6 +38,8 @@ export function useBoardView(sources: {
   advisor: Ref<boolean> | ComputedRef<boolean>
   /** A turn is in flight and its board has not come back yet. See `board` below. */
   holding: Ref<boolean> | ComputedRef<boolean>
+  /** What the running solver prices a life at, so `balanced` ranks the board the way the bot does. */
+  lifeValueGold: Ref<number> | ComputedRef<number>
 }): BoardView {
   // How the player wants the board presented is theirs, not the game's, and it outlives no game.
   const sort = ref<SortKey>('value')
@@ -59,7 +61,9 @@ export function useBoardView(sources: {
     }
   })
 
-  const scored = computed(() => scoreBoard(board.value, posture.value, boardLives.value))
+  const scored = computed(() =>
+    scoreBoard(board.value, posture.value, boardLives.value, sources.lifeValueGold.value),
+  )
   const average = computed(() => meanReward(board.value))
 
   const entries = computed<BoardEntry[]>(() =>
@@ -85,6 +89,8 @@ export function useBoardView(sources: {
     entries,
     total: computed(() => board.value.length),
     shown: computed(() => entries.value.length),
-    lifeCost: computed(() => lifeCost(posture.value, boardLives.value)),
+    lifeCost: computed(() =>
+      lifeCost(posture.value, boardLives.value, sources.lifeValueGold.value),
+    ),
   }
 }

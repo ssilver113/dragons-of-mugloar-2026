@@ -787,12 +787,34 @@ describe('resuming after a reload', () => {
 
 describe('knowing which world it is playing', () => {
   it('reports an offline server so the caveat can be shown', async () => {
-    server.use(http.get('/api/meta', () => HttpResponse.json({ offline: true })))
+    server.use(
+      http.get('/api/meta', () => HttpResponse.json({ offline: true, lifeValueGold: 300 })),
+    )
     const store = useGameStore()
 
     await store.loadMeta()
 
     expect(store.offline).toBe(true)
+  })
+
+  it('takes the balanced posture from the solver that is actually running', async () => {
+    server.use(
+      http.get('/api/meta', () => HttpResponse.json({ offline: false, lifeValueGold: 555 })),
+    )
+    const store = useGameStore()
+
+    await store.loadMeta()
+
+    expect(store.lifeValueGold).toBe(555)
+  })
+
+  it('keeps a figure to rank with when the server does not answer', async () => {
+    server.use(http.get('/api/meta', () => HttpResponse.error()))
+    const store = useGameStore()
+
+    await store.loadMeta()
+
+    expect(store.lifeValueGold).toBe(300)
   })
 
   it('assumes live when the server does not answer', async () => {

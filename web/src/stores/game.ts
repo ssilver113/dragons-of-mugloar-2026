@@ -4,6 +4,7 @@ import { ApiError, api, asApiError } from '../api/client'
 import { endsTheSession, present } from '../api/errorPresentation'
 import { useCalibrationStore } from './calibration'
 import { persisted } from './persistence'
+import { DEFAULT_LIFE_VALUE_GOLD } from '../advisor/ranking'
 import type { AdView, AutoPlayStepView, GameView, ReputationView, ShopItemView } from '../api/types'
 
 export type RequestStatus = 'idle' | 'pending' | 'ready' | 'error'
@@ -56,6 +57,12 @@ export const useGameStore = defineStore('game', () => {
   /** Whether this server simulates. A deployment fact, read once; a failed read leaves it false. */
   const offline = ref(false)
 
+  /**
+   * What the running solver prices a life at. The advisor's balanced posture is this figure, so the
+   * board it ranks is the one the bot would play; the default stands until `/api/meta` answers.
+   */
+  const lifeValueGold = ref(DEFAULT_LIFE_VALUE_GOLD)
+
   /** Which build answered. From the server, not compiled in, so a stale server is visible. */
   const version = ref<string | null>(null)
   const builtAt = ref<string | null>(null)
@@ -89,6 +96,7 @@ export const useGameStore = defineStore('game', () => {
     try {
       const meta = await api.meta()
       offline.value = meta.offline
+      lifeValueGold.value = meta.lifeValueGold
       version.value = meta.version ?? null
       builtAt.value = meta.builtAt ?? null
     } catch {
@@ -411,6 +419,7 @@ export const useGameStore = defineStore('game', () => {
     game,
     ads,
     offline,
+    lifeValueGold,
     version,
     builtAt,
     shopItems,

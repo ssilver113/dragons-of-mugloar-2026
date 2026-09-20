@@ -37,6 +37,7 @@ const boardView = useBoardView({
   lives: computed(() => store.game?.lives ?? 1),
   advisor: computed(() => store.advisorEnabled),
   holding: computed(() => store.acting),
+  lifeValueGold: computed(() => store.lifeValueGold),
 })
 
 /** A reload is not a new game. The log follows the game, restored only once it is on screen. */

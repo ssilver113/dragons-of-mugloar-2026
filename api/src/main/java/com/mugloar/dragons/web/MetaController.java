@@ -1,6 +1,7 @@
 package com.mugloar.dragons.web;
 
 import com.mugloar.dragons.mugloar.MugloarMode;
+import com.mugloar.dragons.solver.StrategyParameters;
 import com.mugloar.dragons.web.dto.MetaView;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -17,20 +18,25 @@ import org.springframework.web.bind.annotation.RestController;
 public class MetaController {
 
     private final MugloarMode mode;
+    private final StrategyParameters strategy;
     private final @Nullable BuildProperties build;
 
     /**
      * The build stamp is optional on purpose: it is decoration on a page that plays a game, and a
      * server that refused to start because it could not name itself would be the worse failure.
      */
-    public MetaController(MugloarMode mode, ObjectProvider<BuildProperties> build) {
+    public MetaController(
+            MugloarMode mode,
+            StrategyParameters strategy,
+            ObjectProvider<BuildProperties> build) {
         this.mode = mode;
+        this.strategy = strategy;
         this.build = build.getIfAvailable();
     }
 
     @GetMapping
-    @Operation(summary = "Report which world this server plays and which build is answering")
+    @Operation(summary = "Report which world this server plays, how it values a life and which build is answering")
     public MetaView meta() {
-        return MetaView.from(mode, build);
+        return MetaView.from(mode, strategy, build);
     }
 }

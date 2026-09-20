@@ -181,6 +181,7 @@ export class FakeApi {
       // taken from the jar, because a suite that asserted on today's date would rot overnight.
       return this.json(route, {
         offline: false,
+        lifeValueGold: 300,
         version: '0.9',
         builtAt: '2026-09-10T09:15:00Z',
       })

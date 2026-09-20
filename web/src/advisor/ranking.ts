@@ -6,11 +6,28 @@ import type { AdView } from '../api/types'
  */
 export type Posture = 'cautious' | 'balanced' | 'bold'
 
-export const POSTURES: ReadonlyArray<{ id: Posture; label: string; lifeValueGold: number }> = [
-  { id: 'cautious', label: 'Cautious', lifeValueGold: 900 },
-  { id: 'balanced', label: 'Balanced', lifeValueGold: 300 },
-  { id: 'bold', label: 'Bold', lifeValueGold: 100 },
+/**
+ * The solver's own figure is `balanced`, which is why it is `(gold) => gold` and not a number: the
+ * server publishes what it plays with on `/api/meta`, so the bot's ordering is provably the bot's
+ * rather than the same constant typed on both sides. The what-ifs are three times as timid and
+ * three times as bold, applied as a multiply and a divide so a round figure stays round.
+ */
+export const POSTURES: ReadonlyArray<{
+  id: Posture
+  label: string
+  lifeValue: (solverLifeValueGold: number) => number
+}> = [
+  { id: 'cautious', label: 'Cautious', lifeValue: (gold) => gold * 3 },
+  { id: 'balanced', label: 'Balanced', lifeValue: (gold) => gold },
+  { id: 'bold', label: 'Bold', lifeValue: (gold) => gold / 3 },
 ]
+
+/**
+ * What to price a life at until `/api/meta` answers. `loadMeta` is deliberately silent on failure,
+ * so the advisor needs a figure it can draw with; this is the only place the server's default is
+ * repeated, and it is a fallback rather than a second source of truth.
+ */
+export const DEFAULT_LIFE_VALUE_GOLD = 300
 
 export type SortKey = 'value' | 'reward' | 'chance' | 'expiry'
 
@@ -50,14 +67,19 @@ export interface ScoredAd extends AdRead {
 }
 
 /** What a life is worth right now: scarcity, not sentiment — the last one is the dearest. */
-export function lifeCost(posture: Posture, lives: number): number {
-  const { lifeValueGold } = POSTURES.find((p) => p.id === posture) ?? POSTURES[1]
-  return lifeValueGold / Math.max(1, lives)
+export function lifeCost(posture: Posture, lives: number, solverLifeValueGold: number): number {
+  const { lifeValue } = POSTURES.find((p) => p.id === posture) ?? POSTURES[1]
+  return lifeValue(solverLifeValueGold) / Math.max(1, lives)
 }
 
-export function riskAdjustedScore(ad: AdView, posture: Posture, lives: number): number {
+export function riskAdjustedScore(
+  ad: AdView,
+  posture: Posture,
+  lives: number,
+  solverLifeValueGold: number,
+): number {
   const p = ad.successProbability
-  return ad.reward * p - lifeCost(posture, lives) * (1 - p)
+  return ad.reward * p - lifeCost(posture, lives, solverLifeValueGold) * (1 - p)
 }
 
 /**
@@ -87,14 +109,21 @@ export function meanReward(ads: AdView[]): number {
   return ads.length === 0 ? 0 : ads.reduce((sum, ad) => sum + ad.reward, 0) / ads.length
 }
 
-export function scoreBoard(ads: AdView[], posture: Posture, lives: number): ScoredAd[] {
+export function scoreBoard(
+  ads: AdView[],
+  posture: Posture,
+  lives: number,
+  solverLifeValueGold: number,
+): ScoredAd[] {
   if (ads.length === 0) {
     return []
   }
-  const scores = ads.map((ad) => riskAdjustedScore(ad, posture, lives))
+  const scores = ads.map((ad) => riskAdjustedScore(ad, posture, lives, solverLifeValueGold))
   // The trap flag is judged at `balanced`, so it needs its own scores whenever the player is not.
   const balanced =
-    posture === 'balanced' ? scores : ads.map((ad) => riskAdjustedScore(ad, 'balanced', lives))
+    posture === 'balanced'
+      ? scores
+      : ads.map((ad) => riskAdjustedScore(ad, 'balanced', lives, solverLifeValueGold))
   const cutoffs: Cutoffs = {
     richReward: thirdFrom(
       ads.map((ad) => ad.reward),
