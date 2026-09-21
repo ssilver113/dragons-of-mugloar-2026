@@ -2,7 +2,7 @@
   "name": "dragons-web",
   "description": "Dragons of Mugloar — playable web app with auto-play solver",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.9.3",
   "type": "module",
   "engines": {
     "node": ">=24"

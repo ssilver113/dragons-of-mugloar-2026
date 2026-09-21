@@ -165,15 +165,20 @@ it and smokes the published port.
 
 ## Screenshots
 
-The board mid-game, with the advisor on: every job carries its chance, its average payout and
-whether the reward covers the risk to a life, and the shop and standings sit alongside it.
+The board mid-game with the advisor off, listed in the order the jobs were posted. The shop and
+the standings sit alongside it.
 
-![The message board with the advisor's read on each job](docs/images/board-and-advisor.jpg)
+![The message board, shop and standings mid-game](docs/images/message-board.jpg)
 
-Underneath, the advisor's calibration — what it predicted against how those jobs actually went —
-and the decision log, each turn expandable into the whole board as the solver ranked it.
+The advisor switched on: it ranks the board by sort and risk posture, and tallies what it
+predicted for each odds label against how those jobs actually went.
 
-![Advisor calibration and the solver's decision log](docs/images/calibration-and-decision-log.jpg)
+![The advisor's controls and its calibration tally](docs/images/advisor.jpg)
+
+Auto-play and the decision log, newest turn first, each entry saying why the solver chose it and
+expandable into the whole board as it ranked it.
+
+![Auto-play controls and the solver's decision log](docs/images/decision-log.jpg)
 
 ## Licence
 

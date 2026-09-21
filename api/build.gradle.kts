@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "com.mugloar"
-version = "0.9"
+version = "0.9.3"
 description = "Dragons of Mugloar — game API adapter, ad scoring and solver"
 
 /* The version reaches the page through /api/meta, so the stamp has to travel in the jar rather
